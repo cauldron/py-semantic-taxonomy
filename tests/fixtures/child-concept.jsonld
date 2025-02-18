@@ -1,0 +1,58 @@
+{
+  "@id": "http://data.europa.eu/xsp/cn2024/010021000090",
+  "@type": [
+    "http://www.w3.org/2004/02/skos/core#Concept"
+  ],
+  "http://www.w3.org/2004/02/skos/core#inScheme": [
+    {
+      "@id": "http://data.europa.eu/xsp/cn2024/cn2024"
+    }
+  ],
+  "http://www.w3.org/2004/02/skos/core#prefLabel": [
+    {
+      "@value": "CHAPTER 1 - LIVE ANIMALS",
+      "@language": "en"
+    },
+    {
+      "@value": "CAP\u00cdTULO 1 - ANIMAIS VIVOS",
+      "@language": "pt"
+    }
+  ],
+  "http://www.w3.org/2004/02/skos/core#altLabel": [
+    {
+      "@value": "CHAPTER 1 - LIVE ANIMALS",
+      "@language": "en"
+    },
+    {
+      "@value": "CAP\u00cdTULO 1 - ANIMAIS VIVOS",
+      "@language": "pt"
+    }
+  ],
+  "http://www.w3.org/2004/02/skos/core#broader": [
+    {
+      "@id": "http://data.europa.eu/xsp/cn2024/010011000090"
+    }
+  ],
+  "http://purl.org/dc/elements/1.1/identifier": [
+    {
+      "@value": "010021000090"
+    }
+  ],
+  "http://rdf-vocabulary.ddialliance.org/xkos#depth": [
+    {
+      "@type": "http://www.w3.org/2001/XMLSchema#positiveInteger",
+      "@value": "2"
+    }
+  ],
+  "http://www.w3.org/2004/02/skos/core#notation": [
+    {
+      "@value": "01"
+    }
+  ],
+  "http://www.w3.org/2004/02/skos/core#scopeNote": [
+    {
+      "@language": "en",
+      "@value": "LIVE ANIMALS"
+    }
+  ]
+}

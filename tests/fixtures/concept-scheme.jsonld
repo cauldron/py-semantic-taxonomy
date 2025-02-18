@@ -1,0 +1,115 @@
+{
+  "@id": "http://data.europa.eu/xsp/cn2024/cn2024",
+  "@type": [
+    "http://www.w3.org/2004/02/skos/core#ConceptScheme"
+  ],
+  "http://purl.org/dc/terms/created": [
+    {
+      "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "@value": "2023-10-11T13:59:56"
+    }
+  ],
+  "http://purl.org/dc/terms/creator": [
+    {
+      "@id": "http://publications.europa.eu/resource/authority/corporate-body/ESTAT"
+    },
+    {
+      "@id": "http://publications.europa.eu/resource/authority/corporate-body/TAXUD"
+    }
+  ],
+  "http://www.w3.org/2002/07/owl#versionInfo": [
+    {
+      "@value": "2024"
+    }
+  ],
+  "http://www.w3.org/2004/02/skos/core#hasTopConcept": [
+    {
+      "@id": "http://data.europa.eu/xsp/cn2024/010011000090"
+    }
+  ],
+  "http://www.w3.org/2004/02/skos/core#prefLabel": [
+    {
+      "@value": "Combined Nomenclature, 2024 (CN 2024)",
+      "@language": "en"
+    },
+    {
+      "@value": "Nomenclatura Combinada, 2024 (NC 2024)",
+      "@language": "pt"
+    }
+  ],
+  "http://www.w3.org/2004/02/skos/core#definition": [
+    {
+      "@value": "The main classification for the European ITGS (International trade in goods statistics)  is the Combined Nomenclature (CN). This is the primary nomenclature as it is the one used by the EU Member States to collect detailed data on their trading of goods since 1988. Before the introduction of the CN, ITGS were based on a product classification called NIMEXE.  The CN is based on the Harmonised Commodity Description and Coding System (managed by the World Customs Organisation (WCO). The Harmonised System (HS) is an international classification at two, four and six-digit level which classifies goods according to their nature. It was introduced in 1988 and, since then, was revised six times: in 1996, 2002, 2007, 2012, 2017 and 2022. The CN corresponds to the HS plus a further breakdown at eight-digit level defined to meet EU needs. The CN is revised annually and, as a Council Regulation, is binding on the Member States. ",
+      "@language": "en"
+    }
+  ],
+  "http://data.europa.eu/eli/ontology#based_on": [
+    {
+      "@id": "http://data.europa.eu/eli/reg_impl/2023/2364/oj"
+    }
+  ],
+  "http://data.europa.eu/eli/ontology#version_date": [
+    {
+      "@type": "http://www.w3.org/2001/XMLSchema#date",
+      "@value": "2023-11-20"
+    }
+  ],
+  "http://purl.org/dc/terms/identifier": [
+    {
+      "@value": "http://data.europa.eu/xsp/cn2024/cn2024"
+    }
+  ],
+  "http://purl.org/dc/terms/language": [
+    {
+      "@id": "http://publications.europa.eu/resource/authority/language/ENG"
+    },
+    {
+      "@id": "http://publications.europa.eu/resource/authority/language/POR"
+    }
+  ],
+  "http://purl.org/dc/terms/modified": [
+    {
+      "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "@value": "2024-07-24T09:37:40"
+    }
+  ],
+  "http://rdf-vocabulary.ddialliance.org/xkos#belongsTo": [
+    {
+      "@id": "http://data.europa.eu/2en/class-series/cn"
+    }
+  ],
+  "http://rdf-vocabulary.ddialliance.org/xkos#follows": [
+    {
+      "@id": "http://data.europa.eu/xsp/cn2023/cn2023"
+    }
+  ],
+  "http://rdf-vocabulary.ddialliance.org/xkos#numberOfLevels": [
+    {
+      "@type": "http://www.w3.org/2001/XMLSchema#positiveInteger",
+      "@value": "5"
+    }
+  ],
+  "http://schema.org/endDate": [
+    {
+      "@type": "http://www.w3.org/2001/XMLSchema#date",
+      "@value": "2024-12-31"
+    }
+  ],
+  "http://schema.org/startDate": [
+    {
+      "@type": "http://www.w3.org/2001/XMLSchema#date",
+      "@value": "2024-01-01"
+    }
+  ],
+  "http://www.w3.org/2004/02/skos/core#notation": [
+    {
+      "@value": "CN 2024"
+    }
+  ],
+  "http://www.w3.org/2004/02/skos/core#scopeNote": [
+    {
+      "@type": "http://www.w3.org/2001/XMLSchema#anyURI",
+      "@value": "http://publications.europa.eu/resource/oj/JOC_2019_119_R_0001"
+    }
+  ]
+}

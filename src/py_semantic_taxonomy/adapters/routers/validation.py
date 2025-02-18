@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 
 import langcodes
 import rfc3987
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator, PlainSerializer
 
 
 def validate_iri(value: str) -> str:
@@ -16,6 +16,10 @@ def validate_iri(value: str) -> str:
 IRI = Annotated[
     str,
     AfterValidator(validate_iri),
+]
+SerializableDateTime = Annotated[
+    datetime,
+    PlainSerializer(lambda dt: dt.isoformat(), return_type=str),
 ]
 
 
@@ -52,7 +56,9 @@ class DateTime(BaseModel):
 
     type_: DateTimeType = Field(alias="@type")
     # Pydantic can convert ISO 8601 dates and datetimes to native types automatically
-    value: datetime = Field(alias="@value")
+    value: SerializableDateTime = Field(alias="@value")
+
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class MultilingualString(BaseModel):
