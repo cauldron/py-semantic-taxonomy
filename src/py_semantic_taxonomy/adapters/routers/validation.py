@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 
 import langcodes
 import rfc3987
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator, PlainSerializer
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, PlainSerializer, field_validator
 
 
 def validate_iri(value: str) -> str:
