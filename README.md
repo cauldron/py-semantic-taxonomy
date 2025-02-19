@@ -204,7 +204,7 @@ Here is an example of this pattern in JSON-LD:
       {"@id": "http://example.com/A/electricity"},
       {"@id": "http://example.com/C/wind_turbine"}
   ],
-  "http://rdf-vocabulary.ddialliance.org/xkos#sourceConcept": [
+  "http://rdf-vocabulary.ddialliance.org/xkos#targetConcept": [
       {"@id": "http://example.com/B/renewable_electricity"}
   ]
 }
