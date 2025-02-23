@@ -43,6 +43,8 @@ This means that we want the following technical capabilities which are missing o
 * Easy customization of the UI
 * Pluggable search index
 
+To put it another way, SKOSMOS is amazing software which can handle knowledge organization systems which are based on SKOS which already exist in a graph database but include a lot of inconsistency and variation, while this software has a reduced feature set and is much pickier about incoming data and controls ingress to the data store.
+
 ### Concepts and Concept Schemes
 
 The core objects in SKOS are [Concepts](https://www.w3.org/TR/skos-primer/#secconcept) and [Concept Schemes](https://www.w3.org/TR/skos-primer/#secscheme).
