@@ -48,7 +48,7 @@ class Concept(KOSCommon):
 
     Checks that required fields are included and have correct type."""
 
-    schemes: list[Node] = Field(alias="http://www.w3.org/2004/02/skos/core#inScheme")
+    schemes: conlist(Node, min_length=1) = Field(alias="http://www.w3.org/2004/02/skos/core#inScheme")
     # Can have multiple alternative labels per language, and multiple languages
     alt_labels: list[MultilingualString] = Field(
         alias="http://www.w3.org/2004/02/skos/core#altLabel", default=[]

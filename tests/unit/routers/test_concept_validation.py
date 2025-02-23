@@ -65,3 +65,18 @@ def test_narrower_self_reference(cn):
     obj["http://www.w3.org/2004/02/skos/core#narrower"] = [{"@id": obj["@id"]}]
     with pytest.raises(ValidationError):
         Concept(**obj)
+
+
+def test_concept_must_be_in_at_least_one_scheme(cn):
+    obj = cn[0]
+    assert Concept(**obj)
+    obj["http://www.w3.org/2004/02/skos/core#inScheme"] = []
+    with pytest.raises(ValidationError):
+        Concept(**obj)
+
+
+def test_concept_can_be_in_more_than_one_scheme(cn):
+    obj = cn[0]
+    assert Concept(**obj)
+    obj["http://www.w3.org/2004/02/skos/core#inScheme"].append({"@id": "http://example.foo/scheme"})
+    assert Concept(**obj)
