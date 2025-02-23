@@ -23,19 +23,24 @@
 
 ### Background and Design Goals
 
-This project has been based on our experiences using [SKOSMOS](https://skosmos.org/) for the [Sentier.dev taxonomic vocabulary](https://vocab.sentier.dev/en/). The RDF graph data sturcture and the SKOSMOS software itself work really well for a certain set of use cases, but for our specific needs and user community, the choice of PHP, Jena, SPARQL for writing queries, and built-in search indexer all posed barriers to productive software and vocabulary maintenance.
+This project has been based on our experiences using [SKOSMOS](https://skosmos.org/) for the [Sentier.dev taxonomic vocabulary](https://vocab.sentier.dev/en/). The RDF graph data structure and the SKOSMOS software itself work well for a certain set of use cases, but for our specific needs and user community, the choice of PHP, Jena, SPARQL for writing queries, and built-in search indexer all posed barriers to productive software and vocabulary maintenance.
 
 In `py_semantic_taxonomy` we have the following goals:
 
-* Easier redirection of IRIs to the correct resource and media type
-* API which uses JSON-LD as its native data format (Semantic Web-compatibility)
-* API which provides common graph queries without needing to learn SPARQL
-* Better query performance by optimizing database indices for a small set of needed edges
-* Easier customization of the UI
-* Pluggable search index which can more easily support semantic queries and text internationalization
-* Python client library which provides convenience wrappers around JSON-LD data structures
 * Native support for [XKOS](https://rdf-vocabulary.ddialliance.org/xkos.html) [Correspondence and ConceptAssociation classes](https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences)
-* A stricter set of validation classes for input data to ensure consistency in how objects are described.
+* A stricter set of validation classes and functions for input data to ensure consistency in how objects are described.
+* Web interface to allow for browsing, and basic data entry and editing
+* API to allow for the complete set of CRUD operations
+* API provides common graph queries without needing to learn SPARQL
+* IRIs should resolve to HTML or RDF serialized resources, depending on requested media type
+* Web interface supports high quality multilingual search without configuration pain
+* Python client library which provides convenience wrappers around API
+
+This means that we want the following technical capabilities which are missing or more difficult than they need to be in SKOSMOS:
+
+* Better query performance by optimizing database indices for a small set of needed edges
+* Easy customization of the UI
+* Pluggable search index
 
 ### Concepts and Concept Schemes
 
@@ -54,6 +59,15 @@ For `ConceptScheme`, we also require the following:
 * Exactly one `http://www.w3.org/2002/07/owl#versionInfo` value is specified
 
 In addition to the above requirements, we assume that concepts within a concept scheme have a transitive hierarchy; therefore, there is no need to specify `broaderTransitive` or `narrowerTransitive`, these are always implied. Similarly, as `broader` and `narrower` are reciprocal, API inputs may only specify `broader` relationships. Specifying `narrower`, `broaderTransitive`, or `narrowerTransitive` will not raise an error, but they will be ignored and the hierarchy will be reconstituted solely from the `broader` definitions.
+
+For `Concept`, we enforce or expect the following SKOS ontology best practices:
+
+* Each `Concept` must be in at least one `ConceptScheme`.
+* `skos:related` is for *associative* relationships, not *hierarchical* ones. Two concepts which are related through a chain of either `skos:broader` or `skos:narrower` concept relationships is not allowed. A concept also can't be `related` to itself.
+* `skos:scopeNote`, `skos:definition`, `skos:example`, and `skos:historyNote` should follow the intended use as documented in section 2.4 of the [SKOS Primer](https://www.w3.org/TR/skos-primer/).
+* The use of `skos:note` is discouraged (but not prohibited) in favor of the specific `skos:note` subclasses.
+* `skos:historyNote` and `skos:editorialNote` are reserved for describing desired or completed changes to concepts as part of a new concept scheme version, and should be non-literal RDF nodes. See the API documentation for the expected format.
+* Hierarchical relationships (`skos:narrower` and `skos:broader`) are reserved for concepts in the same concept scheme. Use `skos:narrowMatch` and `skos:broadMatch` for describing mappings to concepts outside the source concept scheme.
 
 Here is an example of a valid `ConceptScheme` in JSON-LD:
 
@@ -209,6 +223,8 @@ Here is an example of this pattern in JSON-LD:
   ]
 }
 ```
+
+An alternative to this approach would be to create new graph nodes (possibly instances of `Concept` in a custom `ConceptScheme`) which represented the combination of two `Concepts`. This could be done using, for example, `http://www.w3.org/2002/07/owl#intersectionOf`. We didn't choose this approach because it adds complexity creating and maintaining these composite nodes, and because none of the OWL predicates we found were a good fit for conditional concept association.
 
 ## Contributing
 
