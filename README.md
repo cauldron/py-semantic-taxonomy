@@ -67,9 +67,16 @@ For `Concept`, we enforce or expect the following SKOS ontology best practices:
 * `skos:related` is for *associative* relationships, not *hierarchical* ones. Two concepts which are related through a chain of either `skos:broader` or `skos:narrower` concept relationships is not allowed. A concept also can't be `related` to itself.
 * `skos:scopeNote`, `skos:definition`, `skos:example`, and `skos:historyNote` should follow the intended use as documented in section 2.4 of the [SKOS Primer](https://www.w3.org/TR/skos-primer/).
 * The use of `skos:note` is discouraged (but not prohibited) in favor of the specific `skos:note` subclasses.
-* `skos:historyNote` and `skos:editorialNote` are reserved for describing desired or completed changes to concepts as part of a new concept scheme version, and should be non-literal RDF nodes. See the API documentation for the expected format.
 * Hierarchical relationships (`skos:narrower` and `skos:broader`) are reserved for concepts in the same concept scheme. Use `skos:narrowMatch` and `skos:broadMatch` for describing mappings to concepts outside the source concept scheme.
 * `skos:notation` must be a [typed literal](https://www.w3.org/TR/2004/REC-rdf-concepts-20040210/#dfn-typed-literal) - not a string literal - and not include a `@language` tag. The default datatype should be `http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral`.
+
+We follow the SKOS Primer guidance on [documentary notes](https://www.w3.org/TR/skos-primer/#secdocumentation) for the fields `skos:changeNote`, `skos:editorialNote`, and `skos:historyNote`:
+
+* `skos:changeNote` documents fine-grained changes to a concept, for the purposes of administration and maintenance, e.g. "Moved from under 'fruits' to under 'vegetables' by Horace Gray"
+* `skos:editorialNote` supplies information that is an aid to administrative housekeeping, such as reminders of editorial work still to be done, e.g. "Check spelling with John Doe"
+* `skos:historyNote` describes significant changes to the meaning or the form of a concept, e.g. "estab. 1975; heading was: Cruelty to children [1952-1975]"
+
+All three of these notes are required to be RDF resources instead of string literals, and in addition to their values (`rdf:value`), they **must** also include a creator (`dcterms:creator`) and an issuance timestamp (`dcterms:issued`). The API documentation has examples these notes.
 
 Additionally, we **break from** [SKOS guidance](https://www.w3.org/TR/skos-reference/#L2613) to prohibit `skos:notation` having the same value as `skos:prefLabel`. A notations is ['a string of characters such as "T58.5" or "303.4833" used to uniquely identify a concept within the scope of a given concept scheme'](https://www.w3.org/TR/skos-reference/#L2064); this definition is inconsistent [lexical labels](https://www.w3.org/TR/skos-reference/#L2831) like `skos:prefLabel`, which are human-readable and in a natural language. In our system, `skos:prefLabel` is required but `skos:notation` is optional.
 
