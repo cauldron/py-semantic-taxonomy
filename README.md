@@ -69,6 +69,9 @@ For `Concept`, we enforce or expect the following SKOS ontology best practices:
 * The use of `skos:note` is discouraged (but not prohibited) in favor of the specific `skos:note` subclasses.
 * `skos:historyNote` and `skos:editorialNote` are reserved for describing desired or completed changes to concepts as part of a new concept scheme version, and should be non-literal RDF nodes. See the API documentation for the expected format.
 * Hierarchical relationships (`skos:narrower` and `skos:broader`) are reserved for concepts in the same concept scheme. Use `skos:narrowMatch` and `skos:broadMatch` for describing mappings to concepts outside the source concept scheme.
+* `skos:notation` must be a [typed literal](https://www.w3.org/TR/2004/REC-rdf-concepts-20040210/#dfn-typed-literal) - not a string literal - and not include a `@language` tag. The default datatype should be `http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral`.
+
+Additionally, we **break from** [SKOS guidance](https://www.w3.org/TR/skos-reference/#L2613) to prohibit `skos:notation` having the same value as `skos:prefLabel`. A notations is ['a string of characters such as "T58.5" or "303.4833" used to uniquely identify a concept within the scope of a given concept scheme'](https://www.w3.org/TR/skos-reference/#L2064); this definition is inconsistent [lexical labels](https://www.w3.org/TR/skos-reference/#L2831) like `skos:prefLabel`, which are human-readable and in a natural language. In our system, `skos:prefLabel` is required but `skos:notation` is optional.
 
 Here is an example of a valid `ConceptScheme` in JSON-LD:
 
@@ -105,7 +108,12 @@ Here is an example of a valid `ConceptScheme` in JSON-LD:
   "http://rdf-vocabulary.ddialliance.org/xkos#follows": [
     {"@id": "http://data.europa.eu/xsp/cn2023/cn2023"}
   ],
-  "http://www.w3.org/2004/02/skos/core#notation": [{"@value": "CN 2024"}]
+  "http://www.w3.org/2004/02/skos/core#notation": [
+    {
+      "@value": "CN 2024",
+      "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"
+    }
+  ]
 }
 ```
 
@@ -128,7 +136,12 @@ Here is an example of a valid `Concept` in JSON-LD:
       "@language": "pt"
     }
   ],
-  "http://www.w3.org/2004/02/skos/core#notation": [{"@value": "I"}],
+  "http://www.w3.org/2004/02/skos/core#notation": [
+    {
+      "@value": "I",
+      "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"
+    }
+  ],
   "http://www.w3.org/2004/02/skos/core#definition": [
     {
       "@language": "en",
