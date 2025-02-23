@@ -109,3 +109,14 @@ def one_per_language(values: list[MultilingualString], label: str) -> list[Multi
                 f"Only one string per language code is allowed for `{label}`, but language `{key}` has {len(obj)} strings: {obj}"
             )
     return values
+
+
+class Notation(BaseModel):
+    """
+    TBD: The range for http://www.w3.org/2004/02/skos/core#notation
+    """
+
+    value: str = Field(alias="@value")
+    type_: IRI = Field(alias="@type", default="http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral")
+
+    model_config = ConfigDict(extra="forbid")

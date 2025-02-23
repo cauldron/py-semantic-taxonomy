@@ -5,6 +5,7 @@
 @prefix eli: <http://data.europa.eu/eli/ontology#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdfns: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix schema1: <http://schema.org/> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix xkos: <http://rdf-vocabulary.ddialliance.org/xkos#> .
@@ -28,7 +29,7 @@
     schema1:startDate "2024-01-01"^^xsd:date ;
     owl:versionInfo "2024" ;
     skos:hasTopConcept :010011000090 ;
-    skos:notation "CN 2024" ;
+    skos:notation "CN 2024"^^rdfns:PlainLiteral ;
     skos:prefLabel "Combined Nomenclature, 2024 (CN 2024)"@en,
         "Nomenclatura Combinada, 2024 (NC 2024)"@pt ;
     skos:scopeNote "http://publications.europa.eu/resource/oj/JOC_2019_119_R_0001"^^xsd:anyURI .
@@ -39,7 +40,7 @@
     xkos:depth "1"^^xsd:positiveInteger ;
     skos:inScheme :cn2024 ;
     skos:narrower :010021000090 ;
-    skos:notation "I" ;
+    skos:notation "I"^^rdfns:PlainLiteral ;
     skos:prefLabel "SECTION I - LIVE ANIMALS; ANIMAL PRODUCTS"@en,
         "SECÇÃO I - ANIMAIS VIVOS E PRODUTOS DO REINO ANIMAL"@pt ;
     skos:scopeNote "LIVE ANIMALS; ANIMAL PRODUCTS"@en ;
@@ -52,7 +53,7 @@
         "CAPÍTULO 1 - ANIMAIS VIVOS"@pt ;
     skos:broader :010011000090 ;
     skos:inScheme :cn2024 ;
-    skos:notation "01" ;
+    skos:notation "01"^^rdfns:PlainLiteral ;
     skos:prefLabel "CHAPTER 1 - LIVE ANIMALS"@en,
         "CAPÍTULO 1 - ANIMAIS VIVOS"@pt ;
     skos:scopeNote "LIVE ANIMALS"@en .

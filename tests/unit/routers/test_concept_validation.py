@@ -80,3 +80,27 @@ def test_concept_can_be_in_more_than_one_scheme(cn):
     assert Concept(**obj)
     obj["http://www.w3.org/2004/02/skos/core#inScheme"].append({"@id": "http://example.foo/scheme"})
     assert Concept(**obj)
+
+
+def test_pref_label_notation_overlap_error(cn):
+    obj = cn[0]
+    assert Concept(**obj)
+    obj["http://www.w3.org/2004/02/skos/core#notation"] = [{
+        "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
+        "@value": obj["http://www.w3.org/2004/02/skos/core#prefLabel"][0]["@value"]
+    }]
+    with pytest.raises(ValidationError):
+        Concept(**obj)
+
+
+def test_alt_label_notation_overlap(cn):
+    obj = cn[0]
+    obj["http://www.w3.org/2004/02/skos/core#altLabel"] = [{
+        "@value": "Cow goes moo",
+        "@language": "en"
+    }]
+    obj["http://www.w3.org/2004/02/skos/core#notation"] = [{
+        "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
+        "@value": "Cow goes moo"
+    }]
+    assert Concept(**obj)

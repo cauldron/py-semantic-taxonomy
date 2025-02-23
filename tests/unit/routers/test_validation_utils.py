@@ -11,6 +11,7 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     Node,
     VersionString,
     one_per_language,
+    Notation,
 )
 
 
@@ -121,3 +122,10 @@ def test_one_per_language():
         one_per_language(vals, "something")
     MSG = "Only one string per language code is allowed for `something`, but language `en-US` has 2 strings: ['foo', 'too']"
     excinfo.value == MSG
+
+
+def test_notation_forbid_extra_values():
+    assert Notation(**{"@value": "7-11"})
+    assert Notation(**{"@value": "7-11", "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"})
+    with pytest.raises(ValueError):
+        Notation(**{"@value": "7-11", "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral", "language": "en"})

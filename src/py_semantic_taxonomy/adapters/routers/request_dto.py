@@ -9,6 +9,7 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     Node,
     VersionString,
     one_per_language,
+    Notation,
 )
 
 
@@ -50,6 +51,7 @@ class Concept(KOSCommon):
 
     schemes: conlist(Node, min_length=1) = Field(alias="http://www.w3.org/2004/02/skos/core#inScheme")
     # Can have multiple alternative labels per language, and multiple languages
+    notation: list[Notation] = Field(alias="http://www.w3.org/2004/02/skos/core#notation", default=[])
     alt_labels: list[MultilingualString] = Field(
         alias="http://www.w3.org/2004/02/skos/core#altLabel", default=[]
     )
@@ -65,7 +67,7 @@ class Concept(KOSCommon):
     def type_includes_concept(cls, value: list[str]) -> list[str]:
         CONCEPT = "http://www.w3.org/2004/02/skos/core#Concept"
         if CONCEPT not in value:
-            raise ValueError(f"`@type` must include `{CONCEPT}`")
+            raise ValueError(f"`@type` values must include `{CONCEPT}`")
         return value
 
     @model_validator(mode="after")
@@ -76,6 +78,12 @@ class Concept(KOSCommon):
         for node in self.narrower:
             if node.id_ == self.id_:
                 raise ValueError("Concept can't have `narrower` relationship to itself")
+        return self
+
+    @model_validator(mode="after")
+    def notation_disjoint_pref_label(self) -> Self:
+        if overlap := {obj.value for obj in self.pref_labels}.intersection({obj.value for obj in self.notation}):
+            raise ValueError(f"Found overlapping values in `prefLabel` and `notation`: {overlap}")
         return self
 
 

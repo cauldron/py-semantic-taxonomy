@@ -28,7 +28,7 @@ This project has been based on our experiences using [SKOSMOS](https://skosmos.o
 In `py_semantic_taxonomy` we have the following goals:
 
 * Native support for [XKOS](https://rdf-vocabulary.ddialliance.org/xkos.html) [Correspondence and ConceptAssociation classes](https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences)
-* A stricter set of validation classes and functions for input data to ensure consistency in how objects are described.
+* A predictable, consistent, and validated set of properties and property uses for SKOS and XKOS terms
 * Web interface to allow for browsing, and basic data entry and editing
 * API to allow for the complete set of CRUD operations
 * API provides common graph queries without needing to learn SPARQL
@@ -38,6 +38,7 @@ In `py_semantic_taxonomy` we have the following goals:
 
 This means that we want the following technical capabilities which are missing or more difficult than they need to be in SKOSMOS:
 
+* A set of validation classes and functions for input data to ensure consistency in how objects are described.
 * Better query performance by optimizing database indices for a small set of needed edges
 * Easy customization of the UI
 * Pluggable search index

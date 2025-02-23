@@ -46,7 +46,8 @@
   ],
   "http://www.w3.org/2004/02/skos/core#notation": [
     {
-      "@value": "01"
+      "@value": "01",
+      "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"
     }
   ],
   "http://www.w3.org/2004/02/skos/core#scopeNote": [
