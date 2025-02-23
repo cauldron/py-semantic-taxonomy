@@ -68,6 +68,12 @@ def test_multilingual_string():
         MultilingualString(**{"@language": "en-GB"})
 
 
+def test_multilingual_string_extra_forbidden():
+    assert MultilingualString(**{"@value": "foo", "@language": "en-UK"})
+    with pytest.raises(ValidationError):
+        MultilingualString(**{"@value": "foo", "@language": "en-UK", "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"})
+
+
 def test_multilingual_string_langauge_code():
     s = MultilingualString(**{"@value": "foo", "@language": "en-UK"})
     assert s.language == "en-GB"

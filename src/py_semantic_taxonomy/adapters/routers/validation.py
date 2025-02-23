@@ -86,6 +86,8 @@ class MultilingualString(BaseModel):
         # Will raise a subclass of ValidationError if invalid
         return langcodes.standardize_tag(value)
 
+    model_config = ConfigDict(extra="forbid")
+
 
 class Node(BaseModel):
     """
