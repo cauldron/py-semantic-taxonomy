@@ -49,3 +49,19 @@ def test_child_concept(cn):
 def test_child_concept_model_dump(fixtures_dir, cn):
     expected = json.load(open(fixtures_dir / "child-concept.jsonld"))
     assert Concept(**cn[1]).model_dump() == expected
+
+
+def test_broader_self_reference(cn):
+    obj = cn[0]
+    assert Concept(**obj)
+    obj["http://www.w3.org/2004/02/skos/core#broader"] = [{"@id": obj["@id"]}]
+    with pytest.raises(ValidationError):
+        Concept(**obj)
+
+
+def test_narrower_self_reference(cn):
+    obj = cn[0]
+    assert Concept(**obj)
+    obj["http://www.w3.org/2004/02/skos/core#narrower"] = [{"@id": obj["@id"]}]
+    with pytest.raises(ValidationError):
+        Concept(**obj)

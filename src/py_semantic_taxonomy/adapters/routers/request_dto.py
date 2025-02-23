@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict, Field, conlist, field_validator
+from typing import Self
+
+from pydantic import BaseModel, ConfigDict, Field, conlist, field_validator, model_validator
 
 from py_semantic_taxonomy.adapters.routers.validation import (
     IRI,
@@ -65,6 +67,16 @@ class Concept(KOSCommon):
         if CONCEPT not in value:
             raise ValueError(f"`@type` must include `{CONCEPT}`")
         return value
+
+    @model_validator(mode="after")
+    def hierarchy_doesnt_reference_self(self) -> Self:
+        for node in self.broader:
+            if node.id_ == self.id_:
+                raise ValueError("Concept can't have `broader` relationship to itself")
+        for node in self.narrower:
+            if node.id_ == self.id_:
+                raise ValueError("Concept can't have `narrower` relationship to itself")
+        return self
 
 
 class ConceptScheme(KOSCommon):
