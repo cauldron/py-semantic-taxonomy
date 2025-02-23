@@ -12,6 +12,7 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     VersionString,
     one_per_language,
     Notation,
+    NonLiteralNote
 )
 
 
@@ -135,3 +136,7 @@ def test_notation_forbid_extra_values():
     assert Notation(**{"@value": "7-11", "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"})
     with pytest.raises(ValueError):
         Notation(**{"@value": "7-11", "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral", "language": "en"})
+
+
+def test_change_note_format(change_note):
+    assert NonLiteralNote(**change_note)

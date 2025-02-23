@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 
 import langcodes
 import rfc3987
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, PlainSerializer, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, PlainSerializer, field_validator, conlist
 
 
 def validate_iri(value: str) -> str:
@@ -122,3 +122,18 @@ class Notation(BaseModel):
     type_: IRI = Field(alias="@type", default="http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral")
 
     model_config = ConfigDict(extra="forbid")
+
+
+class NonLiteralNote(BaseModel):
+    """
+    Used for skos:changeNote, skos:historyNote, and skos:editorialNote.
+
+    SKOS allows for string literals but we require an author and timestamp for each.
+    """
+    values: conlist(MultilingualString, min_length=1) = Field(alias="http://www.w3.org/1999/02/22-rdf-syntax-ns#value")
+    creators: conlist(Node, min_length=1) = Field(alias="http://purl.org/dc/terms/creator")
+    # XKOS guidance recommends `issued` instead of `created` for notes
+    issued: conlist(DateTime, min_length=1, max_length=1) = Field(
+        alias="http://purl.org/dc/terms/issued"
+    )
+    value: conlist(MultilingualString, min_length=1, max_length=1) = Field(alias='http://www.w3.org/1999/02/22-rdf-syntax-ns#value')

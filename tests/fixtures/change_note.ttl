@@ -1,0 +1,14 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ex: <http://example.com/foo#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xml: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:tomato skos:changeNote [
+  rdf:value "Moved from under 'fruits' to under 'vegetables'"@en;
+  dct:creator ex:HoraceGray;
+  dct:issued "1999-01-23"^^xml:date
+].
+ex:HoraceGray rdf:type foaf:Person;
+  foaf:name "Horace Gray" .

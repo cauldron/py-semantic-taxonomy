@@ -78,7 +78,7 @@ We follow the SKOS Primer guidance on [documentary notes](https://www.w3.org/TR/
 
 All three of these notes are required to be RDF resources instead of string literals, and in addition to their values (`rdf:value`), they **must** also include a creator (`dcterms:creator`) and an issuance timestamp (`dcterms:issued`). The API documentation has examples these notes.
 
-Additionally, we **break from** [SKOS guidance](https://www.w3.org/TR/skos-reference/#L2613) to prohibit `skos:notation` having the same value as `skos:prefLabel`. A notations is ['a string of characters such as "T58.5" or "303.4833" used to uniquely identify a concept within the scope of a given concept scheme'](https://www.w3.org/TR/skos-reference/#L2064); this definition is inconsistent [lexical labels](https://www.w3.org/TR/skos-reference/#L2831) like `skos:prefLabel`, which are human-readable and in a natural language. In our system, `skos:prefLabel` is required but `skos:notation` is optional.
+Additionally, we **break from** [SKOS guidance](https://www.w3.org/TR/skos-reference/#L2613) to prohibit `skos:notation` having the same value as `skos:prefLabel`. A notation is ['a string of characters such as "T58.5" or "303.4833" used to uniquely identify a concept within the scope of a given concept scheme'](https://www.w3.org/TR/skos-reference/#L2064); this definition is inconsistent [lexical labels](https://www.w3.org/TR/skos-reference/#L2831) like `skos:prefLabel`, which are human-readable and in a natural language. In our system, `skos:prefLabel` is required but `skos:notation` is optional.
 
 Here is an example of a valid `ConceptScheme` in JSON-LD:
 

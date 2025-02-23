@@ -10,6 +10,7 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     VersionString,
     one_per_language,
     Notation,
+    NonLiteralNote,
 )
 
 
@@ -61,6 +62,9 @@ class Concept(KOSCommon):
     )
     broader: list[Node] = Field(alias="http://www.w3.org/2004/02/skos/core#broader", default=[])
     narrower: list[Node] = Field(alias="http://www.w3.org/2004/02/skos/core#narrower", default=[])
+    changeNote: list[NonLiteralNote] = Field(alias="http://www.w3.org/2004/02/skos/core#changeNote", default=[])
+    historyNote: list[NonLiteralNote] = Field(alias="http://www.w3.org/2004/02/skos/core#historyNote", default=[])
+    editorialNote: list[NonLiteralNote] = Field(alias="http://www.w3.org/2004/02/skos/core#editorialNote", default=[])
 
     @field_validator("types_", mode="after")
     @classmethod
