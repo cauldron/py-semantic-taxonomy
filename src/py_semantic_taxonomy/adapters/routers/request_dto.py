@@ -7,10 +7,10 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     DateTime,
     MultilingualString,
     Node,
+    NonLiteralNote,
+    Notation,
     VersionString,
     one_per_language,
-    Notation,
-    NonLiteralNote,
 )
 
 
@@ -50,9 +50,13 @@ class Concept(KOSCommon):
 
     Checks that required fields are included and have correct type."""
 
-    schemes: conlist(Node, min_length=1) = Field(alias="http://www.w3.org/2004/02/skos/core#inScheme")
+    schemes: conlist(Node, min_length=1) = Field(
+        alias="http://www.w3.org/2004/02/skos/core#inScheme"
+    )
     # Can have multiple alternative labels per language, and multiple languages
-    notation: list[Notation] = Field(alias="http://www.w3.org/2004/02/skos/core#notation", default=[])
+    notation: list[Notation] = Field(
+        alias="http://www.w3.org/2004/02/skos/core#notation", default=[]
+    )
     alt_labels: list[MultilingualString] = Field(
         alias="http://www.w3.org/2004/02/skos/core#altLabel", default=[]
     )
@@ -62,9 +66,15 @@ class Concept(KOSCommon):
     )
     broader: list[Node] = Field(alias="http://www.w3.org/2004/02/skos/core#broader", default=[])
     narrower: list[Node] = Field(alias="http://www.w3.org/2004/02/skos/core#narrower", default=[])
-    changeNote: list[NonLiteralNote] = Field(alias="http://www.w3.org/2004/02/skos/core#changeNote", default=[])
-    historyNote: list[NonLiteralNote] = Field(alias="http://www.w3.org/2004/02/skos/core#historyNote", default=[])
-    editorialNote: list[NonLiteralNote] = Field(alias="http://www.w3.org/2004/02/skos/core#editorialNote", default=[])
+    changeNote: list[NonLiteralNote] = Field(
+        alias="http://www.w3.org/2004/02/skos/core#changeNote", default=[]
+    )
+    historyNote: list[NonLiteralNote] = Field(
+        alias="http://www.w3.org/2004/02/skos/core#historyNote", default=[]
+    )
+    editorialNote: list[NonLiteralNote] = Field(
+        alias="http://www.w3.org/2004/02/skos/core#editorialNote", default=[]
+    )
 
     @field_validator("types_", mode="after")
     @classmethod
@@ -86,7 +96,9 @@ class Concept(KOSCommon):
 
     @model_validator(mode="after")
     def notation_disjoint_pref_label(self) -> Self:
-        if overlap := {obj.value for obj in self.pref_labels}.intersection({obj.value for obj in self.notation}):
+        if overlap := {obj.value for obj in self.pref_labels}.intersection(
+            {obj.value for obj in self.notation}
+        ):
             raise ValueError(f"Found overlapping values in `prefLabel` and `notation`: {overlap}")
         return self
 

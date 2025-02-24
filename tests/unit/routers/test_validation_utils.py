@@ -9,10 +9,10 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     DateTime,
     MultilingualString,
     Node,
+    NonLiteralNote,
+    Notation,
     VersionString,
     one_per_language,
-    Notation,
-    NonLiteralNote
 )
 
 
@@ -72,7 +72,13 @@ def test_multilingual_string():
 def test_multilingual_string_extra_forbidden():
     assert MultilingualString(**{"@value": "foo", "@language": "en-UK"})
     with pytest.raises(ValidationError):
-        MultilingualString(**{"@value": "foo", "@language": "en-UK", "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"})
+        MultilingualString(
+            **{
+                "@value": "foo",
+                "@language": "en-UK",
+                "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
+            }
+        )
 
 
 def test_multilingual_string_langauge_code():
@@ -133,9 +139,17 @@ def test_one_per_language():
 
 def test_notation_forbid_extra_values():
     assert Notation(**{"@value": "7-11"})
-    assert Notation(**{"@value": "7-11", "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"})
+    assert Notation(
+        **{"@value": "7-11", "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"}
+    )
     with pytest.raises(ValueError):
-        Notation(**{"@value": "7-11", "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral", "language": "en"})
+        Notation(
+            **{
+                "@value": "7-11",
+                "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
+                "language": "en",
+            }
+        )
 
 
 def test_change_note_format(change_note):
