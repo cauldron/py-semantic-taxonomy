@@ -1,0 +1,59 @@
+@prefix : <http://data.europa.eu/xsp/cn2024/> .
+@prefix cv: <http://data.europa.eu/m8g/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix eli: <http://data.europa.eu/eli/ontology#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdfns: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix schema1: <http://schema.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xkos: <http://rdf-vocabulary.ddialliance.org/xkos#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+:cn2024 a skos:ConceptScheme ;
+    eli:based_on <http://data.europa.eu/eli/reg_impl/2023/2364/oj> ;
+    eli:version_date "2023-11-20"^^xsd:date ;
+    dcterms:created "2023-10-11T13:59:56"^^xsd:dateTime ;
+    dcterms:creator <http://publications.europa.eu/resource/authority/corporate-body/ESTAT>,
+        <http://publications.europa.eu/resource/authority/corporate-body/TAXUD> ;
+    skos:definition "The main classification for the European ITGS (International trade in goods statistics)  is the Combined Nomenclature (CN). This is the primary nomenclature as it is the one used by the EU Member States to collect detailed data on their trading of goods since 1988. Before the introduction of the CN, ITGS were based on a product classification called NIMEXE.  The CN is based on the Harmonised Commodity Description and Coding System (managed by the World Customs Organisation (WCO). The Harmonised System (HS) is an international classification at two, four and six-digit level which classifies goods according to their nature. It was introduced in 1988 and, since then, was revised six times: in 1996, 2002, 2007, 2012, 2017 and 2022. The CN corresponds to the HS plus a further breakdown at eight-digit level defined to meet EU needs. The CN is revised annually and, as a Council Regulation, is binding on the Member States. "@en ;
+    dcterms:identifier "http://data.europa.eu/xsp/cn2024/cn2024" ;
+    dcterms:language <http://publications.europa.eu/resource/authority/language/ENG>,
+        <http://publications.europa.eu/resource/authority/language/POR> ;
+    dcterms:modified "2024-07-24T09:37:40"^^xsd:dateTime ;
+    xkos:belongsTo <http://data.europa.eu/2en/class-series/cn> ;
+    xkos:follows <http://data.europa.eu/xsp/cn2023/cn2023> ;
+    xkos:numberOfLevels "5"^^xsd:positiveInteger ;
+    schema1:endDate "2024-12-31"^^xsd:date ;
+    schema1:startDate "2024-01-01"^^xsd:date ;
+    owl:versionInfo "2024" ;
+    skos:hasTopConcept :010011000090 ;
+    skos:notation "CN 2024"^^rdfns:PlainLiteral ;
+    skos:prefLabel "Combined Nomenclature, 2024 (CN 2024)"@en,
+        "Nomenclatura Combinada, 2024 (NC 2024)"@pt ;
+    skos:scopeNote "http://publications.europa.eu/resource/oj/JOC_2019_119_R_0001"^^xsd:anyURI .
+
+:010011000090 a skos:Concept ;
+    dc:identifier "010011000090" ;
+    dcterms:modified "2023-10-11T14:43:01"^^xsd:dateTime ;
+    xkos:depth "1"^^xsd:positiveInteger ;
+    skos:inScheme :cn2024 ;
+    skos:narrower :010021000090 ;
+    skos:notation "I"^^rdfns:PlainLiteral ;
+    skos:prefLabel "SECTION I - LIVE ANIMALS; ANIMAL PRODUCTS"@en,
+        "SECÇÃO I - ANIMAIS VIVOS E PRODUTOS DO REINO ANIMAL"@pt ;
+    skos:scopeNote "LIVE ANIMALS; ANIMAL PRODUCTS"@en ;
+    skos:topConceptOf :cn2024 .
+
+:010021000090 a skos:Concept ;
+    dc:identifier "010021000090" ;
+    xkos:depth "2"^^xsd:positiveInteger ;
+    skos:altLabel "CHAPTER 1 - LIVE ANIMALS"@en,
+        "CAPÍTULO 1 - ANIMAIS VIVOS"@pt ;
+    skos:broader :010011000090 ;
+    skos:inScheme :cn2024 ;
+    skos:notation "01"^^rdfns:PlainLiteral ;
+    skos:prefLabel "CHAPTER 1 - LIVE ANIMALS"@en,
+        "CAPÍTULO 1 - ANIMAIS VIVOS"@pt ;
+    skos:scopeNote "LIVE ANIMALS"@en .
