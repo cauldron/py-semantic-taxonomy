@@ -22,8 +22,8 @@ async def get_concept(
     service=Depends(GraphService),
 ) -> response.Concept:
     try:
-        obj = await service.get_concept(iri=iri).json_ld()
-        return response.Concept(**obj)
+        obj = await service.get_concept(iri=iri)
+        return response.Concept(**obj.to_json_ld())
     except de.ConceptNotFoundError:
         raise HTTPException(status_code=404, detail=f"Concept with iri '{iri}' not found")
 
@@ -37,8 +37,8 @@ async def get_concept(
 )
 async def generic_get_from_iri(request: Request, _: str, service=Depends(GraphService)):
     try:
-        iri = urljoin(request.base_url, request.url.path)
-        object_type = service.get_object_type(iri=iri)
+        iri = urljoin(str(request.base_url), request.url.path)
+        object_type = await service.get_object_type(iri=iri)
         mapping = {
             de.Concept: "get_concept_from_iri"
         }

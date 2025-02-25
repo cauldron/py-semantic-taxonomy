@@ -33,6 +33,7 @@ dependencies = [
     "pydantic>=2",
     "rdflib",
     "rfc3987",
+    "fastapi_pagination",
     "fastapi",
 ]
 
@@ -78,6 +79,7 @@ norecursedirs = [
     ".tox"
 ]
 testpaths = ["tests/**/*.py"]
+asyncio_mode = "auto"
 
 [tool.flake8]
 # Some sane defaults for the code style checker flake8
