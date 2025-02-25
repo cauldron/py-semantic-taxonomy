@@ -33,6 +33,7 @@ dependencies = [
     "pydantic>=2",
     "rdflib",
     "rfc3987",
+    "fastapi",
 ]
 
 [project.urls]
@@ -47,7 +48,8 @@ testing = [
     "py_semantic_taxonomy",
     "pytest",
     "pytest-cov",
-    "python-coveralls"
+    "python-coveralls",
+    "httpx",
 ]
 dev = [
     "build",
