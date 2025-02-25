@@ -1,6 +1,6 @@
 from typing import Protocol, runtime_checkable
 
-from py_sematic_taxonomy.domain.entities import Concept, GraphObject
+from py_semantic_taxonomy.domain.entities import Concept, GraphObject
 
 
 @runtime_checkable

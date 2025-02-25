@@ -1,6 +1,6 @@
 from fastapi.params import Depends
 
-from py_semantic_taxonomy.routers.dependencies import get_kos_graph
+from py_semantic_taxonomy.adapters.routers.dependencies import get_kos_graph
 from py_semantic_taxonomy.domain.entities import Concept, GraphObject
 from py_semantic_taxonomy.domain.ports import KOSGraph
 

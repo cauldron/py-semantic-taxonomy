@@ -1,8 +1,13 @@
+from unittest.mock import AsyncMock
 import json
 from pathlib import Path
 
 import pytest
 from rdflib import Graph
+
+from py_semantic_taxonomy.application.services import GraphService
+from py_semantic_taxonomy.domain.ports import KOSGraph
+from py_semantic_taxonomy.domain.entities import Concept, GraphObject
 
 
 @pytest.fixture
@@ -22,3 +27,18 @@ def change_note(fixtures_dir: Path) -> dict:
     graph = Graph().parse(fixtures_dir / "change_note.ttl")
     dct = json.loads(graph.serialize(format="json-ld"))
     return [obj for obj in dct if obj["@id"][0] == "_"][0]
+
+
+@pytest.fixture
+def entities(cn) -> list[GraphObject]:
+    return [Concept.from_json_ld(cn[0]), Concept.from_json_ld(cn[1])]
+
+
+@pytest.fixture
+def mock_kos_graph() -> AsyncMock:
+    return AsyncMock(spec=KOSGraph)
+
+
+@pytest.fixture
+def graph_service(mock_kos_graph) -> GraphService:
+    return GraphService(graph=mock_kos_graph)
