@@ -97,7 +97,7 @@ class Concept(KOSCommon):
     @model_validator(mode="after")
     def notations_disjoint_pref_label(self) -> Self:
         if overlap := {obj.value for obj in self.pref_labels}.intersection(
-            {obj.value for obj in self.notation}
+            {obj.value for obj in self.notations}
         ):
             raise ValueError(f"Found overlapping values in `prefLabel` and `notation`: {overlap}")
         return self
