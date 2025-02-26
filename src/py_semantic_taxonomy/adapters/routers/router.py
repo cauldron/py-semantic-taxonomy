@@ -13,7 +13,6 @@ router = APIRouter()
 
 @router.get(
     "/concept/",
-    operation_id="get_concept",
     summary="Get a Concept object",
     response_model=response.Concept,
 )
@@ -32,7 +31,6 @@ async def get_concept(
 
 @router.get(
     "/{_:path}",
-    operation_id="generic_get_from_iri",
     summary="Get a KOS graph object which shares the same base URL as PyST",
 )
 async def generic_get_from_iri(request: Request, _: str, service=Depends(GraphService)):
