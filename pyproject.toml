@@ -53,6 +53,7 @@ testing = [
     "pytest",
     "pytest-cov",
     "python-coveralls",
+    "pytest-asyncio",
     "httpx",
 ]
 dev = [
