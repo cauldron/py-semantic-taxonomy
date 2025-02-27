@@ -42,3 +42,12 @@ def mock_kos_graph() -> AsyncMock:
 @pytest.fixture
 def graph_service(mock_kos_graph) -> GraphService:
     return GraphService(graph=mock_kos_graph)
+
+
+@pytest.fixture
+async def sqlite(monkeypatch) -> None:
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+    from py_semantic_taxonomy.adapters.persistence.engine import create_engine, DatabaseChoice
+
+    SqliteSession = async_sessionmaker(autocommit=False, autoflush=True, bind=await create_engine(database=DatabaseChoice.sqlite, echo=True))
+    monkeypatch.setattr("py_semantic_taxonomy.adapters.persistence.session", "Session", SqliteSession)
