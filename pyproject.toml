@@ -35,6 +35,9 @@ dependencies = [
     "rfc3987",
     "fastapi_pagination",
     "fastapi",
+    "sqlalchemy>=2.0",
+    "structlog",
+    "orjson",
 ]
 
 [project.urls]
@@ -50,6 +53,7 @@ testing = [
     "pytest",
     "pytest-cov",
     "python-coveralls",
+    "pytest-asyncio",
     "httpx",
 ]
 dev = [

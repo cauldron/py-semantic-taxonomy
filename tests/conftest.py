@@ -1,3 +1,4 @@
+from functools import partial
 from unittest.mock import AsyncMock
 import json
 from pathlib import Path
@@ -42,3 +43,11 @@ def mock_kos_graph() -> AsyncMock:
 @pytest.fixture
 def graph_service(mock_kos_graph) -> GraphService:
     return GraphService(graph=mock_kos_graph)
+
+
+@pytest.fixture
+async def sqlite(monkeypatch) -> None:
+    from py_semantic_taxonomy.adapters.persistence.engine import create_engine, DatabaseChoice
+
+    engine = await create_engine(database=DatabaseChoice.sqlite, echo=True)
+    monkeypatch.setattr("py_semantic_taxonomy.adapters.persistence.session.engine", engine)
