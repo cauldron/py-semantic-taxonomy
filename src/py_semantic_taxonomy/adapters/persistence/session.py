@@ -4,4 +4,4 @@ from py_semantic_taxonomy.adapters.persistence.engine import create_engine
 # Just currying the creation of `Session` objects
 # https://docs.sqlalchemy.org/en/20/orm/session_basics.html#using-a-sessionmaker
 # Separate file to make monkeypatching in tests easy
-Session = await async_sessionmaker(autocommit=False, autoflush=True, bind=await create_engine())
+Session = async_sessionmaker(autocommit=False, autoflush=True, bind=await create_engine())
