@@ -1,4 +1,4 @@
-def test_get_concept(postgres, cn_db, cn, client):
+async def test_get_concept(postgres, cn_db, cn, client):
     response = client.get(
         "/concept/", params={"iri": "http://data.europa.eu/xsp/cn2024/010011000090"}
     )
@@ -13,6 +13,6 @@ def test_get_concept(postgres, cn_db, cn, client):
         assert given[key] == value
 
 
-def test_get_concept_404(postgres, cn_db, client):
+async def test_get_concept_404(postgres, cn_db, client):
     response = client.get("/concept/", params={"iri": "http://data.europa.eu/xsp/cn2024/woof"})
     assert response.status_code == 404
