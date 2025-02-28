@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from rdflib import Graph
 from sqlalchemy import insert
+from testcontainers.postgres import PostgresContainer
 
 from py_semantic_taxonomy.application.services import GraphService
 from py_semantic_taxonomy.domain.entities import Concept, GraphObject
@@ -49,6 +50,23 @@ def graph_service(mock_kos_graph) -> GraphService:
 @pytest.fixture
 async def sqlite(monkeypatch) -> None:
     monkeypatch.setenv("PyST_db_backend", "sqlite")
+
+
+@pytest.fixture
+async def postgres(monkeypatch) -> None:
+    postgres = PostgresContainer("postgres:16")
+    postgres.start()
+
+    monkeypatch.setenv("PyST_db_backend", "postgres")
+    monkeypatch.setenv("PyST_db_user", postgres.username)
+    monkeypatch.setenv("PyST_db_pass", postgres.password)
+    monkeypatch.setenv("PyST_db_host", postgres.get_container_host_ip())
+    monkeypatch.setenv("PyST_db_port", postgres.get_exposed_port(5432))
+    monkeypatch.setenv("PyST_db_name", postgres.dbname)
+
+    yield
+
+    postgres.stop()
 
 
 @pytest.fixture
