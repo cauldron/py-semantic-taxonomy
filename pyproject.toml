@@ -49,13 +49,14 @@ tracker = "https://github.com/cauldron/py-semantic-taxonomy/issues"
 # Getting recursive dependencies to work is a pain, this
 # seems to work, at least for now
 testing = [
+    "httpx",
     "py_semantic_taxonomy",
     "pytest",
-    "pytest-cov",
-    "python-coveralls",
     "pytest-asyncio",
+    "pytest-cov",
     "pytest-randomly",
-    "httpx",
+    "python-coveralls",
+    "testcontainers[postgres]",
 ]
 dev = [
     "build",
