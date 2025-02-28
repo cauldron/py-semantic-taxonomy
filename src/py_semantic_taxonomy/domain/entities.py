@@ -1,5 +1,5 @@
 from copy import copy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 
 SKOS = "http://www.w3.org/2004/02/skos/core#"
@@ -32,6 +32,9 @@ class Concept:
     history_notes: list[dict] = field(default_factory=list)
     editorial_notes: list[dict] = field(default_factory=list)
     extra: dict = field(default_factory=dict)
+
+    def to_db_dict(self) -> dict:
+        return asdict(self)
 
     def to_json_ld(self) -> dict:
         """Return this data formatted as (but not serialized to) SKOS expanded JSON LD"""

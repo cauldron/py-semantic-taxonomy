@@ -49,5 +49,20 @@ def graph_service(mock_kos_graph) -> GraphService:
 async def sqlite(monkeypatch) -> None:
     from py_semantic_taxonomy.adapters.persistence.engine import create_engine, DatabaseChoice
 
-    engine = await create_engine(database=DatabaseChoice.sqlite, echo=True)
-    monkeypatch.setattr("py_semantic_taxonomy.adapters.persistence.session.engine", engine)
+    engine = partial(create_engine, database=DatabaseChoice.sqlite, echo=True)
+    monkeypatch.setattr("py_semantic_taxonomy.adapters.persistence.session.create_engine", engine)
+
+    from py_semantic_taxonomy.adapters.persistence.session import init_db
+    await init_db()
+
+
+@pytest.fixture
+async def cn_db(entities: list) -> None:
+    from py_semantic_taxonomy.adapters.persistence.session import async_session
+    from py_semantic_taxonomy.adapters.persistence.tables import Concept
+
+    async with async_session() as session:
+        a = Concept(**entities[0].to_db_dict())
+        b = Concept(**entities[1].to_db_dict())
+        await session.add_all([a, b])
+        await session.commit()

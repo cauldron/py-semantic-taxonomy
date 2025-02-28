@@ -3,7 +3,7 @@ from enum import Enum
 from pydantic_settings import BaseSettings
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from py_semantic_taxonomy.cfg import get_settings
-from py_semantic_taxonomy.adapters.persistence.tables import Base
+# from py_semantic_taxonomy.adapters.persistence.tables import Base
 
 base_settings = get_settings()
 
@@ -13,7 +13,7 @@ class DatabaseChoice(Enum):
     sqlite = "sqlite"
 
 
-async def create_engine(
+def create_engine(
     s: BaseSettings = base_settings,
     database: DatabaseChoice = DatabaseChoice.postgres,
     echo: bool = False,
@@ -34,8 +34,4 @@ async def create_engine(
         # pool_size=global_settings.db_pool_size,
         # max_overflow=global_settings.db_max_overflow,
     )
-    if init_db:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-
     return engine
