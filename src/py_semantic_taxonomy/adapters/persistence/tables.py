@@ -23,4 +23,4 @@ class Concept(Base):
     extra: Mapped[dict] = mapped_column(JSON)
 
     def __repr__(self) -> str:
-        return f"Concept(id={self.id_})"
+        return f"Concept(id_={self.id_})"

@@ -1,6 +1,5 @@
 from copy import copy
-from dataclasses import dataclass, field, asdict
-
+from dataclasses import asdict, dataclass, field
 
 SKOS = "http://www.w3.org/2004/02/skos/core#"
 CONCEPT_MAPPING = {

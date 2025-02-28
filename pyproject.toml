@@ -54,6 +54,7 @@ testing = [
     "pytest-cov",
     "python-coveralls",
     "pytest-asyncio",
+    "pytest-randomly",
     "httpx",
 ]
 dev = [
