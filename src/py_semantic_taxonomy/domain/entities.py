@@ -64,3 +64,7 @@ class NotFoundError(Exception):
 
 class ConceptNotFoundError(NotFoundError):
     pass
+
+
+class DuplicateIRI(Exception):
+    pass

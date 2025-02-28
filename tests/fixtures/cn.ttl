@@ -57,3 +57,16 @@
     skos:prefLabel "CHAPTER 1 - LIVE ANIMALS"@en,
         "CAPÍTULO 1 - ANIMAIS VIVOS"@pt ;
     skos:scopeNote "LIVE ANIMALS"@en .
+
+:010100000080 a skos:Concept ;
+    dc:identifier "010100000080" ;
+    xkos:depth "3"^^xsd:positiveInteger ;
+    skos:altLabel "Pferde, Esel, Maultiere und Maulesel, lebend"@de,
+        "Live horses, asses, mules and hinnies"@en ;
+    skos:broader :010021000090 ;
+    skos:inScheme :cn2024 ;
+    skos:notation "0101" ;
+    skos:prefLabel "0101 Pferde, Esel, Maultiere und Maulesel, lebend"@de,
+        "0101 Live horses, asses, mules and hinnies"@en ;
+    skos:scopeNote "Pferde, Esel, Maultiere und Maulesel, lebend"@de,
+        "Live horses, asses, mules and hinnies"@en .
