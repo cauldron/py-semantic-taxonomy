@@ -1,16 +1,24 @@
-from typing import Self
+from sqlalchemy import select
 
-from py_semantic_taxonomy.domain.entities import Concept, GraphObject
-from py_semantic_taxonomy.adapters.persistence.session import Session
-from py_semantic_taxonomy.adapters.persistence.tables import Concept
+from py_semantic_taxonomy.adapters.persistence.database import bound_async_sessionmaker as Session
+from py_semantic_taxonomy.adapters.persistence.tables import Concept as ConceptTable
+from py_semantic_taxonomy.domain.entities import Concept, ConceptNotFoundError, GraphObject
 
 
 class PostgresKOSGraph:
-    def __init__(self) -> Self:
-        pass
-
     async def get_concept(self, iri: str) -> Concept:
-        pass
+        async with Session() as session:
+            stmt = select(ConceptTable).where(ConceptTable.id_ == iri)
+            connection = await session.connection()
+            result = (await connection.execute(stmt)).first()
+            if not result:
+                raise ConceptNotFoundError
+            return Concept(**result._mapping)
 
     async def get_object_type(self, iri: str) -> GraphObject:
-        pass
+        async with Session() as session:
+            stmt = select(ConceptTable).where(ConceptTable.id_ == iri)
+            connection = await session.connection()
+            result = (await connection.execute(stmt)).rowcount
+            if result:
+                return Concept

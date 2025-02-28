@@ -1,14 +1,14 @@
-from functools import partial
-from unittest.mock import AsyncMock
 import json
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import pytest
+from fastapi.testclient import TestClient
 from rdflib import Graph
 
 from py_semantic_taxonomy.application.services import GraphService
-from py_semantic_taxonomy.domain.ports import KOSGraph
 from py_semantic_taxonomy.domain.entities import Concept, GraphObject
+from py_semantic_taxonomy.domain.ports import KOSGraph
 
 
 @pytest.fixture
@@ -47,7 +47,34 @@ def graph_service(mock_kos_graph) -> GraphService:
 
 @pytest.fixture
 async def sqlite(monkeypatch) -> None:
-    from py_semantic_taxonomy.adapters.persistence.engine import create_engine, DatabaseChoice
+    monkeypatch.setenv("PyST_db_backend", "sqlite")
 
-    engine = await create_engine(database=DatabaseChoice.sqlite, echo=True)
-    monkeypatch.setattr("py_semantic_taxonomy.adapters.persistence.session.engine", engine)
+
+@pytest.fixture
+async def cn_db(entities: list) -> None:
+    from py_semantic_taxonomy.adapters.persistence.database import (
+        bound_async_sessionmaker,
+        drop_db,
+        init_db,
+    )
+    from py_semantic_taxonomy.adapters.persistence.tables import Concept
+
+    await init_db()
+
+    async with bound_async_sessionmaker() as session:
+        async with session.begin():
+            a = Concept(**entities[0].to_db_dict())
+            b = Concept(**entities[1].to_db_dict())
+            session.add_all([a, b])
+
+    yield
+
+    # Not sure why this is necessary, the in-memory SQLite should be recreated on each test, but...
+    await drop_db()
+
+
+@pytest.fixture
+def client() -> TestClient:
+    from py_semantic_taxonomy.app import create_app
+
+    return TestClient(create_app())
