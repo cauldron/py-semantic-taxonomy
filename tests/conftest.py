@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi.testclient import TestClient
 from rdflib import Graph
+from sqlalchemy import insert
 
 from py_semantic_taxonomy.application.services import GraphService
 from py_semantic_taxonomy.domain.entities import Concept, GraphObject
@@ -53,19 +54,23 @@ async def sqlite(monkeypatch) -> None:
 @pytest.fixture
 async def cn_db(entities: list) -> None:
     from py_semantic_taxonomy.adapters.persistence.database import (
-        bound_async_sessionmaker,
+        engine,
         drop_db,
         init_db,
     )
-    from py_semantic_taxonomy.adapters.persistence.tables import Concept
+    from py_semantic_taxonomy.adapters.persistence.tables import concept_table
 
     await init_db()
 
-    async with bound_async_sessionmaker() as session:
-        async with session.begin():
-            a = Concept(**entities[0].to_db_dict())
-            b = Concept(**entities[1].to_db_dict())
-            session.add_all([a, b])
+    async with engine.connect() as conn:
+        await conn.execute(
+            insert(concept_table),
+            [
+                entities[0].to_db_dict(),
+                entities[1].to_db_dict(),
+            ]
+        )
+        await conn.commit()
 
     yield
 

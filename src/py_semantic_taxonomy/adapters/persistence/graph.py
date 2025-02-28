@@ -1,24 +1,23 @@
-from sqlalchemy import select
+from sqlalchemy import select, func
 
-from py_semantic_taxonomy.adapters.persistence.database import bound_async_sessionmaker as Session
-from py_semantic_taxonomy.adapters.persistence.tables import Concept as ConceptTable
+from py_semantic_taxonomy.adapters.persistence.database import engine
+from py_semantic_taxonomy.adapters.persistence.tables import concept_table
 from py_semantic_taxonomy.domain.entities import Concept, ConceptNotFoundError, GraphObject
 
 
 class PostgresKOSGraph:
     async def get_concept(self, iri: str) -> Concept:
-        async with Session() as session:
-            stmt = select(ConceptTable).where(ConceptTable.id_ == iri)
-            connection = await session.connection()
-            result = (await connection.execute(stmt)).first()
+        async with engine.connect() as conn:
+            stmt = select(concept_table).where(concept_table.c.id_ == iri)
+            result = (await conn.execute(stmt)).first()
             if not result:
                 raise ConceptNotFoundError
             return Concept(**result._mapping)
 
     async def get_object_type(self, iri: str) -> GraphObject:
-        async with Session() as session:
-            stmt = select(ConceptTable).where(ConceptTable.id_ == iri)
-            connection = await session.connection()
-            result = (await connection.execute(stmt)).rowcount
+        async with engine.connect() as conn:
+            stmt = select(func.count("*")).where(concept_table.c.id_ == iri)
+            # TBD: This is ugly
+            result = (await conn.execute(stmt)).first()[0]
             if result:
                 return Concept

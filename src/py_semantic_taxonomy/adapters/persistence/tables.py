@@ -1,26 +1,26 @@
-from sqlalchemy import JSON
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import JSON, MetaData, Column, String, Table, Index
+
+metadata_obj = MetaData()
 
 
-class Base(DeclarativeBase):
-    pass
+concept_table = Table(
+    "concept",
+    metadata_obj,
+    Column("id_", String, primary_key=True),
+    Column("types", JSON, default=[]),
+    Column("pref_labels", JSON, default=[]),
+    Column("schemes", JSON, default=[]),
+    Column("definitions", JSON, default=[]),
+    Column("notations", JSON, default=[]),
+    Column("alt_labels", JSON, default=[]),
+    Column("hidden_labels", JSON, default=[]),
+    Column("change_notes", JSON, default=[]),
+    Column("history_notes", JSON, default=[]),
+    Column("editorial_notes", JSON, default=[]),
+    Column("extra", JSON, default={}),
+)
 
-
-class Concept(Base):
-    __tablename__ = "concept"
-
-    id_: Mapped[str] = mapped_column(primary_key=True)
-    types: Mapped[list] = mapped_column(JSON)
-    pref_labels: Mapped[list] = mapped_column(JSON)
-    schemes: Mapped[list] = mapped_column(JSON)
-    definitions: Mapped[list] = mapped_column(JSON)
-    notations: Mapped[list] = mapped_column(JSON)
-    alt_labels: Mapped[list] = mapped_column(JSON)
-    hidden_labels: Mapped[list] = mapped_column(JSON)
-    change_notes: Mapped[list] = mapped_column(JSON)
-    history_notes: Mapped[list] = mapped_column(JSON)
-    editorial_notes: Mapped[list] = mapped_column(JSON)
-    extra: Mapped[dict] = mapped_column(JSON)
-
-    def __repr__(self) -> str:
-        return f"Concept(id_={self.id_})"
+Index(
+    "concept_id_index",
+    concept_table.c.id_
+)
