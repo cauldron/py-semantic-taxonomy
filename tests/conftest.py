@@ -54,8 +54,8 @@ async def sqlite(monkeypatch) -> None:
 @pytest.fixture
 async def cn_db(entities: list) -> None:
     from py_semantic_taxonomy.adapters.persistence.database import (
-        engine,
         drop_db,
+        engine,
         init_db,
     )
     from py_semantic_taxonomy.adapters.persistence.tables import concept_table
@@ -68,7 +68,7 @@ async def cn_db(entities: list) -> None:
             [
                 entities[0].to_db_dict(),
                 entities[1].to_db_dict(),
-            ]
+            ],
         )
         await conn.commit()
 

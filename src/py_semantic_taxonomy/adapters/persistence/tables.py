@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, MetaData, Column, String, Table, Index
+from sqlalchemy import JSON, Column, Index, MetaData, String, Table
 
 metadata_obj = MetaData()
 
@@ -20,7 +20,4 @@ concept_table = Table(
     Column("extra", JSON, default={}),
 )
 
-Index(
-    "concept_id_index",
-    concept_table.c.id_
-)
+Index("concept_id_index", concept_table.c.id_)

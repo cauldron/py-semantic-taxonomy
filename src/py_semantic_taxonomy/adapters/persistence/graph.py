@@ -1,4 +1,4 @@
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 
 from py_semantic_taxonomy.adapters.persistence.database import engine
 from py_semantic_taxonomy.adapters.persistence.tables import concept_table
