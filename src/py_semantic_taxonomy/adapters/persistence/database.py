@@ -13,7 +13,7 @@ def create_engine(
     echo: bool = True,
 ) -> AsyncEngine:
     if s.db_backend == "postgres":
-        connection_str = f"postgresql+asyncpg://{s.db_user}:{s.db_pass.get_secret_value()}@{s.db_host}:{s.db_port}/{s.db_name}"
+        connection_str = f"postgresql+asyncpg://{s.db_user}:{s.db_pass}@{s.db_host}:{s.db_port}/{s.db_name}"
     elif s.db_backend == "sqlite":
         # Only for testing
         connection_str = "sqlite+aiosqlite:///:memory:"
@@ -21,7 +21,7 @@ def create_engine(
         raise ValueError(f"Missing or incorrect database backend `PyST_db_backend`: {s.db_backend}")
     engine = create_async_engine(
         connection_str,
-        json_serializer=lambda obj: orjson.dumps(obj),
+        json_serializer=lambda obj: orjson.dumps(obj).decode(),
         json_deserializer=lambda obj: orjson.loads(obj),
         echo=echo,
         # Magic?

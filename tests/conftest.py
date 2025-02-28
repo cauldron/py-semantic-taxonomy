@@ -19,10 +19,18 @@ def fixtures_dir() -> Path:
 
 
 @pytest.fixture
-def cn(fixtures_dir: Path) -> list:
+def cn(fixtures_dir: Path) -> object:
     graph = Graph().parse(fixtures_dir / "cn.ttl")
     # Sorted is top level concept, child concept, concept scheme
-    return sorted(json.loads(graph.serialize(format="json-ld")), key=lambda x: x["@id"])
+    data = sorted(json.loads(graph.serialize(format="json-ld")), key=lambda x: x["@id"])
+
+    class CN:
+        concept_top = data[0]
+        concept_mid = data[1]
+        concept_low = data[2]
+        scheme = data[3]
+
+    return CN()
 
 
 @pytest.fixture
@@ -34,7 +42,7 @@ def change_note(fixtures_dir: Path) -> dict:
 
 @pytest.fixture
 def entities(cn) -> list[GraphObject]:
-    return [Concept.from_json_ld(cn[0]), Concept.from_json_ld(cn[1])]
+    return [Concept.from_json_ld(cn.concept_top), Concept.from_json_ld(cn.concept_mid)]
 
 
 @pytest.fixture

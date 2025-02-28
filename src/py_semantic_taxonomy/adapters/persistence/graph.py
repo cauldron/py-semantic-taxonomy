@@ -1,8 +1,8 @@
-from sqlalchemy import func, select
+from sqlalchemy import func, select, insert
 
 from py_semantic_taxonomy.adapters.persistence.database import engine
 from py_semantic_taxonomy.adapters.persistence.tables import concept_table
-from py_semantic_taxonomy.domain.entities import Concept, ConceptNotFoundError, GraphObject
+from py_semantic_taxonomy.domain.entities import Concept, ConceptNotFoundError, GraphObject, DuplicateIRI
 
 
 class PostgresKOSGraph:
@@ -21,3 +21,12 @@ class PostgresKOSGraph:
             result = (await conn.execute(stmt)).first()[0]
             if result:
                 return Concept
+
+    async def create_concept(self, concept: Concept) -> Concept:
+        async with engine.connect() as conn:
+            await conn.execute(
+                insert(concept_table),
+                [concept.to_db_dict()],
+            )
+            await conn.commit()
+        return concept
