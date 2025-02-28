@@ -2,7 +2,7 @@ import orjson
 from pydantic_settings import BaseSettings
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
-from py_semantic_taxonomy.adapters.persistence.tables import Base
+from py_semantic_taxonomy.adapters.persistence.tables import metadata_obj
 from py_semantic_taxonomy.cfg import get_settings
 
 base_settings = get_settings()
@@ -10,7 +10,7 @@ base_settings = get_settings()
 
 def create_engine(
     s: BaseSettings = base_settings,
-    echo: bool = False,
+    echo: bool = True,
 ) -> AsyncEngine:
     if s.db_backend == "postgres":
         connection_str = f"postgresql+asyncpg://{s.db_user}:{s.db_pass.get_secret_value()}@{s.db_host}:{s.db_port}/{s.db_name}"
@@ -37,16 +37,16 @@ engine = create_engine()
 
 async def init_db(engine: AsyncEngine = engine) -> None:
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(metadata_obj.create_all)
 
 
 async def drop_db(engine: AsyncEngine = engine) -> None:
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(metadata_obj.drop_all)
 
 
-def get_bound_async_sessionmaker(engine: AsyncEngine = engine, **kwargs) -> async_sessionmaker:
-    return async_sessionmaker(bind=engine, **kwargs)
+# def get_bound_async_sessionmaker(engine: AsyncEngine = engine, **kwargs) -> async_sessionmaker:
+#     return async_sessionmaker(bind=engine, **kwargs)
 
 
-bound_async_sessionmaker = get_bound_async_sessionmaker()
+# bound_async_sessionmaker = get_bound_async_sessionmaker()
