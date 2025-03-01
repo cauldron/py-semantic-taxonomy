@@ -1,6 +1,10 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class ErrorMessage(BaseModel):
+    message: str
+
+
 class Concept(BaseModel):
     id_: str = Field(alias="@id")
     types: list[str] = Field(alias="@type")

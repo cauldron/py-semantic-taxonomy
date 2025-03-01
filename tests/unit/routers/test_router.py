@@ -1,5 +1,4 @@
 import pytest
-from fastapi import HTTPException
 from starlette.requests import Request
 
 import py_semantic_taxonomy.adapters.routers.router as router
@@ -17,10 +16,9 @@ async def test_get_concept(mock_kos_graph, graph_service, entities):
 async def test_get_concept_not_found(mock_kos_graph, graph_service):
     mock_kos_graph.get_concept.side_effect = ConceptNotFoundError()
 
-    with pytest.raises(HTTPException) as exc_info:
-        await router.get_concept("foo", service=graph_service)
-    assert exc_info.value.status_code == 404
-    assert exc_info.value.detail == "Concept with iri 'foo' not found"
+    response = await router.get_concept("foo", service=graph_service)
+    assert response.status_code == 404
+    assert response.body == b'{"message":"Concept with iri \'foo\' not found"}'
 
 
 @pytest.mark.skip(reason="Needs to be integration test because of URL reverse needs FastAPI app")
