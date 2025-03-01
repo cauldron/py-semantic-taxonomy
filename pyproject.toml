@@ -78,7 +78,7 @@ package-dir = {"" = "src"}
 version = {attr = "py_semantic_taxonomy.__version__"}
 
 [tool.pytest.ini_options]
-addopts = "--cov py_semantic_taxonomy --cov-report term-missing --verbose"
+addopts = "--cov py_semantic_taxonomy --cov-report term-missing --verbose -m \"not postgres\""
 norecursedirs = [
     "dist",
     "build",
@@ -87,6 +87,10 @@ norecursedirs = [
 testpaths = ["tests/**/*.py"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+markers = [
+    # Mark tests with `@pytest.mark.postgres` (deselect with `pytest -m "postgres or not postgres"`)
+    "postgres"
+]
 
 [tool.flake8]
 # Some sane defaults for the code style checker flake8
