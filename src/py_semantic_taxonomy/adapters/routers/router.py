@@ -2,6 +2,7 @@ from urllib.parse import urljoin
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 
 import py_semantic_taxonomy.adapters.routers.response_dto as response
 from py_semantic_taxonomy.application.services import GraphService
@@ -14,6 +15,7 @@ router = APIRouter()
     "/concept/",
     summary="Get a Concept object",
     response_model=response.Concept,
+    responses={404: {"model": response.ErrorMessage}}
 )
 async def get_concept(
     iri: str,
@@ -23,7 +25,7 @@ async def get_concept(
         obj = await service.get_concept(iri=iri)
         return response.Concept(**obj.to_json_ld())
     except de.ConceptNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Concept with iri '{iri}' not found")
+        return JSONResponse(status_code=404, content={"message": f"Concept with iri '{iri}' not found"})
 
 
 # TBD: Add in static route before generic catch-all function
