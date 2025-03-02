@@ -15,6 +15,13 @@ CONCEPT_MAPPING = {
     "history_notes": f"{SKOS}historyNote",
     "editorial_notes": f"{SKOS}editorialNote",
 }
+CONCEPT_EXCLUDED = {
+    "http://www.w3.org/2004/02/skos/core#narrowerTransitive",
+    "http://www.w3.org/2004/02/skos/core#narrower",
+    "http://www.w3.org/2004/02/skos/core#broaderTransitive",
+    "http://www.w3.org/2004/02/skos/core#broader",
+    "http://www.w3.org/2004/02/skos/core#topConceptOf",
+}
 
 
 @dataclass
@@ -50,7 +57,9 @@ class Concept:
         for dataclass_label, skos_label in CONCEPT_MAPPING.items():
             if skos_label in source_dict:
                 data[dataclass_label] = source_dict.pop(skos_label)
-        data["extra"] = source_dict
+        data["extra"] = {
+            key: value for key, value in source_dict.items() if key not in CONCEPT_EXCLUDED
+        }
         return Concept(**data)
 
 
