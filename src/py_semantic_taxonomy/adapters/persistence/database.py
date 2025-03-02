@@ -13,7 +13,9 @@ def create_engine(
     echo: bool = True,
 ) -> AsyncEngine:
     if s.db_backend == "postgres":
-        connection_str = f"postgresql+asyncpg://{s.db_user}:{s.db_pass}@{s.db_host}:{s.db_port}/{s.db_name}"
+        connection_str = (
+            f"postgresql+asyncpg://{s.db_user}:{s.db_pass}@{s.db_host}:{s.db_port}/{s.db_name}"
+        )
     elif s.db_backend == "sqlite":
         # Only for testing
         connection_str = "sqlite+aiosqlite:///:memory:"

@@ -1,11 +1,14 @@
 import json
 from pathlib import Path
+from typing import Callable
 from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
 from rdflib import Graph
 from sqlalchemy import insert
+from starlette.datastructures import Headers
+from starlette.requests import Request
 from testcontainers.postgres import PostgresContainer
 
 from py_semantic_taxonomy.application.services import GraphService
@@ -109,3 +112,37 @@ def client() -> TestClient:
     from py_semantic_taxonomy.app import create_app
 
     return TestClient(create_app())
+
+
+@pytest.fixture
+def mock_request() -> Callable:
+    # Stolen from https://stackoverflow.com/questions/62231022/how-to-programmatically-instantiate-starlettes-request-with-a-body
+    def build_request(
+        method: str = "GET",
+        server: str = "http://example.com",
+        path: str = "/",
+        headers: dict | None = None,
+        body: str | None = None,
+    ) -> Request:
+        if headers is None:
+            headers = {}
+        request = Request(
+            {
+                "type": "http",
+                "path": path,
+                "headers": Headers(headers).raw,
+                "http_version": "1.1",
+                "method": method,
+                "scheme": "https",
+                "client": ("127.0.0.1", 8080),
+                "server": (server, 443),
+            }
+        )
+        if body:
+            async def request_body():
+                return body
+
+            request.body = request_body
+        return request
+
+    return build_request

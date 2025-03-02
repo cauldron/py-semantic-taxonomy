@@ -1,8 +1,13 @@
-from sqlalchemy import func, select, insert
+from sqlalchemy import func, insert, select
 
 from py_semantic_taxonomy.adapters.persistence.database import engine
 from py_semantic_taxonomy.adapters.persistence.tables import concept_table
-from py_semantic_taxonomy.domain.entities import Concept, ConceptNotFoundError, GraphObject, DuplicateIRI
+from py_semantic_taxonomy.domain.entities import (
+    Concept,
+    ConceptNotFoundError,
+    DuplicateIRI,
+    GraphObject,
+)
 
 
 class PostgresKOSGraph:

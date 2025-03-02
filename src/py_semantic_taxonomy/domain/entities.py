@@ -75,5 +75,9 @@ class ConceptNotFoundError(NotFoundError):
     pass
 
 
+class ConceptSchemeNotFoundError(NotFoundError):
+    pass
+
+
 class DuplicateIRI(Exception):
     pass
