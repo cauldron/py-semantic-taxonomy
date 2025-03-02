@@ -5,6 +5,7 @@ from starlette.requests import Request
 from pydantic import ValidationError
 
 import py_semantic_taxonomy.adapters.routers.router as router
+from py_semantic_taxonomy.adapters.routers import response_dto
 from py_semantic_taxonomy.domain.entities import Concept, ConceptNotFoundError
 
 
@@ -35,7 +36,7 @@ async def test_create_concept(mock_kos_graph, graph_service, mock_request, cn):
     response = await router.create_concept(
         request=request, concept=await request.json(), service=graph_service
     )
-    assert response == Concept.from_json_ld(cn.concept_low)
+    assert response == response_dto.Concept(**Concept.from_json_ld(cn.concept_low).to_json_ld())
 
 
 async def test_create_concept_validation(graph_service, mock_request, cn):

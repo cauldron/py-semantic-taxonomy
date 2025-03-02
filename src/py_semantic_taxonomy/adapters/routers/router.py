@@ -75,7 +75,7 @@ async def create_concept(
     try:
         concept = de.Concept.from_json_ld(await request.json())
         result = await service.create_concept(concept)
-        return result
+        return response.Concept(**result.to_json_ld())
     except de.ConceptNotFoundError:
         raise HTTPException(status_code=404, detail=f"Bad")
 
