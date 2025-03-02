@@ -1,6 +1,7 @@
 from dataclasses import fields
 
 from py_semantic_taxonomy.adapters.routers import request_dto as request
+from py_semantic_taxonomy.adapters.routers import response_dto as response
 from py_semantic_taxonomy.domain.entities import CONCEPT_EXCLUDED, Concept
 
 
@@ -9,11 +10,22 @@ def test_concept_domain_request_dto_same_fields():
     request_fields = set(request.Concept.model_fields)
     assert domain_fields.difference(request_fields) == {
         "extra"
-    }, "Validation and domain `Concept` fields differ"
+    }, "Request validation and domain `Concept` model fields differ"
     assert request_fields.difference(domain_fields) == {
         "broader",
         "narrower",
-    }, "Validation and domain `Concept` fields differ"
+    }, "Request validation and domain `Concept` model fields differ"
+
+
+def test_concept_domain_response_dto_same_fields():
+    domain_fields = {f.name for f in fields(Concept)}
+    response_fields = set(response.Concept.model_fields)
+    assert domain_fields.difference(response_fields) == {
+        "extra"
+    }, "Response validation and domain `Concept` model fields differ"
+    assert not response_fields.difference(
+        domain_fields
+    ), "Response validation and domain `Concept` model fields differ"
 
 
 def test_concept_to_db_dict(cn):
