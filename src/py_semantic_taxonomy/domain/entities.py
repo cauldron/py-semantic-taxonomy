@@ -1,95 +1,83 @@
-from collections.abc import MutableMapping
-from dataclasses import dataclass
-from enum import Enum
-from typing import Any, Generator
+from copy import copy
+from dataclasses import asdict, dataclass, field
 
-
-class Document(MutableMapping):
-    """
-    Store JSON-LD as a dictionary with some convenience methods.
-
-    In any given document (such as Concept, ConceptScheme), there are some required fields, some
-    optional fields, and the ability for the user to add additional fields. Therefore we work not on
-    a fixed data schema but on the JSON-LD dictionary.
-
-    Validation isn't needed as we do validation at data ingress.
-    """
-
-    def __init__(self, document: dict) -> None:
-        self.document = document
-
-    def __getitem__(self, key: Any) -> Any:
-        return self.document[key]
-
-    def __setitem__(self, key: Any, value: Any) -> None:
-        self.document[key] = value
-
-    def __delitem__(self, key: Any) -> None:
-        del self.document[key]
-
-    def __iter__(self) -> Generator:
-        return iter(self.document)
-
-    def __len__(self) -> int:
-        return len(self.document)
-
-    def __getattr__(self, key: Any) -> Any:
-        try:
-            return self.document[self.__config[key]["label"]]
-        except KeyError:
-            return super().__getattr__(key)
-
-    def __setattr__(self, key: Any, value: Any) -> None:
-        try:
-            properties = self.__config[key]
-            if properties["read-only"]:
-                raise ValueError(f"Attribute {key} is read-only")
-            self.document[properties["label"]] = value
-        except KeyError:
-            return super().__setattr__(key, value)
-
-
-class Concept(Document):
-    __config = {
-        "id_": {"label": "@id", "read-only": True},
-        "type_": {"label": "@type", "read-only": True},
-        "pref_labels": {
-            "label": "http://www.w3.org/2004/02/skos/core#prefLabel",
-            "read-only": False,
-        },
-        "alt_labels": {"label": "http://www.w3.org/2004/02/skos/core#altLabel", "read-only": False},
-        "hidden_labels": {
-            "label": "http://www.w3.org/2004/02/skos/core#hiddenLabel",
-            "read-only": False,
-        },
-        "definitions": {
-            "label": "http://www.w3.org/2004/02/skos/core#definition",
-            "read-only": False,
-        },
-    }
-
-
-class ConceptScheme(Document):
-    __config = {
-        "id_": {"label": "@id", "read-only": True},
-        "type_": {"label": "@type", "read-only": True},
-        "pref_labels": {
-            "label": "http://www.w3.org/2004/02/skos/core#prefLabel",
-            "read-only": False,
-        },
-        "definitions": {
-            "label": "http://www.w3.org/2004/02/skos/core#definition",
-            "read-only": False,
-        },
-    }
-
-
-class EdgeKind(Enum):
-    in_scheme = "http://www.w3.org/2004/02/skos/core#inScheme"
+SKOS = "http://www.w3.org/2004/02/skos/core#"
+CONCEPT_MAPPING = {
+    "id_": "@id",
+    "types": "@type",
+    "schemes": f"{SKOS}inScheme",
+    "pref_labels": f"{SKOS}prefLabel",
+    "definitions": f"{SKOS}definition",
+    "notations": f"{SKOS}notation",
+    "alt_labels": f"{SKOS}altLabel",
+    "hidden_labels": f"{SKOS}hiddenLabel",
+    "change_notes": f"{SKOS}changeNote",
+    "history_notes": f"{SKOS}historyNote",
+    "editorial_notes": f"{SKOS}editorialNote",
+}
+CONCEPT_EXCLUDED = {
+    "http://www.w3.org/2004/02/skos/core#narrowerTransitive",
+    "http://www.w3.org/2004/02/skos/core#narrower",
+    "http://www.w3.org/2004/02/skos/core#broaderTransitive",
+    "http://www.w3.org/2004/02/skos/core#broader",
+    "http://www.w3.org/2004/02/skos/core#topConceptOf",
+}
 
 
 @dataclass
-class Edge:
-    source: str  # IRI
-    target: str  # IRI
-    kind: EdgeKind
+class Concept:
+    id_: str
+    types: list[str]
+    pref_labels: list[dict[str, str]]
+    schemes: list[dict]
+    definitions: list[dict[str, str]] = field(default_factory=list)
+    notations: list[dict[str, str]] = field(default_factory=list)
+    alt_labels: list[dict[str, str]] = field(default_factory=list)
+    hidden_labels: list[dict[str, str]] = field(default_factory=list)
+    change_notes: list[dict] = field(default_factory=list)
+    history_notes: list[dict] = field(default_factory=list)
+    editorial_notes: list[dict] = field(default_factory=list)
+    extra: dict = field(default_factory=dict)
+
+    def to_db_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json_ld(self) -> dict:
+        """Return this data formatted as (but not serialized to) SKOS expanded JSON LD"""
+        dct = copy(self.extra)
+        for attr, label in CONCEPT_MAPPING.items():
+            if value := getattr(self, attr):
+                dct[label] = value
+
+        return dct
+
+    @staticmethod
+    def from_json_ld(concept_dict: dict) -> "Concept":
+        source_dict, data = copy(concept_dict), {}
+        for dataclass_label, skos_label in CONCEPT_MAPPING.items():
+            if skos_label in source_dict:
+                data[dataclass_label] = source_dict.pop(skos_label)
+        data["extra"] = {
+            key: value for key, value in source_dict.items() if key not in CONCEPT_EXCLUDED
+        }
+        return Concept(**data)
+
+
+# Will be Concept | ConceptScheme | Correspondence | Association
+GraphObject = Concept
+
+
+class NotFoundError(Exception):
+    pass
+
+
+class ConceptNotFoundError(NotFoundError):
+    pass
+
+
+class ConceptSchemeNotFoundError(NotFoundError):
+    pass
+
+
+class DuplicateIRI(Exception):
+    pass
