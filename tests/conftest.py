@@ -11,6 +11,7 @@ from starlette.datastructures import Headers
 from starlette.requests import Request
 from testcontainers.postgres import PostgresContainer
 
+import py_semantic_taxonomy
 from py_semantic_taxonomy.application.services import GraphService
 from py_semantic_taxonomy.domain.entities import Concept, GraphObject
 from py_semantic_taxonomy.domain.ports import KOSGraph
