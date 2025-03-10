@@ -1,4 +1,4 @@
-from sqlalchemy import func, insert, select
+from sqlalchemy import func, insert, select, update, Connection
 
 from py_semantic_taxonomy.adapters.persistence.database import engine
 from py_semantic_taxonomy.adapters.persistence.tables import concept_table
@@ -11,6 +11,11 @@ from py_semantic_taxonomy.domain.entities import (
 
 
 class PostgresKOSGraph:
+    async def _get_concept_count_from_iri(self, connection: Connection, iri: str) -> int:
+        stmt = select(func.count("*")).where(concept_table.c.id_ == iri)
+        # TBD: This is ugly
+        return (await connection.execute(stmt)).first()[0]
+
     async def get_concept(self, iri: str) -> Concept:
         async with engine.connect() as conn:
             stmt = select(concept_table).where(concept_table.c.id_ == iri)
@@ -21,10 +26,8 @@ class PostgresKOSGraph:
 
     async def get_object_type(self, iri: str) -> GraphObject:
         async with engine.connect() as conn:
-            stmt = select(func.count("*")).where(concept_table.c.id_ == iri)
-            # TBD: This is ugly
-            result = (await conn.execute(stmt)).first()[0]
-            if result:
+            is_concept = self._get_concept_count_from_iri(conn, iri)
+            if is_concept:
                 return Concept
 
     async def concept_create(self, concept: Concept) -> Concept:
