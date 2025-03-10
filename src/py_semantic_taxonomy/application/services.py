@@ -12,8 +12,8 @@ class GraphService:
     async def get_concept(self, iri: str) -> Concept:
         return await self.graph.get_concept(iri=iri)
 
-    async def create_concept(self, concept: Concept) -> Concept:
-        return await self.graph.create_concept(concept=concept)
+    async def concept_create(self, concept: Concept) -> Concept:
+        return await self.graph.concept_create(concept=concept)
 
     async def get_object_type(self, iri: str) -> GraphObject:
         return await self.graph.get_object_type(iri=iri)

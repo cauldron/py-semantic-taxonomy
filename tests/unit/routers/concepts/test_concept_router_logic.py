@@ -22,15 +22,15 @@ async def test_get_concept_not_found(mock_kos_graph, graph_service):
     assert response.body == b'{"message":"Concept with iri \'foo\' not found"}'
 
 
-async def test_create_concept(mock_kos_graph, graph_service, mock_request, cn):
-    mock_kos_graph.create_concept.side_effect = lambda concept: concept
+async def test_concept_create(mock_kos_graph, graph_service, mock_request, cn):
+    mock_kos_graph.concept_create.side_effect = lambda concept: concept
 
     request = mock_request(
         method="POST",
         path=router.Paths.concept,
         body=orjson.dumps(cn.concept_low),
     )
-    response = await router.create_concept(
+    response = await router.concept_create(
         request=request, concept=ConceptCreate(**cn.concept_low), service=graph_service
     )
     assert response == response_dto.Concept(**Concept.from_json_ld(cn.concept_low).to_json_ld())

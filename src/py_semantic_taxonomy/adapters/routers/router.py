@@ -65,14 +65,14 @@ async def get_concept(
     summary="Create a Concept object",
     response_model=response.Concept,
 )
-async def create_concept(
+async def concept_create(
     request: Request,
     concept: req.ConceptCreate,
     service=Depends(GraphService),
 ) -> response.Concept:
     try:
         concept = de.Concept.from_json_ld(await request.json())
-        result = await service.create_concept(concept)
+        result = await service.concept_create(concept)
         return response.Concept(**result.to_json_ld())
     except de.ConceptNotFoundError:
         raise HTTPException(status_code=404, detail=f"Bad")

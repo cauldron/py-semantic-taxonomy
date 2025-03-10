@@ -27,7 +27,7 @@ class PostgresKOSGraph:
             if result:
                 return Concept
 
-    async def create_concept(self, concept: Concept) -> Concept:
+    async def concept_create(self, concept: Concept) -> Concept:
         async with engine.connect() as conn:
             await conn.execute(
                 insert(concept_table),

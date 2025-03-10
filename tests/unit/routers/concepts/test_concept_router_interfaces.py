@@ -4,17 +4,17 @@ from py_semantic_taxonomy.adapters.routers.router import GraphService
 from py_semantic_taxonomy.domain.entities import Concept
 
 
-async def test_create_concept(cn, client, monkeypatch):
+async def test_concept_create(cn, client, monkeypatch):
     monkeypatch.setattr(
-        GraphService, "create_concept", AsyncMock(return_value=Concept.from_json_ld(cn.concept_low))
+        GraphService, "concept_create", AsyncMock(return_value=Concept.from_json_ld(cn.concept_low))
     )
 
     response = client.post("/concept/", json=cn.concept_low)
     assert response.status_code == 200
 
 
-async def test_create_concept_error(cn, client, monkeypatch):
-    monkeypatch.setattr(GraphService, "create_concept", AsyncMock())
+async def test_concept_create_error(cn, client, monkeypatch):
+    monkeypatch.setattr(GraphService, "concept_create", AsyncMock())
 
     obj = cn.concept_low
     del obj["@id"]
