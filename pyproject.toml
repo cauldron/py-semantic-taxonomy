@@ -29,15 +29,17 @@ classifiers = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "asyncpg",
+    "fastapi",
+    "fastapi_pagination",
     "langcodes",
+    "orjson",
     "pydantic>=2",
+    "pydantic_settings",
     "rdflib",
     "rfc3987",
-    "fastapi_pagination",
-    "fastapi",
     "sqlalchemy>=2.0",
     "structlog",
-    "orjson",
 ]
 
 [project.urls]
@@ -49,6 +51,7 @@ tracker = "https://github.com/cauldron/py-semantic-taxonomy/issues"
 # Getting recursive dependencies to work is a pain, this
 # seems to work, at least for now
 testing = [
+    "aiosqlite",
     "httpx",
     "py_semantic_taxonomy",
     "pytest",
@@ -71,7 +74,6 @@ dev = [
 [tool.setuptools]
 license-files = ["LICENSE"]
 include-package-data = true
-packages = ["py_semantic_taxonomy"]
 package-dir = {"" = "src"}
 
 [tool.setuptools.dynamic]
