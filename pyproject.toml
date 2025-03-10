@@ -31,6 +31,7 @@ requires-python = ">=3.12"
 dependencies = [
     "langcodes",
     "pydantic>=2",
+    "pydantic_settings",
     "rdflib",
     "rfc3987",
     "fastapi_pagination",
