@@ -67,11 +67,9 @@ async def get_concept(
 )
 async def create_concept(
     request: Request,
-    concept: req.Concept,
+    concept: req.ConceptCreate,
     service=Depends(GraphService),
 ) -> response.Concept:
-    # Conversion of request data to Pydantic class appears to be lazy; force it now
-    req.Concept(**concept)
     try:
         concept = de.Concept.from_json_ld(await request.json())
         result = await service.create_concept(concept)

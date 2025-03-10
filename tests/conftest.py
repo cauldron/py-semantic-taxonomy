@@ -140,6 +140,7 @@ def mock_request() -> Callable:
             }
         )
         if body:
+
             async def request_body():
                 return body
 

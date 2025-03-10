@@ -1,7 +1,8 @@
 from copy import copy
 from dataclasses import asdict, dataclass, field
 
-SKOS = "http://www.w3.org/2004/02/skos/core#"
+from py_semantic_taxonomy.domain.constants import SKOS, SKOS_RELATIONSHIP_PREDICATES
+
 CONCEPT_MAPPING = {
     "id_": "@id",
     "types": "@type",
@@ -14,13 +15,6 @@ CONCEPT_MAPPING = {
     "change_notes": f"{SKOS}changeNote",
     "history_notes": f"{SKOS}historyNote",
     "editorial_notes": f"{SKOS}editorialNote",
-}
-CONCEPT_EXCLUDED = {
-    "http://www.w3.org/2004/02/skos/core#narrowerTransitive",
-    "http://www.w3.org/2004/02/skos/core#narrower",
-    "http://www.w3.org/2004/02/skos/core#broaderTransitive",
-    "http://www.w3.org/2004/02/skos/core#broader",
-    "http://www.w3.org/2004/02/skos/core#topConceptOf",
 }
 
 
@@ -58,7 +52,9 @@ class Concept:
             if skos_label in source_dict:
                 data[dataclass_label] = source_dict.pop(skos_label)
         data["extra"] = {
-            key: value for key, value in source_dict.items() if key not in CONCEPT_EXCLUDED
+            key: value
+            for key, value in source_dict.items()
+            if key not in SKOS_RELATIONSHIP_PREDICATES
         }
         return Concept(**data)
 

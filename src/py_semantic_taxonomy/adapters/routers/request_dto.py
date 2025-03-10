@@ -12,27 +12,20 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     VersionString,
     one_per_language,
 )
+from py_semantic_taxonomy.domain.constants import SKOS, SKOS_RELATIONSHIP_PREDICATES
 
 
 class KOSCommon(BaseModel):
     id_: IRI = Field(alias="@id")
     types: conlist(item_type=IRI) = Field(alias="@type")
-    pref_labels: conlist(MultilingualString, min_length=1) = Field(
-        alias="http://www.w3.org/2004/02/skos/core#prefLabel"
-    )
+    pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}prefLabel")
     # One definition per language, at least one definition
     definitions: conlist(MultilingualString, min_length=1) = Field(
-        alias="http://www.w3.org/2004/02/skos/core#definition", default=[]
+        alias=f"{SKOS}definition", default=[]
     )
-    change_notes: list[NonLiteralNote] = Field(
-        alias="http://www.w3.org/2004/02/skos/core#changeNote", default=[]
-    )
-    history_notes: list[NonLiteralNote] = Field(
-        alias="http://www.w3.org/2004/02/skos/core#historyNote", default=[]
-    )
-    editorial_notes: list[NonLiteralNote] = Field(
-        alias="http://www.w3.org/2004/02/skos/core#editorialNote", default=[]
-    )
+    change_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}changeNote", default=[])
+    history_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}historyNote", default=[])
+    editorial_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}editorialNote", default=[])
 
     model_config = ConfigDict(extra="allow")
 
@@ -59,31 +52,31 @@ class Concept(KOSCommon):
 
     Checks that required fields are included and have correct type."""
 
-    schemes: conlist(Node, min_length=1) = Field(
-        alias="http://www.w3.org/2004/02/skos/core#inScheme"
-    )
+    schemes: conlist(Node, min_length=1) = Field(alias=f"{SKOS}inScheme")
     # Can have multiple alternative labels per language, and multiple languages
-    notations: list[Notation] = Field(
-        alias="http://www.w3.org/2004/02/skos/core#notation", default=[]
-    )
-    alt_labels: list[MultilingualString] = Field(
-        alias="http://www.w3.org/2004/02/skos/core#altLabel", default=[]
-    )
+    notations: list[Notation] = Field(alias=f"{SKOS}notation", default=[])
+    alt_labels: list[MultilingualString] = Field(alias=f"{SKOS}altLabel", default=[])
     # Can have multiple hidden labels per language, and multiple languages
-    hidden_labels: list[MultilingualString] = Field(
-        alias="http://www.w3.org/2004/02/skos/core#hiddenLabel", default=[]
-    )
-    broader: list[Node] = Field(alias="http://www.w3.org/2004/02/skos/core#broader", default=[])
-    narrower: list[Node] = Field(alias="http://www.w3.org/2004/02/skos/core#narrower", default=[])
+    hidden_labels: list[MultilingualString] = Field(alias=f"{SKOS}hiddenLabel", default=[])
 
     @field_validator("types", mode="after")
     @classmethod
     def type_includes_concept(cls, value: list[str]) -> list[str]:
-        CONCEPT = "http://www.w3.org/2004/02/skos/core#Concept"
+        CONCEPT = f"{SKOS}Concept"
         if CONCEPT not in value:
             raise ValueError(f"`@type` values must include `{CONCEPT}`")
         return value
 
+    @model_validator(mode="after")
+    def notations_disjoint_pref_label(self) -> Self:
+        if overlap := {obj.value for obj in self.pref_labels}.intersection(
+            {obj.value for obj in self.notations}
+        ):
+            raise ValueError(f"Found overlapping values in `prefLabel` and `notation`: {overlap}")
+        return self
+
+
+class ConceptCreate(Concept):
     @model_validator(mode="after")
     def hierarchy_doesnt_reference_self(self) -> Self:
         for node in self.broader:
@@ -94,13 +87,21 @@ class Concept(KOSCommon):
                 raise ValueError("Concept can't have `narrower` relationship to itself")
         return self
 
-    @model_validator(mode="after")
-    def notations_disjoint_pref_label(self) -> Self:
-        if overlap := {obj.value for obj in self.pref_labels}.intersection(
-            {obj.value for obj in self.notations}
-        ):
-            raise ValueError(f"Found overlapping values in `prefLabel` and `notation`: {overlap}")
-        return self
+    broader: list[Node] = Field(alias=f"{SKOS}broader", default=[])
+    narrower: list[Node] = Field(alias=f"{SKOS}narrower", default=[])
+
+
+class ConceptUpdate(Concept):
+    @model_validator(mode="before")
+    @classmethod
+    def check_no_graph_relationships(cls, data: dict) -> dict:
+        for key in data:
+            if key in SKOS_RELATIONSHIP_PREDICATES:
+                short = key[len(SKOS) :]
+                raise ValueError(
+                    f"Found `{short}` in concept update; Use specific API calls to update graph structure."
+                )
+        return data
 
 
 class ConceptScheme(KOSCommon):
@@ -116,19 +117,15 @@ class ConceptScheme(KOSCommon):
         alias="http://www.w3.org/2002/07/owl#versionInfo"
     )
     # Range is an object, so `{"@id": "foo"}` instead of `"foo"`.
-    top_concepts: list[Node] = Field(alias="http://www.w3.org/2004/02/skos/core#hasTopConcept")
-    pref_labels: conlist(MultilingualString, min_length=1) = Field(
-        alias="http://www.w3.org/2004/02/skos/core#prefLabel"
-    )
+    top_concepts: list[Node] = Field(alias=f"{SKOS}hasTopConcept")
+    pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}prefLabel")
     # One definition per language
-    definitions: conlist(MultilingualString, min_length=1) = Field(
-        alias="http://www.w3.org/2004/02/skos/core#definition"
-    )
+    definitions: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}definition")
 
     @field_validator("types", mode="after")
     @classmethod
     def type_includes_concept(cls, value: list[str]) -> list[str]:
-        SCHEME = "http://www.w3.org/2004/02/skos/core#ConceptScheme"
+        SCHEME = f"{SKOS}ConceptScheme"
         if SCHEME not in value:
             raise ValueError(f"`@type` must include `{SCHEME}`")
         return value

@@ -2,7 +2,8 @@ from dataclasses import fields
 
 from py_semantic_taxonomy.adapters.routers import request_dto as request
 from py_semantic_taxonomy.adapters.routers import response_dto as response
-from py_semantic_taxonomy.domain.entities import CONCEPT_EXCLUDED, Concept
+from py_semantic_taxonomy.domain.constants import SKOS_RELATIONSHIP_PREDICATES
+from py_semantic_taxonomy.domain.entities import Concept
 
 
 def test_concept_domain_request_dto_same_fields():
@@ -11,10 +12,9 @@ def test_concept_domain_request_dto_same_fields():
     assert domain_fields.difference(request_fields) == {
         "extra"
     }, "Request validation and domain `Concept` model fields differ"
-    assert request_fields.difference(domain_fields) == {
-        "broader",
-        "narrower",
-    }, "Request validation and domain `Concept` model fields differ"
+    assert not request_fields.difference(
+        domain_fields
+    ), "Request validation and domain `Concept` model fields differ"
 
 
 def test_concept_domain_response_dto_same_fields():
@@ -105,6 +105,10 @@ def test_concept_from_json_ld(cn):
 
 
 def test_concept_to_json_ld(cn):
-    expected = {key: value for key, value in cn.concept_top.items() if key not in CONCEPT_EXCLUDED}
+    expected = {
+        key: value
+        for key, value in cn.concept_top.items()
+        if key not in SKOS_RELATIONSHIP_PREDICATES
+    }
     given = Concept.from_json_ld(cn.concept_top).to_json_ld()
     assert given == expected, "Conversion to JSON-LD failed"

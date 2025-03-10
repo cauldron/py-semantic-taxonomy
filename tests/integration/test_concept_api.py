@@ -1,6 +1,6 @@
 import pytest
 
-from py_semantic_taxonomy.domain.entities import CONCEPT_EXCLUDED
+from py_semantic_taxonomy.domain.constants import SKOS_RELATIONSHIP_PREDICATES
 
 
 @pytest.mark.postgres
@@ -9,7 +9,11 @@ async def test_get_concept(postgres, cn_db, cn, client):
         "/concept/", params={"iri": "http://data.europa.eu/xsp/cn2024/010011000090"}
     )
     assert response.status_code == 200
-    expected = {key: value for key, value in cn.concept_top.items() if key not in CONCEPT_EXCLUDED}
+    expected = {
+        key: value
+        for key, value in cn.concept_top.items()
+        if key not in SKOS_RELATIONSHIP_PREDICATES
+    }
     given = response.json()
 
     # https://fastapi.tiangolo.com/tutorial/response-model/#response-model-encoding-parameters
