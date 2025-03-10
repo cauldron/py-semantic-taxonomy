@@ -72,7 +72,6 @@ dev = [
 [tool.setuptools]
 license-files = ["LICENSE"]
 include-package-data = true
-packages = ["py_semantic_taxonomy"]
 package-dir = {"" = "src"}
 
 [tool.setuptools.dynamic]
