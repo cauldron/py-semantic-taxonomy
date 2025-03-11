@@ -12,6 +12,8 @@ class GraphService:
     async def get_object_type(self, iri: str) -> GraphObject:
         return await self.graph.get_object_type(iri=iri)
 
+    # Concept
+
     async def concept_get(self, iri: str) -> Concept:
         return await self.graph.concept_get(iri=iri)
 
@@ -24,5 +26,10 @@ class GraphService:
     async def concept_delete(self, iri: str) -> int:
         return await self.graph.concept_delete(iri=iri)
 
+    # Concept Scheme
+
     async def concept_scheme_get(self, iri: str) -> ConceptScheme:
         return await self.graph.concept_scheme_get(iri=iri)
+
+    async def concept_scheme_create(self, concept_scheme: ConceptScheme) -> ConceptScheme:
+        return await self.graph.concept_scheme_create(concept_scheme=concept_scheme)
