@@ -20,3 +20,6 @@ class GraphService:
 
     async def concept_update(self, concept: Concept) -> Concept:
         return await self.graph.concept_update(concept=concept)
+
+    async def concept_delete(self, iri: str) -> int:
+        return await self.graph.concept_delete(iri=iri)

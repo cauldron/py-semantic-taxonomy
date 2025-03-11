@@ -59,3 +59,13 @@ async def test_update_concept_missing(sqlite, cn, entities, graph):
     expected = Concept.from_json_ld(cn.concept_low)
     with pytest.raises(ConceptNotFoundError):
         await graph.concept_update(concept=expected)
+
+
+async def test_delete_concept(sqlite, cn, entities, graph):
+    response = await graph.concept_delete(iri=cn.concept_mid["@id"])
+    print(response)
+    assert response == 1, "Wrong number of deleted concepts"
+
+    response = await graph.concept_delete(iri=cn.concept_mid["@id"])
+    print(response)
+    assert response == 0, "Wrong number of deleted concepts"

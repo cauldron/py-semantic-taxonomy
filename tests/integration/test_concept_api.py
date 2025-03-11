@@ -1,14 +1,11 @@
 import pytest
 
-from py_semantic_taxonomy.domain.constants import SKOS_RELATIONSHIP_PREDICATES
-from py_semantic_taxonomy.domain.constants import SKOS
+from py_semantic_taxonomy.domain.constants import SKOS, SKOS_RELATIONSHIP_PREDICATES
 
 
 @pytest.mark.postgres
 async def test_get_concept(postgres, cn_db_engine, cn, client):
-    response = await client.get(
-        "/concept/", params={"iri": "http://data.europa.eu/xsp/cn2024/010011000090"}
-    )
+    response = await client.get("/concept/", params={"iri": cn.concept_top["@id"]})
     assert response.status_code == 200
     expected = {
         key: value
@@ -70,9 +67,7 @@ async def test_update_concept(postgres, cn_db_engine, cn, client):
     response = await client.put("/concept/", json=updated)
     assert response.status_code == 200
     expected = {
-        key: value
-        for key, value in updated.items()
-        if key not in SKOS_RELATIONSHIP_PREDICATES
+        key: value for key, value in updated.items() if key not in SKOS_RELATIONSHIP_PREDICATES
     }
     given = response.json()
 
@@ -93,4 +88,22 @@ async def test_update_concept_not_found(postgres, cn_db_engine, cn, client):
     del obj[f"{SKOS}broader"]
 
     response = await client.put("/concept/", json=obj)
+    assert response.status_code == 404
+
+
+@pytest.mark.postgres
+async def test_delete_concept(postgres, cn_db_engine, cn, client):
+    response = await client.get("/concept/", params={"iri": cn.concept_top["@id"]})
+    assert response.status_code == 200
+    assert response.json()
+
+    response = await client.delete("/concept/", params={"iri": cn.concept_top["@id"]})
+    assert response.status_code == 200
+    assert response.json()["count"] == 1
+
+    response = await client.delete("/concept/", params={"iri": cn.concept_top["@id"]})
+    assert response.status_code == 200
+    assert response.json()["count"] == 0
+
+    response = await client.get("/concept/", params={"iri": cn.concept_top["@id"]})
     assert response.status_code == 404

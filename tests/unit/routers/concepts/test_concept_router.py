@@ -103,3 +103,10 @@ async def test_concept_update_error_missing(cn, client, monkeypatch):
         "detail": {"@id": id_},
     }
     assert response.status_code == 404
+
+
+async def test_concept_delete(cn, client, monkeypatch):
+    monkeypatch.setattr(GraphService, "concept_delete", AsyncMock(return_value=1))
+
+    response = await client.delete("/concept/", params={"iri": cn.concept_top["@id"]})
+    assert response.status_code == 200

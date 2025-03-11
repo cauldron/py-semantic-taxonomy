@@ -1,4 +1,4 @@
-from sqlalchemy import Connection, func, insert, select, update
+from sqlalchemy import Connection, delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from py_semantic_taxonomy.adapters.persistence.database import create_engine
@@ -63,3 +63,9 @@ class PostgresKOSGraph:
             )
             await conn.commit()
         return concept
+
+    async def concept_delete(self, iri: str) -> int:
+        async with self.engine.connect() as conn:
+            result = await conn.execute(delete(concept_table).where(concept_table.c.id_ == iri))
+            await conn.commit()
+        return result.rowcount

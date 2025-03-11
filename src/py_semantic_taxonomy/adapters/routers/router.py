@@ -109,6 +109,25 @@ async def concept_update(
         )
 
 
+@router.delete(
+    Paths.concept,
+    summary="Delete a Concept object",
+)
+async def concept_delete(
+    iri: str,
+    service=Depends(GraphService),
+) -> JSONResponse:
+    count = await service.concept_delete(iri=iri)
+    # TBD: 404 if not found?
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": f"Concept (possibly) deleted",
+            "count": count,
+        },
+    )
+
+
 # TBD: Add in static route before generic catch-all function
 
 
