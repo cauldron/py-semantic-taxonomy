@@ -56,7 +56,8 @@ async def get_concept(
         return response.Concept(**obj.to_json_ld())
     except de.ConceptNotFoundError:
         return JSONResponse(
-            status_code=404, content={"message": f"Concept with iri '{iri}' not found"}
+            status_code=404,
+            content={"message": f"Concept with IRI '{iri}' not found", "detail": {"iri": iri}},
         )
 
 
@@ -74,6 +75,14 @@ async def concept_create(
         concept = de.Concept.from_json_ld(await request.json())
         result = await service.concept_create(concept)
         return response.Concept(**result.to_json_ld())
+    except de.DuplicateIRI:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "message": f"Resource with `@id` already exists",
+                "detail": {"@id": concept.id_},
+            },
+        )
     except de.ConceptNotFoundError:
         raise HTTPException(status_code=404, detail=f"Bad")
 
