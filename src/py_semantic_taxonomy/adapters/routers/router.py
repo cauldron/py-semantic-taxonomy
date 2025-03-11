@@ -157,6 +157,30 @@ async def concept_scheme_get(
         )
 
 
+@router.post(
+    Paths.concept_scheme,
+    summary="Create a Concept Scheme object",
+    response_model=response.ConceptScheme,
+)
+async def concept_scheme_create(
+    request: Request,
+    concept: req.ConceptScheme,
+    service=Depends(GraphService),
+) -> response.ConceptScheme:
+    try:
+        cs = de.ConceptScheme.from_json_ld(await request.json())
+        result = await service.concept_scheme_create(cs)
+        return response.ConceptScheme(**result.to_json_ld())
+    except de.DuplicateIRI:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "message": f"Resource with `@id` already exists",
+                "detail": {"@id": cs.id_},
+            },
+        )
+
+
 # TBD: Add in static route before generic catch-all function
 
 

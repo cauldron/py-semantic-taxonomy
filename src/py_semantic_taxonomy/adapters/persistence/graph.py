@@ -85,3 +85,16 @@ class PostgresKOSGraph:
                 raise ConceptSchemeNotFoundError
             await conn.rollback()
         return ConceptScheme(**result._mapping)
+
+    async def concept_scheme_create(self, concept_scheme: ConceptScheme) -> ConceptScheme:
+        async with self.engine.connect() as conn:
+            count = await self._get_count_from_iri(conn, concept_scheme.id_, concept_scheme_table)
+            if count:
+                raise DuplicateIRI
+
+            await conn.execute(
+                insert(concept_scheme_table),
+                [concept_scheme.to_db_dict()],
+            )
+            await conn.commit()
+        return concept_scheme
