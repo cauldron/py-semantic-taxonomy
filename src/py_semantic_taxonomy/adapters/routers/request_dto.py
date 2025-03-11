@@ -48,9 +48,7 @@ class Concept(KOSCommon):
     # Can have multiple hidden labels per language, and multiple languages
     hidden_labels: list[MultilingualString] = Field(alias=f"{SKOS}hiddenLabel", default=[])
     # One definition per language, at least one definition
-    definitions: list[MultilingualString] = Field(
-        alias=f"{SKOS}definition", default=[]
-    )
+    definitions: list[MultilingualString] = Field(alias=f"{SKOS}definition", default=[])
 
     @field_validator("types", mode="after")
     @classmethod
