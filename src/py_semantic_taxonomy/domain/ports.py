@@ -1,6 +1,6 @@
 from typing import Protocol, runtime_checkable
 
-from py_semantic_taxonomy.domain.entities import Concept, GraphObject
+from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject
 
 
 @runtime_checkable
@@ -14,3 +14,5 @@ class KOSGraph(Protocol):
     async def concept_update(self, concept: Concept) -> Concept: ...
 
     async def concept_delete(self, iri: str) -> int: ...
+
+    async def concept_scheme_get(self, iri: str) -> ConceptScheme: ...

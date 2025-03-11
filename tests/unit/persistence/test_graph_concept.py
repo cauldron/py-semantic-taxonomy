@@ -3,14 +3,6 @@ import pytest
 from py_semantic_taxonomy.domain.entities import Concept, ConceptNotFoundError, DuplicateIRI
 
 
-@pytest.fixture
-def graph(cn_db_engine):
-    # Defer import until environment is patched
-    from py_semantic_taxonomy.adapters.persistence.graph import PostgresKOSGraph
-
-    return PostgresKOSGraph(engine=cn_db_engine)
-
-
 async def test_get_object_type_concept(sqlite, graph):
     concept = await graph.get_object_type(iri="http://data.europa.eu/xsp/cn2024/010011000090")
     assert concept is Concept, "Wrong result type"

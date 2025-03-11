@@ -14,6 +14,7 @@ router = APIRouter()
 
 class Paths(StrEnum):
     concept = "/concept/"
+    concept_scheme = "/concept_scheme/"
     catchall = "/{_:path}"
 
 
@@ -39,6 +40,8 @@ It's possible that this will change in the future:
 
 https://github.com/pydantic/pydantic/issues/8379
 """
+
+# Concept
 
 
 @router.get(
@@ -126,6 +129,32 @@ async def concept_delete(
             "count": count,
         },
     )
+
+
+# Concept Scheme
+
+
+@router.get(
+    Paths.concept_scheme,
+    summary="Get a ConceptScheme object",
+    response_model=response.ConceptScheme,
+    responses={404: {"model": response.ErrorMessage}},
+)
+async def concept_scheme_get(
+    iri: str,
+    service=Depends(GraphService),
+) -> response.ConceptScheme:
+    try:
+        obj = await service.concept_scheme_get(iri=iri)
+        return response.ConceptScheme(**obj.to_json_ld())
+    except de.ConceptSchemeNotFoundError:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "message": f"Concept Scheme with IRI '{iri}' not found",
+                "detail": {"iri": iri},
+            },
+        )
 
 
 # TBD: Add in static route before generic catch-all function
