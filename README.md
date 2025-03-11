@@ -99,11 +99,6 @@ Here is an example of a valid `ConceptScheme` in JSON-LD:
     {"@id": "http://publications.europa.eu/resource/authority/corporate-body/TAXUD"}
   ],
   "http://www.w3.org/2002/07/owl#versionInfo": [{"@value": "2024"}],
-  "http://www.w3.org/2004/02/skos/core#hasTopConcept": [
-    {
-      "@id": "http://data.europa.eu/xsp/cn2024/010011000090"
-    }
-  ],
   "http://www.w3.org/2004/02/skos/core#prefLabel": [
     {"@value": "Combined Nomenclature, 2024 (CN 2024)", "@language": "en"},
     {"@value": "Nomenclatura Combinada, 2024 (NC 2024)", "@language": "pt"}

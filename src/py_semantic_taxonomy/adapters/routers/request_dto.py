@@ -116,8 +116,6 @@ class ConceptScheme(KOSCommon):
     version: conlist(VersionString, min_length=1, max_length=1) = Field(
         alias="http://www.w3.org/2002/07/owl#versionInfo"
     )
-    # Range is an object, so `{"@id": "foo"}` instead of `"foo"`.
-    top_concepts: list[Node] = Field(alias=f"{SKOS}hasTopConcept")
     pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}prefLabel")
     # One definition per language
     definitions: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}definition")
@@ -129,3 +127,13 @@ class ConceptScheme(KOSCommon):
         if SCHEME not in value:
             raise ValueError(f"`@type` must include `{SCHEME}`")
         return value
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_no_top_concept(cls, data: dict) -> dict:
+        """skos:hasTopConcept has range skos:Concept, which we don't want. Create links later."""
+        if f"{SKOS}hasTopConcept" in data:
+            raise ValueError(
+                f"Found `hasTopConcept` in concept scheme; Use specific API calls to create or update this relationship."
+            )
+        return data

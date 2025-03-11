@@ -22,11 +22,6 @@
       "@value": "2024"
     }
   ],
-  "http://www.w3.org/2004/02/skos/core#hasTopConcept": [
-    {
-      "@id": "http://data.europa.eu/xsp/cn2024/010011000090"
-    }
-  ],
   "http://www.w3.org/2004/02/skos/core#prefLabel": [
     {
       "@value": "Combined Nomenclature, 2024 (CN 2024)",
