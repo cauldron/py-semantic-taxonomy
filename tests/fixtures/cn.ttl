@@ -28,7 +28,6 @@
     schema1:endDate "2024-12-31"^^xsd:date ;
     schema1:startDate "2024-01-01"^^xsd:date ;
     owl:versionInfo "2024" ;
-    skos:hasTopConcept :010011000090 ;
     skos:notation "CN 2024"^^rdfns:PlainLiteral ;
     skos:prefLabel "Combined Nomenclature, 2024 (CN 2024)"@en,
         "Nomenclatura Combinada, 2024 (NC 2024)"@pt ;
