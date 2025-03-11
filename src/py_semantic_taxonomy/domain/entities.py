@@ -1,22 +1,8 @@
 from copy import copy
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
 
-from py_semantic_taxonomy.domain.constants import SKOS, SKOS_RELATIONSHIP_PREDICATES
-
-SKOS_MAPPING = {
-    "id_": "@id",
-    "types": "@type",
-    "schemes": f"{SKOS}inScheme",
-    "pref_labels": f"{SKOS}prefLabel",
-    "definitions": f"{SKOS}definition",
-    "notations": f"{SKOS}notation",
-    "alt_labels": f"{SKOS}altLabel",
-    "hidden_labels": f"{SKOS}hiddenLabel",
-    "change_notes": f"{SKOS}changeNote",
-    "history_notes": f"{SKOS}historyNote",
-    "editorial_notes": f"{SKOS}editorialNote",
-}
+from py_semantic_taxonomy.domain.constants import SKOS_RELATIONSHIP_PREDICATES, RDF_MAPPING
 
 
 # Allow mixing non-default and default values in dataclasses
@@ -26,6 +12,7 @@ class SKOS:
     id_: str
     types: list[str]
     pref_labels: list[dict[str, str]]
+    notations: list[dict[str, str]] = field(default_factory=list)
     definitions: list[dict[str, str]] = field(default_factory=list)
     change_notes: list[dict] = field(default_factory=list)
     history_notes: list[dict] = field(default_factory=list)
@@ -38,7 +25,10 @@ class SKOS:
     def to_json_ld(self) -> dict:
         """Return this data formatted as (but not serialized to) SKOS expanded JSON LD"""
         dct = copy(self.extra)
-        for attr, label in SKOS_MAPPING.items():
+        class_fields = {f.name for f in fields(self)}.difference({"extra"})
+        for attr, label in RDF_MAPPING.items():
+            if attr not in class_fields:
+                continue
             if value := getattr(self, attr):
                 dct[label] = value
 
@@ -47,8 +37,9 @@ class SKOS:
     @classmethod
     def from_json_ld(cls, concept_dict: dict) -> "Concept":
         source_dict, data = copy(concept_dict), {}
-        for dataclass_label, skos_label in SKOS_MAPPING.items():
-            if skos_label in source_dict:
+        class_fields = {f.name for f in fields(cls)}.difference({"extra"})
+        for dataclass_label, skos_label in RDF_MAPPING.items():
+            if dataclass_label in class_fields and skos_label in source_dict:
                 data[dataclass_label] = source_dict.pop(skos_label)
         data["extra"] = {
             key: value
@@ -61,7 +52,6 @@ class SKOS:
 @dataclass(kw_only=True)
 class Concept(SKOS):
     schemes: list[dict]
-    notations: list[dict[str, str]] = field(default_factory=list)
     alt_labels: list[dict[str, str]] = field(default_factory=list)
     hidden_labels: list[dict[str, str]] = field(default_factory=list)
 
