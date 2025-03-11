@@ -16,7 +16,7 @@ class PostgresKOSGraph:
         # TBD: This is ugly
         return (await connection.execute(stmt)).first()[0]
 
-    async def get_concept(self, iri: str) -> Concept:
+    async def concept_get(self, iri: str) -> Concept:
         async with engine.connect() as conn:
             stmt = select(concept_table).where(concept_table.c.id_ == iri)
             result = (await conn.execute(stmt)).first()

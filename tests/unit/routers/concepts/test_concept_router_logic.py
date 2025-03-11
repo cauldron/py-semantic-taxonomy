@@ -7,17 +7,17 @@ from py_semantic_taxonomy.domain.entities import Concept, ConceptNotFoundError, 
 
 
 async def test_get_concept(mock_kos_graph, graph_service, entities):
-    mock_kos_graph.get_concept.return_value = entities[0]
+    mock_kos_graph.concept_get.return_value = entities[0]
 
-    p = await router.get_concept(iri="", service=graph_service)
+    p = await router.concept_get(iri="", service=graph_service)
     assert p != entities[0]
     assert p.id_ == entities[0].id_
 
 
 async def test_get_concept_not_found(mock_kos_graph, graph_service):
-    mock_kos_graph.get_concept.side_effect = ConceptNotFoundError()
+    mock_kos_graph.concept_get.side_effect = ConceptNotFoundError()
 
-    response = await router.get_concept("foo", service=graph_service)
+    response = await router.concept_get("foo", service=graph_service)
     assert response.status_code == 404
     assert orjson.loads(response.body) == {
         "message": "Concept with IRI 'foo' not found",

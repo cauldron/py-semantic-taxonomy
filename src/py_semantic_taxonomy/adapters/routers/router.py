@@ -47,12 +47,12 @@ https://github.com/pydantic/pydantic/issues/8379
     response_model=response.Concept,
     responses={404: {"model": response.ErrorMessage}},
 )
-async def get_concept(
+async def concept_get(
     iri: str,
     service=Depends(GraphService),
 ) -> response.Concept:
     try:
-        obj = await service.get_concept(iri=iri)
+        obj = await service.concept_get(iri=iri)
         return response.Concept(**obj.to_json_ld())
     except de.ConceptNotFoundError:
         return JSONResponse(

@@ -8,7 +8,7 @@ async def test_get_concept(sqlite, cn_db, entities):
     from py_semantic_taxonomy.adapters.persistence.graph import PostgresKOSGraph
 
     graph = PostgresKOSGraph()
-    concept = await graph.get_concept(iri="http://data.europa.eu/xsp/cn2024/010011000090")
+    concept = await graph.concept_get(iri="http://data.europa.eu/xsp/cn2024/010011000090")
     assert isinstance(concept, Concept), "Wrong result type"
     assert concept == entities[0]  # Check all data attributes correct
 
@@ -19,7 +19,7 @@ async def test_get_concept_not_found(sqlite, cn_db):
 
     graph = PostgresKOSGraph()
     with pytest.raises(ConceptNotFoundError):
-        await graph.get_concept(iri="http://data.europa.eu/xsp/cn2024/woof")
+        await graph.concept_get(iri="http://data.europa.eu/xsp/cn2024/woof")
 
 
 async def test_get_object_type_concept(sqlite, cn_db):
