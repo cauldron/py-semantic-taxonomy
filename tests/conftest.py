@@ -12,7 +12,7 @@ from starlette.requests import Request
 from testcontainers.postgres import PostgresContainer
 
 from py_semantic_taxonomy.application.services import GraphService
-from py_semantic_taxonomy.domain.entities import Concept, GraphObject
+from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject
 from py_semantic_taxonomy.domain.ports import KOSGraph
 
 
@@ -45,7 +45,11 @@ def change_note(fixtures_dir: Path) -> dict:
 
 @pytest.fixture
 def entities(cn) -> list[GraphObject]:
-    return [Concept.from_json_ld(cn.concept_top), Concept.from_json_ld(cn.concept_mid)]
+    return [
+        Concept.from_json_ld(cn.concept_top),
+        Concept.from_json_ld(cn.concept_mid),
+        ConceptScheme.from_json_ld(cn.scheme),
+    ]
 
 
 @pytest.fixture

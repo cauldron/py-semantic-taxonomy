@@ -19,10 +19,7 @@ class KOSCommon(BaseModel):
     id_: IRI = Field(alias="@id")
     types: conlist(item_type=IRI) = Field(alias="@type")
     pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}prefLabel")
-    # One definition per language, at least one definition
-    definitions: conlist(MultilingualString, min_length=1) = Field(
-        alias=f"{SKOS}definition", default=[]
-    )
+    notations: list[Notation] = Field(alias=f"{SKOS}notation", default=[])
     change_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}changeNote", default=[])
     history_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}historyNote", default=[])
     editorial_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}editorialNote", default=[])
@@ -39,13 +36,6 @@ class KOSCommon(BaseModel):
     ) -> list[MultilingualString]:
         return one_per_language(value, "prefLabel")
 
-    @field_validator("definitions", mode="after")
-    @classmethod
-    def definition_one_per_language(
-        cls, value: list[MultilingualString]
-    ) -> list[MultilingualString]:
-        return one_per_language(value, "definition")
-
 
 class Concept(KOSCommon):
     """Validation class for SKOS Concepts.
@@ -54,10 +44,13 @@ class Concept(KOSCommon):
 
     schemes: conlist(Node, min_length=1) = Field(alias=f"{SKOS}inScheme")
     # Can have multiple alternative labels per language, and multiple languages
-    notations: list[Notation] = Field(alias=f"{SKOS}notation", default=[])
     alt_labels: list[MultilingualString] = Field(alias=f"{SKOS}altLabel", default=[])
     # Can have multiple hidden labels per language, and multiple languages
     hidden_labels: list[MultilingualString] = Field(alias=f"{SKOS}hiddenLabel", default=[])
+    # One definition per language, at least one definition
+    definitions: list[MultilingualString] = Field(
+        alias=f"{SKOS}definition", default=[]
+    )
 
     @field_validator("types", mode="after")
     @classmethod
@@ -66,6 +59,13 @@ class Concept(KOSCommon):
         if CONCEPT not in value:
             raise ValueError(f"`@type` values must include `{CONCEPT}`")
         return value
+
+    @field_validator("definitions", mode="after")
+    @classmethod
+    def definition_one_per_language(
+        cls, value: list[MultilingualString]
+    ) -> list[MultilingualString]:
+        return one_per_language(value, "definition")
 
     @model_validator(mode="after")
     def notations_disjoint_pref_label(self) -> Self:
@@ -109,6 +109,10 @@ class ConceptScheme(KOSCommon):
 
     Checks that required fields are included and have correct type."""
 
+    # One definition per language, at least one definition
+    definitions: conlist(MultilingualString, min_length=1) = Field(
+        alias=f"{SKOS}definition",
+    )
     created: conlist(DateTime, min_length=1, max_length=1) = Field(
         alias="http://purl.org/dc/terms/created"
     )
@@ -116,8 +120,6 @@ class ConceptScheme(KOSCommon):
     version: conlist(VersionString, min_length=1, max_length=1) = Field(
         alias="http://www.w3.org/2002/07/owl#versionInfo"
     )
-    # One definition per language
-    definitions: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}definition")
 
     @field_validator("types", mode="after")
     @classmethod
@@ -126,6 +128,13 @@ class ConceptScheme(KOSCommon):
         if SCHEME not in value:
             raise ValueError(f"`@type` must include `{SCHEME}`")
         return value
+
+    @field_validator("definitions", mode="after")
+    @classmethod
+    def definition_one_per_language(
+        cls, value: list[MultilingualString]
+    ) -> list[MultilingualString]:
+        return one_per_language(value, "definition")
 
     @model_validator(mode="before")
     @classmethod
