@@ -49,3 +49,17 @@ class PostgresKOSGraph:
             )
             await conn.commit()
         return concept
+
+    async def concept_update(self, concept: Concept) -> Concept:
+        async with self.engine.connect() as conn:
+            count = await self._get_concept_count_from_iri(conn, concept.id_)
+            if not count:
+                raise ConceptNotFoundError
+
+            await conn.execute(
+                update(concept_table)
+                .where(concept_table.c.id_ == concept.id_)
+                .values(**concept.to_db_dict())
+            )
+            await conn.commit()
+        return concept

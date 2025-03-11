@@ -1,5 +1,4 @@
 import orjson
-from pydantic_settings import BaseSettings
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from py_semantic_taxonomy.adapters.persistence.tables import metadata_obj

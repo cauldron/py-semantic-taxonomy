@@ -17,3 +17,6 @@ class GraphService:
 
     async def concept_create(self, concept: Concept) -> Concept:
         return await self.graph.concept_create(concept=concept)
+
+    async def concept_update(self, concept: Concept) -> Concept:
+        return await self.graph.concept_update(concept=concept)

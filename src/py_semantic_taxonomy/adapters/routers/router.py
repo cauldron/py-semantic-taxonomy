@@ -83,8 +83,30 @@ async def concept_create(
                 "detail": {"@id": concept.id_},
             },
         )
+
+
+@router.put(
+    Paths.concept,
+    summary="Update a Concept object",
+    response_model=response.Concept,
+)
+async def concept_update(
+    request: Request,
+    concept: req.ConceptUpdate,
+    service=Depends(GraphService),
+) -> response.Concept:
+    try:
+        concept_obj = de.Concept.from_json_ld(await request.json())
+        result = await service.concept_update(concept_obj)
+        return response.Concept(**result.to_json_ld())
     except de.ConceptNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Bad")
+        return JSONResponse(
+            status_code=404,
+            content={
+                "message": f"Concept with `@id` {concept.id_} not present",
+                "detail": {"@id": concept.id_},
+            },
+        )
 
 
 # TBD: Add in static route before generic catch-all function
