@@ -54,5 +54,8 @@ jobs:
           pip install .[testing]
 
       - name: Test with pytest
+        # Should be:
+        # pytest -m "postgres or not postgres"
+        # But there's some issue with connections closing on Github
         run: |
-          pytest -m "postgres or not postgres"
+          pytest -vv
