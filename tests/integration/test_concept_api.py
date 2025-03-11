@@ -4,8 +4,8 @@ from py_semantic_taxonomy.domain.constants import SKOS_RELATIONSHIP_PREDICATES
 
 
 @pytest.mark.postgres
-async def test_get_concept(postgres, cn_db, cn, client):
-    response = client.get(
+async def test_get_concept(postgres, cn_db_engine, cn, client):
+    response = await client.get(
         "/concept/", params={"iri": "http://data.europa.eu/xsp/cn2024/010011000090"}
     )
     assert response.status_code == 200
@@ -24,16 +24,16 @@ async def test_get_concept(postgres, cn_db, cn, client):
 
 
 @pytest.mark.postgres
-async def test_get_concept_404(postgres, cn_db, client):
-    response = client.get("/concept/", params={"iri": "http://data.europa.eu/xsp/cn2024/woof"})
+async def test_get_concept_404(postgres, cn_db_engine, client):
+    response = await client.get(
+        "/concept/", params={"iri": "http://data.europa.eu/xsp/cn2024/woof"}
+    )
     assert response.status_code == 404
 
 
 @pytest.mark.postgres
-async def test_create_concept(postgres, cn_db, cn, client):
-    response = client.post(
-        "/concept/", json=cn.concept_low
-    )
+async def test_create_concept(postgres, cn_db_engine, cn, client):
+    response = await client.post("/concept/", json=cn.concept_low)
     assert response.status_code == 200
     expected = {
         key: value
@@ -48,16 +48,12 @@ async def test_create_concept(postgres, cn_db, cn, client):
     for key, value in expected.items():
         assert given[key] == value
 
-    given = client.get(
-        "/concept/", params={"iri": cn.concept_low["@id"]}
-    ).json()
+    given = (await client.get("/concept/", params={"iri": cn.concept_low["@id"]})).json()
     for key, value in expected.items():
         assert given[key] == value
 
 
 @pytest.mark.postgres
-async def test_create_concept_duplicate(postgres, cn_db, cn, client):
-    response = client.post(
-        "/concept/", json=cn.concept_top
-    )
+async def test_create_concept_duplicate(postgres, cn_db_engine, cn, client):
+    response = await client.post("/concept/", json=cn.concept_top)
     assert response.status_code == 409

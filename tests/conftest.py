@@ -11,7 +11,6 @@ from starlette.datastructures import Headers
 from starlette.requests import Request
 from testcontainers.postgres import PostgresContainer
 
-import py_semantic_taxonomy
 from py_semantic_taxonomy.application.services import GraphService
 from py_semantic_taxonomy.domain.entities import Concept, GraphObject
 from py_semantic_taxonomy.domain.ports import KOSGraph
@@ -82,15 +81,16 @@ async def postgres(monkeypatch) -> None:
 
 
 @pytest.fixture
-async def cn_db(entities: list) -> None:
+async def cn_db_engine(entities: list) -> None:
     from py_semantic_taxonomy.adapters.persistence.database import (
+        create_engine,
         drop_db,
-        engine,
         init_db,
     )
     from py_semantic_taxonomy.adapters.persistence.tables import concept_table
 
-    await init_db()
+    engine = create_engine()
+    await init_db(engine)
 
     async with engine.connect() as conn:
         await conn.execute(
@@ -102,17 +102,20 @@ async def cn_db(entities: list) -> None:
         )
         await conn.commit()
 
-    yield
+    yield engine
 
     # Not sure why this is necessary, the in-memory SQLite should be recreated on each test, but...
-    await drop_db()
+    await drop_db(engine)
 
 
 @pytest.fixture
-def client() -> TestClient:
+async def client() -> TestClient:
+    from httpx import ASGITransport, AsyncClient
+
     from py_semantic_taxonomy.app import create_app
 
-    return TestClient(create_app())
+    async with AsyncClient(transport=ASGITransport(app=create_app()), base_url="http://") as ac:
+        yield ac
 
 
 @pytest.fixture
