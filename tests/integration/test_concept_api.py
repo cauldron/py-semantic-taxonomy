@@ -27,3 +27,37 @@ async def test_get_concept(postgres, cn_db, cn, client):
 async def test_get_concept_404(postgres, cn_db, client):
     response = client.get("/concept/", params={"iri": "http://data.europa.eu/xsp/cn2024/woof"})
     assert response.status_code == 404
+
+
+@pytest.mark.postgres
+async def test_create_concept(postgres, cn_db, cn, client):
+    response = client.post(
+        "/concept/", json=cn.concept_low
+    )
+    assert response.status_code == 200
+    expected = {
+        key: value
+        for key, value in cn.concept_low.items()
+        if key not in SKOS_RELATIONSHIP_PREDICATES
+    }
+    given = response.json()
+
+    # https://fastapi.tiangolo.com/tutorial/response-model/#response-model-encoding-parameters
+    # Child models don't call `model_dump`, which means that `exclude_unset` or `by_alias` is
+    # ignored. See https://github.com/pydantic/pydantic/issues/8792
+    for key, value in expected.items():
+        assert given[key] == value
+
+    given = client.get(
+        "/concept/", params={"iri": cn.concept_low["@id"]}
+    ).json()
+    for key, value in expected.items():
+        assert given[key] == value
+
+
+@pytest.mark.postgres
+async def test_create_concept_duplicate(postgres, cn_db, cn, client):
+    response = client.post(
+        "/concept/", json=cn.concept_top
+    )
+    assert response.status_code == 409
