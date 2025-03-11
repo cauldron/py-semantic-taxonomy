@@ -45,6 +45,6 @@ class Concept(KOSCommon):
 
 
 class ConceptScheme(KOSCommon):
-    created: list[datetime] = Field(alias="http://purl.org/dc/terms/created")
+    created: list[dict] = Field(alias="http://purl.org/dc/terms/created")
     creators: list[dict] = Field(alias="http://purl.org/dc/terms/creator")
     version: list[dict] = Field(alias="http://www.w3.org/2002/07/owl#versionInfo")

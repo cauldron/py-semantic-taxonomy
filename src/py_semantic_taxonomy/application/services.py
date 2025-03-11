@@ -1,7 +1,7 @@
 from fastapi.params import Depends
 
 from py_semantic_taxonomy.adapters.routers.dependencies import get_kos_graph
-from py_semantic_taxonomy.domain.entities import Concept, GraphObject
+from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject
 from py_semantic_taxonomy.domain.ports import KOSGraph
 
 
@@ -23,3 +23,6 @@ class GraphService:
 
     async def concept_delete(self, iri: str) -> int:
         return await self.graph.concept_delete(iri=iri)
+
+    async def concept_scheme_get(self, iri: str) -> ConceptScheme:
+        return await self.graph.concept_scheme_get(iri=iri)

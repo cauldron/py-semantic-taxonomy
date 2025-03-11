@@ -91,7 +91,7 @@ async def cn_db_engine(entities: list) -> None:
         drop_db,
         init_db,
     )
-    from py_semantic_taxonomy.adapters.persistence.tables import concept_table
+    from py_semantic_taxonomy.adapters.persistence.tables import concept_scheme_table, concept_table
 
     engine = create_engine()
     await init_db(engine)
@@ -102,6 +102,12 @@ async def cn_db_engine(entities: list) -> None:
             [
                 entities[0].to_db_dict(),
                 entities[1].to_db_dict(),
+            ],
+        )
+        await conn.execute(
+            insert(concept_scheme_table),
+            [
+                entities[2].to_db_dict(),
             ],
         )
         await conn.commit()
@@ -155,3 +161,11 @@ def mock_request() -> Callable:
         return request
 
     return build_request
+
+
+@pytest.fixture
+def graph(cn_db_engine):
+    # Defer import until environment is patched
+    from py_semantic_taxonomy.adapters.persistence.graph import PostgresKOSGraph
+
+    return PostgresKOSGraph(engine=cn_db_engine)
