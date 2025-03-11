@@ -116,7 +116,6 @@ class ConceptScheme(KOSCommon):
     version: conlist(VersionString, min_length=1, max_length=1) = Field(
         alias="http://www.w3.org/2002/07/owl#versionInfo"
     )
-    pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}prefLabel")
     # One definition per language
     definitions: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}definition")
 

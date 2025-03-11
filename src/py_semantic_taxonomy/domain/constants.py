@@ -6,4 +6,5 @@ SKOS_RELATIONSHIP_PREDICATES = {
     f"{SKOS}broaderTransitive",
     f"{SKOS}broader",
     f"{SKOS}topConceptOf",
+    f"{SKOS}hasTopConcept",
 }
