@@ -62,11 +62,9 @@ async def test_update_concept_scheme_missing(sqlite, cn, entities, graph):
         await graph.concept_scheme_update(concept_scheme=expected)
 
 
-# async def test_delete_concept(sqlite, cn, entities, graph):
-#     response = await graph.concept_delete(iri=cn.concept_mid["@id"])
-#     print(response)
-#     assert response == 1, "Wrong number of deleted concepts"
+async def test_delete_concept_scheme(sqlite, cn, entities, graph):
+    response = await graph.concept_scheme_delete(iri=cn.scheme["@id"])
+    assert response == 1, "Wrong number of deleted concepts"
 
-#     response = await graph.concept_delete(iri=cn.concept_mid["@id"])
-#     print(response)
-#     assert response == 0, "Wrong number of deleted concepts"
+    response = await graph.concept_delete(iri=cn.scheme["@id"])
+    assert response == 0, "Wrong number of deleted concepts"
