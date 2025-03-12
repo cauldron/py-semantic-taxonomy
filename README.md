@@ -23,27 +23,27 @@
 
 ### Background and Design Goals
 
-This project has been based on our experiences using [SKOSMOS](https://skosmos.org/) for the [Sentier.dev taxonomic vocabulary](https://vocab.sentier.dev/en/). The RDF graph data structure and the SKOSMOS software itself work well for a certain set of use cases, but for our specific needs and user community, the choice of PHP, Jena, SPARQL for writing queries, and built-in search indexer all posed barriers to productive software and vocabulary maintenance.
+This project has been based on our experiences using [SKOSMOS](https://skosmos.org/) for the [Sentier.dev taxonomic vocabulary](https://vocab.sentier.dev/en/). The RDF graph data structure and the SKOSMOS software itself work well for a certain set of use cases, but for our specific needs and user community, the choice of PHP, [Jena](https://jena.apache.org/), [SPARQL](https://en.wikipedia.org/wiki/SPARQL), and built-in search indexer all posed barriers to productive software and vocabulary maintenance.
 
 In `py_semantic_taxonomy` we have the following goals:
 
-* Native support for [XKOS](https://rdf-vocabulary.ddialliance.org/xkos.html) [Correspondence and ConceptAssociation classes](https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences)
+* Native support for [XKOS](https://rdf-vocabulary.ddialliance.org/xkos.html) [`Correspondence` and `ConceptAssociation` classes](https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences)
 * A predictable, consistent, and validated set of properties and property uses for SKOS and XKOS terms
-* Web interface to allow for browsing, and basic data entry and editing
-* API to allow for the complete set of CRUD operations
+* Web interface to allow for browsing, and some basic data entry and editing
+* API to allow for the complete set of [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) operations
 * API provides common graph queries without needing to learn SPARQL
 * IRIs should resolve to HTML or RDF serialized resources, depending on requested media type
 * Web interface supports high quality multilingual search without configuration pain
-* Python client library which provides convenience wrappers around API
+* Python client library which provides convenience wrappers around the API
 
 This means that we want the following technical capabilities which are missing or more difficult than they need to be in SKOSMOS:
 
 * A set of validation classes and functions for input data to ensure consistency in how objects are described.
-* Better query performance by optimizing database indices for a small set of needed edges
+* Better query performance by optimizing database structure and indices for a small set of needed edges
 * Easy customization of the UI
 * Pluggable search index
 
-To put it another way, SKOSMOS is amazing software which can handle knowledge organization systems which are based on SKOS which already exist in a graph database but include a lot of inconsistency and variation, while this software has a reduced feature set and is much pickier about incoming data and controls ingress to the data store.
+To put it another way, SKOSMOS is amazing software which can handle knowledge organization systems which are based on SKOS and already exist in a graph database, but which include a lot of inconsistency and variability - PyST has a reduced feature set, but allows for easier data editing, and is much pickier about incoming data.
 
 ### Concepts and Concept Schemes
 
@@ -99,11 +99,6 @@ Here is an example of a valid `ConceptScheme` in JSON-LD:
     {"@id": "http://publications.europa.eu/resource/authority/corporate-body/TAXUD"}
   ],
   "http://www.w3.org/2002/07/owl#versionInfo": [{"@value": "2024"}],
-  "http://www.w3.org/2004/02/skos/core#hasTopConcept": [
-    {
-      "@id": "http://data.europa.eu/xsp/cn2024/010011000090"
-    }
-  ],
   "http://www.w3.org/2004/02/skos/core#prefLabel": [
     {"@value": "Combined Nomenclature, 2024 (CN 2024)", "@language": "en"},
     {"@value": "Nomenclatura Combinada, 2024 (NC 2024)", "@language": "pt"}

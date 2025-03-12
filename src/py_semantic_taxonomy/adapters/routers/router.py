@@ -14,6 +14,7 @@ router = APIRouter()
 
 class Paths(StrEnum):
     concept = "/concept/"
+    concept_scheme = "/concept_scheme/"
     catchall = "/{_:path}"
 
 
@@ -39,6 +40,8 @@ It's possible that this will change in the future:
 
 https://github.com/pydantic/pydantic/issues/8379
 """
+
+# Concept
 
 
 @router.get(
@@ -122,7 +125,100 @@ async def concept_delete(
     return JSONResponse(
         status_code=200,
         content={
-            "message": f"Concept (possibly) deleted",
+            "message": "Concept (possibly) deleted",
+            "count": count,
+        },
+    )
+
+
+# Concept Scheme
+
+
+@router.get(
+    Paths.concept_scheme,
+    summary="Get a ConceptScheme object",
+    response_model=response.ConceptScheme,
+    responses={404: {"model": response.ErrorMessage}},
+)
+async def concept_scheme_get(
+    iri: str,
+    service=Depends(GraphService),
+) -> response.ConceptScheme:
+    try:
+        obj = await service.concept_scheme_get(iri=iri)
+        return response.ConceptScheme(**obj.to_json_ld())
+    except de.ConceptSchemeNotFoundError:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "message": f"Concept Scheme with IRI '{iri}' not found",
+                "detail": {"iri": iri},
+            },
+        )
+
+
+@router.post(
+    Paths.concept_scheme,
+    summary="Create a Concept Scheme object",
+    response_model=response.ConceptScheme,
+)
+async def concept_scheme_create(
+    request: Request,
+    concept_scheme: req.ConceptScheme,
+    service=Depends(GraphService),
+) -> response.ConceptScheme:
+    try:
+        cs = de.ConceptScheme.from_json_ld(await request.json())
+        result = await service.concept_scheme_create(cs)
+        return response.ConceptScheme(**result.to_json_ld())
+    except de.DuplicateIRI:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "message": f"Resource with `@id` already exists",
+                "detail": {"@id": cs.id_},
+            },
+        )
+
+
+@router.put(
+    Paths.concept_scheme,
+    summary="Update a Concept Scheme object",
+    response_model=response.ConceptScheme,
+)
+async def concept_scheme_update(
+    request: Request,
+    concept_scheme: req.ConceptScheme,
+    service=Depends(GraphService),
+) -> response.ConceptScheme:
+    try:
+        cs = de.ConceptScheme.from_json_ld(await request.json())
+        result = await service.concept_scheme_update(cs)
+        return response.ConceptScheme(**result.to_json_ld())
+    except de.ConceptSchemeNotFoundError:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "message": f"Concept Scheme with `@id` {cs.id_} not present",
+                "detail": {"@id": cs.id_},
+            },
+        )
+
+
+@router.delete(
+    Paths.concept_scheme,
+    summary="Delete a Concept Scheme object",
+)
+async def concept_scheme_delete(
+    iri: str,
+    service=Depends(GraphService),
+) -> JSONResponse:
+    count = await service.concept_scheme_delete(iri=iri)
+    # TBD: 404 if not found?
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "Concept Scheme (possibly) deleted",
             "count": count,
         },
     )
