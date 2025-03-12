@@ -24,7 +24,7 @@ class KOSGraph(Protocol):
     async def concept_scheme_delete(self, iri: str) -> int: ...
 
     async def relationships_get(
-        self, iri: str, only_source: bool, only_target: bool
+        self, iri: str, source: bool, target: bool
     ) -> list[Relationship]: ...
 
     async def relationships_create(
