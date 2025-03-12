@@ -47,16 +47,17 @@ https://github.com/pydantic/pydantic/issues/8379
     response_model=response.Concept,
     responses={404: {"model": response.ErrorMessage}},
 )
-async def get_concept(
+async def concept_get(
     iri: str,
     service=Depends(GraphService),
 ) -> response.Concept:
     try:
-        obj = await service.get_concept(iri=iri)
+        obj = await service.concept_get(iri=iri)
         return response.Concept(**obj.to_json_ld())
     except de.ConceptNotFoundError:
         return JSONResponse(
-            status_code=404, content={"message": f"Concept with iri '{iri}' not found"}
+            status_code=404,
+            content={"message": f"Concept with IRI '{iri}' not found", "detail": {"iri": iri}},
         )
 
 
@@ -65,19 +66,66 @@ async def get_concept(
     summary="Create a Concept object",
     response_model=response.Concept,
 )
-async def create_concept(
+async def concept_create(
     request: Request,
-    concept: req.Concept,
+    concept: req.ConceptCreate,
     service=Depends(GraphService),
 ) -> response.Concept:
-    # Conversion of request data to Pydantic class appears to be lazy; force it now
-    req.Concept(**concept)
     try:
         concept = de.Concept.from_json_ld(await request.json())
-        result = await service.create_concept(concept)
+        result = await service.concept_create(concept)
+        return response.Concept(**result.to_json_ld())
+    except de.DuplicateIRI:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "message": f"Resource with `@id` already exists",
+                "detail": {"@id": concept.id_},
+            },
+        )
+
+
+@router.put(
+    Paths.concept,
+    summary="Update a Concept object",
+    response_model=response.Concept,
+)
+async def concept_update(
+    request: Request,
+    concept: req.ConceptUpdate,
+    service=Depends(GraphService),
+) -> response.Concept:
+    try:
+        concept_obj = de.Concept.from_json_ld(await request.json())
+        result = await service.concept_update(concept_obj)
         return response.Concept(**result.to_json_ld())
     except de.ConceptNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Bad")
+        return JSONResponse(
+            status_code=404,
+            content={
+                "message": f"Concept with `@id` {concept.id_} not present",
+                "detail": {"@id": concept.id_},
+            },
+        )
+
+
+@router.delete(
+    Paths.concept,
+    summary="Delete a Concept object",
+)
+async def concept_delete(
+    iri: str,
+    service=Depends(GraphService),
+) -> JSONResponse:
+    count = await service.concept_delete(iri=iri)
+    # TBD: 404 if not found?
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": f"Concept (possibly) deleted",
+            "count": count,
+        },
+    )
 
 
 # TBD: Add in static route before generic catch-all function
