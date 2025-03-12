@@ -12,7 +12,11 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     VersionString,
     one_per_language,
 )
-from py_semantic_taxonomy.domain.constants import SKOS, SKOS_RELATIONSHIP_PREDICATES
+from py_semantic_taxonomy.domain.constants import (
+    SKOS,
+    SKOS_RELATIONSHIP_PREDICATES,
+    RelationshipVerbs,
+)
 
 
 class KOSCommon(BaseModel):
@@ -143,3 +147,39 @@ class ConceptScheme(KOSCommon):
                 f"Found `hasTopConcept` in concept scheme; Use specific API calls to create or update this relationship."
             )
         return data
+
+
+class Relationship(BaseModel):
+    id_: IRI = Field(alias="@id")
+    broader: list[Node] = Field(alias=f"{SKOS}broader", default=[])
+    narrower: list[Node] = Field(alias=f"{SKOS}narrower", default=[])
+    exact_match: list[Node] = Field(alias=f"{SKOS}exactMatch", default=[])
+    close_match: list[Node] = Field(alias=f"{SKOS}closeMatch", default=[])
+    broad_match: list[Node] = Field(alias=f"{SKOS}broadMatch", default=[])
+    narrow_match: list[Node] = Field(alias=f"{SKOS}narrowMatch", default=[])
+    related_match: list[Node] = Field(alias=f"{SKOS}relatedMatch", default=[])
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    def model_dump(self, exclude_unset=True, by_alias=True, *args, **kwargs):
+        return super().model_dump(*args, exclude_unset=exclude_unset, by_alias=by_alias, **kwargs)
+
+    @model_validator(mode="after")
+    def exactly_one_relationship_type(self) -> Self:
+        FIELDS = (
+            "broader",
+            "narrower",
+            "exact_match",
+            "close_match",
+            "broad_match",
+            "narrow_match",
+            "related_match",
+        )
+        truthy = {field for field in FIELDS if getattr(self, field)}
+
+        if len(truthy) > 1:
+            raise ValueError(f"Found multiple relationships {truthy} where only one is allowed")
+        elif not truthy:
+            raise ValueError(f"Found zero relationships")
+
+        return self
