@@ -1,6 +1,6 @@
 from typing import Protocol, runtime_checkable
 
-from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject
+from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject, Relationship
 
 
 @runtime_checkable
@@ -22,3 +22,17 @@ class KOSGraph(Protocol):
     async def concept_scheme_update(self, concept_scheme: ConceptScheme) -> ConceptScheme: ...
 
     async def concept_scheme_delete(self, iri: str) -> int: ...
+
+    async def relationships_get(
+        self, iri: str, only_source: bool, only_target: bool
+    ) -> list[Relationship]: ...
+
+    async def relationships_create(
+        self, relationships: list[Relationship]
+    ) -> list[Relationship]: ...
+
+    async def relationships_update(
+        self, relationships: list[Relationship]
+    ) -> list[Relationship]: ...
+
+    async def relationships_delete(self, relationships: list[Relationship]) -> int: ...

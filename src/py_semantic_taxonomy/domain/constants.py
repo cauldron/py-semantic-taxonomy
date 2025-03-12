@@ -1,3 +1,5 @@
+import enum
+
 SKOS = "http://www.w3.org/2004/02/skos/core#"
 DCTERMS = "http://purl.org/dc/terms/"
 OWL = "http://www.w3.org/2002/07/owl#"
@@ -28,3 +30,13 @@ RDF_MAPPING = {
     "creators": f"{DCTERMS}creator",
     "version": f"{OWL}versionInfo",
 }
+
+
+class RelationshipVerbs(enum.StrEnum):
+    broader = f"{SKOS}broader"
+    narrower = f"{SKOS}narrower"
+    exact_match = f"{SKOS}exactMatch"
+    close_match = f"{SKOS}closeMatch"
+    broad_match = f"{SKOS}broadMatch"
+    narrow_match = f"{SKOS}narrowMatch"
+    related_match = f"{SKOS}relatedMatch"
