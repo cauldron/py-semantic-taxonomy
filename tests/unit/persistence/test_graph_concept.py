@@ -3,14 +3,6 @@ import pytest
 from py_semantic_taxonomy.domain.entities import Concept, ConceptNotFoundError, DuplicateIRI
 
 
-@pytest.fixture
-def graph(cn_db_engine):
-    # Defer import until environment is patched
-    from py_semantic_taxonomy.adapters.persistence.graph import PostgresKOSGraph
-
-    return PostgresKOSGraph(engine=cn_db_engine)
-
-
 async def test_get_object_type_concept(sqlite, graph):
     concept = await graph.get_object_type(iri="http://data.europa.eu/xsp/cn2024/010011000090")
     assert concept is Concept, "Wrong result type"
@@ -63,9 +55,7 @@ async def test_update_concept_missing(sqlite, cn, entities, graph):
 
 async def test_delete_concept(sqlite, cn, entities, graph):
     response = await graph.concept_delete(iri=cn.concept_mid["@id"])
-    print(response)
     assert response == 1, "Wrong number of deleted concepts"
 
     response = await graph.concept_delete(iri=cn.concept_mid["@id"])
-    print(response)
     assert response == 0, "Wrong number of deleted concepts"

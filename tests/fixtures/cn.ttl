@@ -17,7 +17,7 @@
     dcterms:created "2023-10-11T13:59:56"^^xsd:dateTime ;
     dcterms:creator <http://publications.europa.eu/resource/authority/corporate-body/ESTAT>,
         <http://publications.europa.eu/resource/authority/corporate-body/TAXUD> ;
-    skos:definition "The main classification for the European ITGS (International trade in goods statistics)  is the Combined Nomenclature (CN). This is the primary nomenclature as it is the one used by the EU Member States to collect detailed data on their trading of goods since 1988. Before the introduction of the CN, ITGS were based on a product classification called NIMEXE.  The CN is based on the Harmonised Commodity Description and Coding System (managed by the World Customs Organisation (WCO). The Harmonised System (HS) is an international classification at two, four and six-digit level which classifies goods according to their nature. It was introduced in 1988 and, since then, was revised six times: in 1996, 2002, 2007, 2012, 2017 and 2022. The CN corresponds to the HS plus a further breakdown at eight-digit level defined to meet EU needs. The CN is revised annually and, as a Council Regulation, is binding on the Member States. "@en ;
+    skos:definition "The main classification for the European ITGS (International trade in goods statistics)  is the Combined Nomenclature (CN). This is the primary nomenclature as it is the one used by the EU Member States to collect detailed data on their trading of goods since 1988. Before the introduction of the CN, ITGS were based on a product classification called NIMEXE.  The CN is based on the Harmonised Commodity Description and Coding System (managed by the World Customs Organisation (WCO). The Harmonised System (HS) is an international classification at two, four and six-digit level which classifies goods according to their nature. It was introduced in 1988 and, since then, was revised six times: in 1996, 2002, 2007, 2012, 2017 and 2022. The CN corresponds to the HS plus a further breakdown at eight-digit level defined to meet EU needs. The CN is revised annually and, as a Council Regulation, is binding on the Member States."@en ;
     dcterms:identifier "http://data.europa.eu/xsp/cn2024/cn2024" ;
     dcterms:language <http://publications.europa.eu/resource/authority/language/ENG>,
         <http://publications.europa.eu/resource/authority/language/POR> ;
@@ -28,7 +28,6 @@
     schema1:endDate "2024-12-31"^^xsd:date ;
     schema1:startDate "2024-01-01"^^xsd:date ;
     owl:versionInfo "2024" ;
-    skos:hasTopConcept :010011000090 ;
     skos:notation "CN 2024"^^rdfns:PlainLiteral ;
     skos:prefLabel "Combined Nomenclature, 2024 (CN 2024)"@en,
         "Nomenclatura Combinada, 2024 (NC 2024)"@pt ;
