@@ -68,6 +68,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "pytest-randomly",
+    "pytest-antilru",
     "setuptools",
 ]
 
@@ -93,6 +94,9 @@ markers = [
     # Mark tests with `@pytest.mark.postgres` (deselect with `pytest -m "postgres or not postgres"`)
     "postgres"
 ]
+lru_cache_disabled = '''
+    py_semantic_taxonomy.adapters.routers.dependencies
+    '''
 
 [tool.flake8]
 # Some sane defaults for the code style checker flake8

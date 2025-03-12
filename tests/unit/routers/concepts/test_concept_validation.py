@@ -3,7 +3,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from py_semantic_taxonomy.adapters.routers.request_dto import Concept
+from py_semantic_taxonomy.adapters.routers.request_dto import Concept, ConceptCreate, ConceptUpdate
 
 
 def test_top_level_concept(cn):
@@ -53,18 +53,40 @@ def test_child_concept_model_dump(fixtures_dir, cn):
 
 def test_broader_self_reference(cn):
     obj = cn.concept_top
-    assert Concept(**obj)
+    assert ConceptCreate(**obj)
     obj["http://www.w3.org/2004/02/skos/core#broader"] = [{"@id": obj["@id"]}]
     with pytest.raises(ValidationError):
-        Concept(**obj)
+        ConceptCreate(**obj)
+
+
+def test_broader_not_allowed_in_update(cn):
+    obj = cn.concept_top
+    del obj["http://www.w3.org/2004/02/skos/core#narrower"]
+    del obj["http://www.w3.org/2004/02/skos/core#topConceptOf"]
+    assert ConceptUpdate(**obj)
+    with pytest.raises(ValidationError):
+        ConceptUpdate(**(obj | {"http://www.w3.org/2004/02/skos/core#broader": []}))
+    with pytest.raises(ValidationError):
+        ConceptUpdate(**(obj | {"http://www.w3.org/2004/02/skos/core#broaderTransitive": []}))
 
 
 def test_narrower_self_reference(cn):
     obj = cn.concept_top
-    assert Concept(**obj)
+    assert ConceptCreate(**obj)
     obj["http://www.w3.org/2004/02/skos/core#narrower"] = [{"@id": obj["@id"]}]
     with pytest.raises(ValidationError):
-        Concept(**obj)
+        ConceptCreate(**obj)
+
+
+def test_narrower_not_allowed_in_update(cn):
+    obj = cn.concept_top
+    del obj["http://www.w3.org/2004/02/skos/core#narrower"]
+    del obj["http://www.w3.org/2004/02/skos/core#topConceptOf"]
+    assert ConceptUpdate(**obj)
+    with pytest.raises(ValidationError):
+        ConceptUpdate(**(obj | {"http://www.w3.org/2004/02/skos/core#narrower": []}))
+    with pytest.raises(ValidationError):
+        ConceptUpdate(**(obj | {"http://www.w3.org/2004/02/skos/core#narrowerTransitive": []}))
 
 
 def test_concept_must_be_in_at_least_one_scheme(cn):

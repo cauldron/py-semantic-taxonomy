@@ -17,7 +17,7 @@ on:
       - ".gitignore"
   pull_request:
     branches: [main, develop]
-    types: [opened, reopened]  # excludes syncronize to avoid redundant trigger from commits on PRs
+    # types: [opened, reopened]  # excludes syncronize to avoid redundant trigger from commits on PRs
     paths-ignore:
       - "**.md"
       - "**.bib"
@@ -54,5 +54,8 @@ jobs:
           pip install .[testing]
 
       - name: Test with pytest
+        # Should be:
+        # pytest -m "postgres or not postgres"
+        # But there's some issue with connections closing on Github
         run: |
-          pytest -m "postgres or not postgres"
+          pytest -vv

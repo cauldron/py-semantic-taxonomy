@@ -9,11 +9,17 @@ class GraphService:
     def __init__(self, graph: KOSGraph = Depends(get_kos_graph)):
         self.graph = graph
 
-    async def get_concept(self, iri: str) -> Concept:
-        return await self.graph.get_concept(iri=iri)
-
-    async def create_concept(self, concept: Concept) -> Concept:
-        return await self.graph.create_concept(concept=concept)
-
     async def get_object_type(self, iri: str) -> GraphObject:
         return await self.graph.get_object_type(iri=iri)
+
+    async def concept_get(self, iri: str) -> Concept:
+        return await self.graph.concept_get(iri=iri)
+
+    async def concept_create(self, concept: Concept) -> Concept:
+        return await self.graph.concept_create(concept=concept)
+
+    async def concept_update(self, concept: Concept) -> Concept:
+        return await self.graph.concept_update(concept=concept)
+
+    async def concept_delete(self, iri: str) -> int:
+        return await self.graph.concept_delete(iri=iri)

@@ -3,6 +3,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class ErrorMessage(BaseModel):
     message: str
+    detail: dict | None = None
 
 
 class Concept(BaseModel):
