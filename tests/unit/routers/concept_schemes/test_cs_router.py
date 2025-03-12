@@ -74,45 +74,46 @@ async def test_concept_scheme_create_error_already_exists(cn, client, monkeypatc
     assert response.status_code == 409
 
 
-# async def test_concept_update(cn, client, monkeypatch):
-#     monkeypatch.setattr(
-#         GraphService, "concept_update", AsyncMock(return_value=Concept.from_json_ld(cn.concept_top))
-#     )
+async def test_concept_scheme_update(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "concept_scheme_update",
+        AsyncMock(return_value=ConceptScheme.from_json_ld(cn.scheme)),
+    )
 
-#     updated = cn.concept_top
-#     updated[f"{SKOS}altLabel"] = [{"@value": "Dream a little dream", "@language": "en"}]
-#     del updated[f"{SKOS}narrower"]
-#     del updated[f"{SKOS}topConceptOf"]
-#     response = await client.put(Paths.concept_scheme, json=updated)
-#     assert response.status_code == 200
-
-
-# async def test_concept_update_error_validation_errors(cn, client, monkeypatch):
-#     monkeypatch.setattr(GraphService, "concept_update", AsyncMock())
-
-#     obj = cn.concept_low
-#     del obj[f"{SKOS}broader"]
-#     del obj[f"{SKOS}prefLabel"]
-
-#     response = await client.put(Paths.concept_scheme, json=obj)
-#     assert response.json()["detail"][0]["type"] == "missing"
-#     assert response.json()["detail"][0]["loc"] == ["body", f"{SKOS}prefLabel"]
-#     assert response.status_code == 422
+    updated = cn.scheme
+    updated[f"{SKOS}prefLabel"] = [{"@value": "Combine all them nommies", "@language": "en"}]
+    response = await client.put(Paths.concept_scheme, json=updated)
+    assert response.status_code == 200
 
 
-# async def test_concept_update_error_missing(cn, client, monkeypatch):
-#     monkeypatch.setattr(GraphService, "concept_update", AsyncMock(side_effect=ConceptNotFoundError))
+async def test_concept_scheme_update_error_validation_errors(cn, client, monkeypatch):
+    monkeypatch.setattr(GraphService, "concept_scheme_update", AsyncMock())
 
-#     obj = cn.concept_low
-#     del obj[f"{SKOS}broader"]
-#     id_ = obj["@id"]
+    obj = cn.scheme
+    del obj[f"{SKOS}prefLabel"]
 
-#     response = await client.put(Paths.concept_scheme, json=obj)
-#     assert orjson.loads(response.content) == {
-#         "message": f"Concept with `@id` {id_} not present",
-#         "detail": {"@id": id_},
-#     }
-#     assert response.status_code == 404
+    response = await client.put(Paths.concept_scheme, json=obj)
+    assert response.json()["detail"][0]["type"] == "missing"
+    assert response.json()["detail"][0]["loc"] == ["body", f"{SKOS}prefLabel"]
+    assert response.status_code == 422
+
+
+async def test_concept_scheme_update_error_missing(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService, "concept_scheme_update", AsyncMock(side_effect=ConceptSchemeNotFoundError)
+    )
+
+    obj = cn.scheme
+    obj["@id"] = "http://data.europa.eu/xsp/cn2024/cn2025"
+    id_ = obj["@id"]
+
+    response = await client.put(Paths.concept_scheme, json=obj)
+    assert orjson.loads(response.content) == {
+        "message": f"Concept Scheme with `@id` {id_} not present",
+        "detail": {"@id": id_},
+    }
+    assert response.status_code == 404
 
 
 # async def test_concept_delete(cn, client, monkeypatch):

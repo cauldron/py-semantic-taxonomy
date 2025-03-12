@@ -14,3 +14,12 @@ async def test_concept_scheme_create(graph_service, entities):
     result = await graph_service.concept_scheme_create(entities[2])
     assert result == entities[2]
     mock_kos_graph.concept_scheme_create.assert_called_with(concept_scheme=entities[2])
+
+
+async def test_concept_scheme_update(graph_service, entities):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.concept_scheme_update.return_value = entities[2]
+
+    result = await graph_service.concept_scheme_update(entities[2])
+    assert result == entities[2]
+    mock_kos_graph.concept_scheme_update.assert_called_with(concept_scheme=entities[2])
