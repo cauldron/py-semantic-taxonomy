@@ -67,11 +67,50 @@ class ConceptScheme(SKOS):
     version: list[str]
 
 
-@dataclass
+@dataclass(frozen=True)
 class Relationship:
     source: str
     target: str
     predicate: RelationshipVerbs
+
+    def to_db_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json_ld(self) -> dict:
+        """Return this data formatted as (but not serialized to) SKOS expanded JSON LD"""
+        return {"@id": self.source, str(self.predicate): [{"@id": self.target}]}
+
+    @classmethod
+    def from_json_ld(cls, obj: dict) -> list["Relationship"]:
+        def _get_object_id(obj: dict) -> str:
+            try:
+                return obj["@id"]
+            except KeyError:
+                raise ValueError(f"Can't find `@id` in given JSON-LD object: {obj}")
+
+        result = set()
+        mapping = {elem.value: elem for elem in RelationshipVerbs}
+        source = _get_object_id(obj)
+
+        for key, value in obj.items():
+            if key == RelationshipVerbs.narrower:
+                for elem in value:
+                    result.add((_get_object_id(elem), RelationshipVerbs.broader, source))
+            elif key in mapping:
+                for elem in value:
+                    result.add((source, mapping[key], _get_object_id(elem)))
+
+        return sorted(
+            [Relationship(source=s, target=o, predicate=p) for s, p, o in result],
+            key=lambda x: (x.source, x.target, x.predicate),
+        )
+
+    @classmethod
+    def from_json_ld_list(cls, obj: list[dict]) -> list["Relationship"]:
+        return sorted(
+            {rel for elem in obj for rel in cls.from_json_ld(elem)},
+            key=lambda x: (x.source, x.target, x.predicate),
+        )
 
 
 # For type hinting
