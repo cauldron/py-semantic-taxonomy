@@ -6,7 +6,7 @@ from py_semantic_taxonomy.cfg import get_settings
 
 
 def create_engine(
-    echo: bool = True,
+    echo: bool = False,
 ) -> AsyncEngine:
     s = get_settings()
     if s.db_backend == "postgres":
