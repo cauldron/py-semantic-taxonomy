@@ -1,4 +1,5 @@
 from sqlalchemy import Connection, Table, delete, func, insert, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from py_semantic_taxonomy.adapters.persistence.database import create_engine
@@ -130,6 +131,46 @@ class PostgresKOSGraph:
     # Relationship
 
     async def relationships_get(
-        self, iri: str, only_source: bool = False, only_target: bool = False
+        self, iri: str, source: bool = True, target: bool = False
     ) -> list[Relationship]:
-        return
+        if not source and not target:
+            raise ValueError("Must choose at least one of source or target")
+        async with self.engine.connect() as conn:
+            rels = []
+            if source:
+                stmt = select(
+                    # Exclude id field
+                    relationship_table.c.source,
+                    relationship_table.c.target,
+                    relationship_table.c.predicate,
+                ).where(relationship_table.c.source == iri)
+                result = await conn.execute(stmt)
+                rels.extend([Relationship(**line._mapping) for line in result])
+            if target:
+                stmt = select(
+                    relationship_table.c.source,
+                    relationship_table.c.target,
+                    relationship_table.c.predicate,
+                ).where(relationship_table.c.target == iri)
+                result = await conn.execute(stmt)
+                rels.extend([Relationship(**line._mapping) for line in result])
+            await conn.rollback()
+        return rels
+
+    async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
+        async with self.engine.connect() as conn:
+            try:
+                await conn.execute(
+                    insert(relationship_table), [obj.to_db_dict() for obj in relationships]
+                )
+                await conn.commit()
+            except IntegrityError as exc:
+                await conn.rollback()
+                if (
+                    "UNIQUE constraint failed: relationship.source, relationship.target"
+                    in exc._message()
+                ):
+                    raise DuplicateRelationship
+                else:
+                    raise exc
+        return relationships
