@@ -68,19 +68,19 @@ async def test_update_concept_scheme_not_found(postgres, cn_db_engine, cn, clien
     assert response.status_code == 404
 
 
-# @pytest.mark.postgres
-# async def test_delete_concept(postgres, cn_db_engine, cn, client):
-#     response = await client.get(Paths.concept_scheme, params={"iri": cn.concept_top["@id"]})
-#     assert response.status_code == 200
-#     assert response.json()
+@pytest.mark.postgres
+async def test_delete_concept_scheme(postgres, cn_db_engine, cn, client):
+    response = await client.get(Paths.concept_scheme, params={"iri": cn.scheme["@id"]})
+    assert response.status_code == 200
+    assert response.json()
 
-#     response = await client.delete(Paths.concept_scheme, params={"iri": cn.concept_top["@id"]})
-#     assert response.status_code == 200
-#     assert response.json()["count"] == 1
+    response = await client.delete(Paths.concept_scheme, params={"iri": cn.scheme["@id"]})
+    assert response.status_code == 200
+    assert response.json()["count"] == 1
 
-#     response = await client.delete(Paths.concept_scheme, params={"iri": cn.concept_top["@id"]})
-#     assert response.status_code == 200
-#     assert response.json()["count"] == 0
+    response = await client.delete(Paths.concept_scheme, params={"iri": cn.scheme["@id"]})
+    assert response.status_code == 200
+    assert response.json()["count"] == 0
 
-#     response = await client.get(Paths.concept_scheme, params={"iri": cn.concept_top["@id"]})
-#     assert response.status_code == 404
+    response = await client.get(Paths.concept_scheme, params={"iri": cn.scheme["@id"]})
+    assert response.status_code == 404

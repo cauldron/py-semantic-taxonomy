@@ -116,8 +116,12 @@ async def test_concept_scheme_update_error_missing(cn, client, monkeypatch):
     assert response.status_code == 404
 
 
-# async def test_concept_delete(cn, client, monkeypatch):
-#     monkeypatch.setattr(GraphService, "concept_delete", AsyncMock(return_value=1))
+async def test_concept_scheme_delete(cn, client, monkeypatch):
+    monkeypatch.setattr(GraphService, "concept_scheme_delete", AsyncMock(return_value=1))
 
-#     response = await client.delete(Paths.concept_scheme, params={"iri": cn.concept_top["@id"]})
-#     assert response.status_code == 200
+    response = await client.delete(Paths.concept_scheme, params={"iri": cn.scheme["@id"]})
+    assert response.status_code == 200
+    assert orjson.loads(response.content) == {
+        "message": "Concept Scheme (possibly) deleted",
+        "count": 1,
+    }

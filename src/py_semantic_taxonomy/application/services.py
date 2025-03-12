@@ -36,3 +36,6 @@ class GraphService:
 
     async def concept_scheme_update(self, concept_scheme: ConceptScheme) -> ConceptScheme:
         return await self.graph.concept_scheme_update(concept_scheme=concept_scheme)
+
+    async def concept_scheme_delete(self, iri: str) -> int:
+        return await self.graph.concept_scheme_delete(iri=iri)

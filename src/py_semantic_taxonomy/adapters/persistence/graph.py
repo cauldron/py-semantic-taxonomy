@@ -112,3 +112,11 @@ class PostgresKOSGraph:
             )
             await conn.commit()
         return concept_scheme
+
+    async def concept_scheme_delete(self, iri: str) -> int:
+        async with self.engine.connect() as conn:
+            result = await conn.execute(
+                delete(concept_scheme_table).where(concept_scheme_table.c.id_ == iri)
+            )
+            await conn.commit()
+        return result.rowcount

@@ -110,3 +110,7 @@ async def test_concept_delete(cn, client, monkeypatch):
 
     response = await client.delete(Paths.concept, params={"iri": cn.concept_top["@id"]})
     assert response.status_code == 200
+    assert orjson.loads(response.content) == {
+        "message": "Concept (possibly) deleted",
+        "count": 1,
+    }
