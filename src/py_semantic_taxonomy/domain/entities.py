@@ -2,7 +2,11 @@ from copy import copy
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
 
-from py_semantic_taxonomy.domain.constants import RDF_MAPPING, SKOS_RELATIONSHIP_PREDICATES
+from py_semantic_taxonomy.domain.constants import (
+    RDF_MAPPING,
+    SKOS_RELATIONSHIP_PREDICATES,
+    RelationshipVerbs,
+)
 
 
 # Allow mixing non-default and default values in dataclasses
@@ -63,6 +67,13 @@ class ConceptScheme(SKOS):
     version: list[str]
 
 
+@dataclass
+class Relationship:
+    source: str
+    target: str
+    predicate: RelationshipVerbs
+
+
 # For type hinting
 # Will be Concept | ConceptScheme | Correspondence | Association
 GraphObject = Concept | ConceptScheme
@@ -81,4 +92,8 @@ class ConceptSchemeNotFoundError(NotFoundError):
 
 
 class DuplicateIRI(Exception):
+    pass
+
+
+class DuplicateRelationship(Exception):
     pass

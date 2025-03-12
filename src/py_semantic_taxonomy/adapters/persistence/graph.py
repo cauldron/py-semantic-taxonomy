@@ -2,14 +2,20 @@ from sqlalchemy import Connection, Table, delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from py_semantic_taxonomy.adapters.persistence.database import create_engine
-from py_semantic_taxonomy.adapters.persistence.tables import concept_scheme_table, concept_table
+from py_semantic_taxonomy.adapters.persistence.tables import (
+    concept_scheme_table,
+    concept_table,
+    relationship_table,
+)
 from py_semantic_taxonomy.domain.entities import (
     Concept,
     ConceptNotFoundError,
     ConceptScheme,
     ConceptSchemeNotFoundError,
     DuplicateIRI,
+    DuplicateRelationship,
     GraphObject,
+    Relationship,
 )
 
 
@@ -120,3 +126,10 @@ class PostgresKOSGraph:
             )
             await conn.commit()
         return result.rowcount
+
+    # Relationship
+
+    async def relationships_get(
+        self, iri: str, only_source: bool = False, only_target: bool = False
+    ) -> list[Relationship]:
+        return
