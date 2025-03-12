@@ -23,7 +23,7 @@ async def test_get_concept_scheme_not_found(sqlite, graph):
         await graph.concept_scheme_get(iri="http://data.europa.eu/xsp/cn2024/woof")
 
 
-async def test_create_scheme_concept(sqlite, cn, entities, graph):
+async def test_create_concept_scheme(sqlite, cn, entities, graph):
     new = cn.scheme
     new["@id"] = "http://data.europa.eu/xsp/cn2024/cn2025"
     expected = ConceptScheme.from_json_ld(new)
@@ -36,27 +36,30 @@ async def test_create_scheme_concept(sqlite, cn, entities, graph):
     assert given == expected, "Data attributes from database differ"
 
 
-async def test_create_concept_duplicate(sqlite, cn, entities, graph):
+async def test_create_concept_scheme_duplicate(sqlite, cn, entities, graph):
     with pytest.raises(DuplicateIRI):
         await graph.concept_scheme_create(concept_scheme=ConceptScheme.from_json_ld(cn.scheme))
 
 
-# async def test_update_concept(sqlite, cn, entities, graph):
-#     expected = Concept.from_json_ld(cn.concept_top)
-#     expected.alt_labels = [{"@value": "Dream a little dream", "@language": "en"}]
+async def test_update_concept_scheme(sqlite, cn, entities, graph):
+    expected = ConceptScheme.from_json_ld(cn.scheme)
+    expected.pref_labels = [{"@value": "Combine all them nommies", "@language": "en"}]
 
-#     response = await graph.concept_update(concept=expected)
-#     assert isinstance(response, Concept), "Wrong result type"
-#     assert response == expected, "Data attributes from database differ"
+    response = await graph.concept_scheme_update(concept_scheme=expected)
+    assert isinstance(response, ConceptScheme), "Wrong result type"
+    assert response == expected, "Data attributes from database differ"
 
-#     given = await graph.concept_get(iri=cn.concept_top["@id"])
-#     assert given == expected, "Data attributes from database differ"
+    given = await graph.concept_scheme_get(iri=cn.scheme["@id"])
+    assert given == expected, "Data attributes from database differ"
 
 
-# async def test_update_concept_missing(sqlite, cn, entities, graph):
-#     expected = Concept.from_json_ld(cn.concept_low)
-#     with pytest.raises(ConceptNotFoundError):
-#         await graph.concept_update(concept=expected)
+async def test_update_concept_scheme_missing(sqlite, cn, entities, graph):
+    new = cn.scheme
+    new["@id"] = "http://data.europa.eu/xsp/cn2024/cn2025"
+
+    expected = ConceptScheme.from_json_ld(new)
+    with pytest.raises(ConceptSchemeNotFoundError):
+        await graph.concept_scheme_update(concept_scheme=expected)
 
 
 # async def test_delete_concept(sqlite, cn, entities, graph):

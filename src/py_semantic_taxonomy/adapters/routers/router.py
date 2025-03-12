@@ -164,7 +164,7 @@ async def concept_scheme_get(
 )
 async def concept_scheme_create(
     request: Request,
-    concept: req.ConceptScheme,
+    concept_scheme: req.ConceptScheme,
     service=Depends(GraphService),
 ) -> response.ConceptScheme:
     try:
@@ -176,6 +176,30 @@ async def concept_scheme_create(
             status_code=409,
             content={
                 "message": f"Resource with `@id` already exists",
+                "detail": {"@id": cs.id_},
+            },
+        )
+
+
+@router.put(
+    Paths.concept_scheme,
+    summary="Update a Concept Scheme object",
+    response_model=response.ConceptScheme,
+)
+async def concept_scheme_update(
+    request: Request,
+    concept_scheme: req.ConceptScheme,
+    service=Depends(GraphService),
+) -> response.ConceptScheme:
+    try:
+        cs = de.ConceptScheme.from_json_ld(await request.json())
+        result = await service.concept_scheme_update(cs)
+        return response.ConceptScheme(**result.to_json_ld())
+    except de.ConceptSchemeNotFoundError:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "message": f"Concept Scheme with `@id` {cs.id_} not present",
                 "detail": {"@id": cs.id_},
             },
         )

@@ -5,7 +5,7 @@ from py_semantic_taxonomy.domain.constants import SKOS
 
 
 @pytest.mark.postgres
-async def test_get_concept(postgres, cn_db_engine, cn, client):
+async def test_get_concept_scheme(postgres, cn_db_engine, cn, client):
     response = await client.get(Paths.concept_scheme, params={"iri": cn.scheme["@id"]})
     assert response.status_code == 200
     given = response.json()
@@ -14,7 +14,7 @@ async def test_get_concept(postgres, cn_db_engine, cn, client):
 
 
 @pytest.mark.postgres
-async def test_get_concept_404(postgres, cn_db_engine, client):
+async def test_get_concept_scheme_404(postgres, cn_db_engine, client):
     response = await client.get(
         Paths.concept_scheme, params={"iri": "http://data.europa.eu/xsp/cn2024/woof"}
     )
@@ -22,7 +22,7 @@ async def test_get_concept_404(postgres, cn_db_engine, client):
 
 
 @pytest.mark.postgres
-async def test_create_concept(postgres, cn_db_engine, cn, client):
+async def test_create_concept_scheme(postgres, cn_db_engine, cn, client):
     new = cn.scheme
     new["@id"] = "http://data.europa.eu/xsp/cn2024/cn2025"
 
@@ -38,43 +38,34 @@ async def test_create_concept(postgres, cn_db_engine, cn, client):
 
 
 @pytest.mark.postgres
-async def test_create_concept_duplicate(postgres, cn_db_engine, cn, client):
+async def test_create_concept_scheme_duplicate(postgres, cn_db_engine, cn, client):
     response = await client.post(Paths.concept_scheme, json=cn.scheme)
     assert response.status_code == 409
 
 
-# @pytest.mark.postgres
-# async def test_update_concept(postgres, cn_db_engine, cn, client):
-#     updated = cn.concept_top
-#     updated[f"{SKOS}altLabel"] = [{"@value": "Dream a little dream", "@language": "en"}]
-#     del updated[f"{SKOS}narrower"]
-#     del updated[f"{SKOS}topConceptOf"]
+@pytest.mark.postgres
+async def test_update_concept_scheme(postgres, cn_db_engine, cn, client):
+    updated = cn.scheme
+    updated[f"{SKOS}prefLabel"] = [{"@value": "Combine all them nommies", "@language": "en"}]
 
-#     response = await client.put(Paths.concept_scheme, json=updated)
-#     assert response.status_code == 200
-#     expected = {
-#         key: value for key, value in updated.items() if key not in SKOS_RELATIONSHIP_PREDICATES
-#     }
-#     given = response.json()
+    response = await client.put(Paths.concept_scheme, json=updated)
+    assert response.status_code == 200
+    given = response.json()
+    for key, value in updated.items():
+        assert given[key] == value
 
-#     # https://fastapi.tiangolo.com/tutorial/response-model/#response-model-encoding-parameters
-#     # Child models don't call `model_dump`, which means that `exclude_unset` or `by_alias` is
-#     # ignored. See https://github.com/pydantic/pydantic/issues/8792
-#     for key, value in expected.items():
-#         assert given[key] == value
-
-#     given = (await client.get(Paths.concept_scheme, params={"iri": updated["@id"]})).json()
-#     for key, value in expected.items():
-#         assert given[key] == value
+    given = (await client.get(Paths.concept_scheme, params={"iri": updated["@id"]})).json()
+    for key, value in updated.items():
+        assert given[key] == value
 
 
-# @pytest.mark.postgres
-# async def test_update_concept_not_found(postgres, cn_db_engine, cn, client):
-#     obj = cn.concept_low
-#     del obj[f"{SKOS}broader"]
+@pytest.mark.postgres
+async def test_update_concept_scheme_not_found(postgres, cn_db_engine, cn, client):
+    obj = cn.scheme
+    obj["@id"] = "http://data.europa.eu/xsp/cn2024/cn2025"
 
-#     response = await client.put(Paths.concept_scheme, json=obj)
-#     assert response.status_code == 404
+    response = await client.put(Paths.concept_scheme, json=obj)
+    assert response.status_code == 404
 
 
 # @pytest.mark.postgres
