@@ -296,6 +296,26 @@ async def relationships_update(
         )
 
 
+@router.delete(
+    Paths.relationship,
+    summary="Delete a list of Relationship objects",
+)
+async def relationship_delete(
+    request: Request,
+    relationships: list[req.Relationship],
+    service=Depends(GraphService),
+) -> JSONResponse:
+    incoming = de.Relationship.from_json_ld_list(await request.json())
+    count = await service.relationships_delete(incoming)
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "Relationships (possibly) deleted",
+            "count": count,
+        },
+    )
+
+
 # TBD: Add in static route before generic catch-all function
 
 

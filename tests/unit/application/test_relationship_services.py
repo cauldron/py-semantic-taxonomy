@@ -35,10 +35,10 @@ async def test_relationship_update(graph_service, relationships):
     mock_kos_graph.relationships_update.assert_called_with(relationships)
 
 
-# async def test_relationship_delete(graph_service, entities):
-#     mock_kos_graph = graph_service.graph
-#     mock_kos_graph.relationship_delete.return_value = 1
+async def test_relationship_delete(graph_service, relationships):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.relationships_delete.return_value = 1
 
-#     result = await graph_service.relationship_delete(entities[2].id_)
-#     assert result == 1
-#     mock_kos_graph.concept_scheme_delete.assert_called_with(iri=entities[2].id_)
+    result = await graph_service.relationships_delete(relationships)
+    assert result == 1
+    mock_kos_graph.relationships_delete.assert_called_with(relationships)

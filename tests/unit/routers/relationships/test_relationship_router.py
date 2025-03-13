@@ -190,3 +190,19 @@ async def test_relationship_update_error_missing(relationships, client, monkeypa
     assert response.json() == {
         "message": "Test message",
     }
+
+
+async def test_relationship_delete(relationships, client, monkeypatch):
+    monkeypatch.setattr(GraphService, "relationships_delete", AsyncMock(return_value=1))
+
+    # https://www.python-httpx.org/compatibility/#request-body-on-http-methods
+    response = await client.request(
+        method="DELETE",
+        url=Paths.relationship,
+        content=orjson.dumps([relationships[0].to_json_ld()]),
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "Relationships (possibly) deleted",
+        "count": 1,
+    }

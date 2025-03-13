@@ -1,5 +1,7 @@
 import pytest
 
+import orjson
+
 from py_semantic_taxonomy.adapters.routers.router import Paths
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import Relationship
@@ -94,4 +96,30 @@ async def test_update_relationships_not_found(postgres, cn_db_engine, client, re
     assert response.status_code == 404
     assert response.json() == {
         "message": "Can't update non-existent relationship between source `http://example.com/foo` and target `http://example.com/bar`"
+    }
+
+
+@pytest.mark.postgres
+async def test_relationship_delete(postgres, cn_db_engine, client, relationships):
+    # https://www.python-httpx.org/compatibility/#request-body-on-http-methods
+    response = await client.request(
+        method="DELETE",
+        url=Paths.relationship,
+        content=orjson.dumps([relationships[0].to_json_ld()]),
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "Relationships (possibly) deleted",
+        "count": 1,
+    }
+
+    response = await client.request(
+        method="DELETE",
+        url=Paths.relationship,
+        content=orjson.dumps([relationships[0].to_json_ld()]),
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "Relationships (possibly) deleted",
+        "count": 0,
     }

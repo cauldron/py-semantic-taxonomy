@@ -67,3 +67,11 @@ async def test_update_relationships_not_found_error(sqlite, graph):
     )
     with pytest.raises(RelationshipNotFoundError):
         await graph.relationships_update([missing])
+
+
+async def test_delete_concept(sqlite, graph, relationships):
+    response = await graph.relationships_delete(relationships)
+    assert response == 2, "Wrong number of deleted relationships"
+
+    response = await graph.relationships_delete(relationships)
+    assert response == 0, "Wrong number of deleted concepts"

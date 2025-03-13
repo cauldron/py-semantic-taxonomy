@@ -227,3 +227,19 @@ class PostgresKOSGraph:
                 )
             await conn.commit()
         return relationships
+
+    async def relationships_delete(self, relationships: list[Relationship]) -> int:
+        async with self.engine.connect() as conn:
+            count = 0
+            for rel in relationships:
+                print(rel, type(rel))
+                result = await conn.execute(
+                    delete(relationship_table).where(
+                        relationship_table.c.source == rel.source,
+                        relationship_table.c.target == rel.target,
+                        relationship_table.c.predicate == rel.predicate,
+                    )
+                )
+                count += result.rowcount
+            await conn.commit()
+        return count

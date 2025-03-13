@@ -54,3 +54,6 @@ class GraphService:
 
     async def relationships_update(self, relationships: list[Relationship]) -> list[Relationship]:
         return await self.graph.relationships_update(relationships)
+
+    async def relationships_delete(self, relationships: list[Relationship]) -> int:
+        return await self.graph.relationships_delete(relationships)
