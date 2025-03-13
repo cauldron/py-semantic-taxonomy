@@ -1,7 +1,7 @@
 from fastapi.params import Depends
 
 from py_semantic_taxonomy.adapters.routers.dependencies import get_kos_graph
-from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject
+from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject, Relationship
 from py_semantic_taxonomy.domain.ports import KOSGraph
 
 
@@ -17,8 +17,10 @@ class GraphService:
     async def concept_get(self, iri: str) -> Concept:
         return await self.graph.concept_get(iri=iri)
 
-    async def concept_create(self, concept: Concept) -> Concept:
-        return await self.graph.concept_create(concept=concept)
+    async def concept_create(
+        self, concept: Concept, relationships: list[Relationship] = []
+    ) -> Concept:
+        return await self.graph.concept_create(concept=concept, relationships=relationships)
 
     async def concept_update(self, concept: Concept) -> Concept:
         return await self.graph.concept_update(concept=concept)
@@ -39,3 +41,19 @@ class GraphService:
 
     async def concept_scheme_delete(self, iri: str) -> int:
         return await self.graph.concept_scheme_delete(iri=iri)
+
+    # Relationships
+
+    async def relationships_get(
+        self, iri: str, source: bool = True, target: bool = False
+    ) -> list[Relationship]:
+        return await self.graph.relationships_get(iri=iri, source=source, target=target)
+
+    async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
+        return await self.graph.relationships_create(relationships)
+
+    async def relationships_update(self, relationships: list[Relationship]) -> list[Relationship]:
+        return await self.graph.relationships_update(relationships)
+
+    async def relationships_delete(self, relationships: list[Relationship]) -> int:
+        return await self.graph.relationships_delete(relationships)

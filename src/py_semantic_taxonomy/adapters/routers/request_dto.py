@@ -12,7 +12,11 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     VersionString,
     one_per_language,
 )
-from py_semantic_taxonomy.domain.constants import SKOS, SKOS_RELATIONSHIP_PREDICATES
+from py_semantic_taxonomy.domain.constants import (
+    SKOS,
+    SKOS_RELATIONSHIP_PREDICATES,
+    RelationshipVerbs,
+)
 
 
 class KOSCommon(BaseModel):
@@ -143,3 +147,56 @@ class ConceptScheme(KOSCommon):
                 f"Found `hasTopConcept` in concept scheme; Use specific API calls to create or update this relationship."
             )
         return data
+
+
+class Relationship(BaseModel):
+    id_: IRI = Field(alias="@id")
+    broader: list[Node] = Field(alias=f"{SKOS}broader", default=[])
+    narrower: list[Node] = Field(alias=f"{SKOS}narrower", default=[])
+    exact_match: list[Node] = Field(alias=f"{SKOS}exactMatch", default=[])
+    close_match: list[Node] = Field(alias=f"{SKOS}closeMatch", default=[])
+    broad_match: list[Node] = Field(alias=f"{SKOS}broadMatch", default=[])
+    narrow_match: list[Node] = Field(alias=f"{SKOS}narrowMatch", default=[])
+    related_match: list[Node] = Field(alias=f"{SKOS}relatedMatch", default=[])
+
+    _RELATIONSHIP_FIELDS = (
+        "broader",
+        "narrower",
+        "exact_match",
+        "close_match",
+        "broad_match",
+        "narrow_match",
+        "related_match",
+    )
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    def model_dump(self, exclude_unset=True, by_alias=True, *args, **kwargs):
+        return super().model_dump(*args, exclude_unset=exclude_unset, by_alias=by_alias, **kwargs)
+
+    @model_validator(mode="after")
+    def no_self_references(self) -> Self:
+        for field in self._RELATIONSHIP_FIELDS:
+            for obj in getattr(self, field, []):
+                if obj.id_ == self.id_:
+                    raise ValueError("Relationship has same source and target")
+
+        return self
+
+    @model_validator(mode="after")
+    def two_relationships_of_same_type(self) -> Self:
+        for field in self._RELATIONSHIP_FIELDS:
+            if len(getattr(self, field, [])) > 1:
+                raise ValueError(f"Found multiple relationships of type `{field}`")
+        return self
+
+    @model_validator(mode="after")
+    def exactly_one_relationship_type(self) -> Self:
+        truthy = sorted({field for field in self._RELATIONSHIP_FIELDS if getattr(self, field)})
+
+        if len(truthy) > 1:
+            raise ValueError(f"Found multiple relationships {truthy} where only one is allowed")
+        elif not truthy:
+            raise ValueError(f"Found zero relationships")
+
+        return self

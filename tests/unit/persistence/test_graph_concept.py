@@ -1,6 +1,12 @@
 import pytest
 
-from py_semantic_taxonomy.domain.entities import Concept, ConceptNotFoundError, DuplicateIRI
+from py_semantic_taxonomy.domain.constants import RelationshipVerbs
+from py_semantic_taxonomy.domain.entities import (
+    Concept,
+    ConceptNotFoundError,
+    DuplicateIRI,
+    Relationship,
+)
 
 
 async def test_get_object_type_concept(sqlite, graph):
@@ -28,6 +34,15 @@ async def test_create_concept(sqlite, cn, entities, graph):
 
     given = await graph.concept_get(iri=cn.concept_low["@id"])
     assert given == expected, "Data attributes from database differ"
+
+    given = await graph.relationships_get(iri=cn.concept_low["@id"])
+    assert given == [
+        Relationship(
+            source="http://data.europa.eu/xsp/cn2024/010100000080",
+            target="http://data.europa.eu/xsp/cn2024/010021000090",
+            predicate=RelationshipVerbs.broader,
+        )
+    ], "Relationship not created"
 
 
 async def test_create_concept_duplicate(sqlite, cn, entities, graph):

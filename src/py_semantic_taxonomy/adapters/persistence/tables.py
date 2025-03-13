@@ -1,5 +1,7 @@
-from sqlalchemy import JSON, Column, Index, MetaData, String, Table
+from sqlalchemy import JSON, Column, Enum, Index, Integer, MetaData, String, Table, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
+
+from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 
 BetterJSON = JSON().with_variant(JSONB(), "postgresql")
 
@@ -44,3 +46,17 @@ concept_scheme_table = Table(
 )
 
 Index("concept_scheme_id_index", concept_scheme_table.c.id_)
+
+relationship_table = Table(
+    "relationship",
+    metadata_obj,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("source", String, nullable=False),
+    Column("target", String, nullable=False),
+    # https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.Enum
+    Column("predicate", Enum(RelationshipVerbs, values_callable=lambda x: [i.value for i in x])),
+    UniqueConstraint("source", "target", name="relationship_source_target_uniqueness"),
+)
+
+Index("relationship_source_index", relationship_table.c.source)
+Index("relationship_target_index", relationship_table.c.target)

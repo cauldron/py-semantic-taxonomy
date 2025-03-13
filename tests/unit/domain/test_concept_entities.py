@@ -2,7 +2,7 @@ from dataclasses import fields
 
 from py_semantic_taxonomy.adapters.routers import request_dto as request
 from py_semantic_taxonomy.adapters.routers import response_dto as response
-from py_semantic_taxonomy.domain.constants import SKOS_RELATIONSHIP_PREDICATES
+from py_semantic_taxonomy.domain.constants import SKOS_RELATIONSHIP_PREDICATES, RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import Concept
 
 
@@ -102,6 +102,16 @@ def test_concept_from_json_ld(cn):
         },
     )
     assert given == expected, "Conversion from JSON-LD failed"
+
+
+def test_concept_from_json_ld_exlude_relationship_predicates(cn):
+    obj = cn.concept_top
+    obj[RelationshipVerbs.narrower.value] = [{"@id": "http://example.com/foo"}]
+    obj[RelationshipVerbs.exact_match.value] = [{"@id": "http://example.com/foo"}]
+
+    given = Concept.from_json_ld(obj)
+    for key in given.extra:
+        assert key not in RelationshipVerbs, "Relationship in `extra` section"
 
 
 def test_concept_to_json_ld(cn):

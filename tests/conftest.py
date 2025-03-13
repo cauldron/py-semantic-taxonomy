@@ -12,7 +12,8 @@ from starlette.requests import Request
 from testcontainers.postgres import PostgresContainer
 
 from py_semantic_taxonomy.application.services import GraphService
-from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject
+from py_semantic_taxonomy.domain.constants import RelationshipVerbs
+from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject, Relationship
 from py_semantic_taxonomy.domain.ports import KOSGraph
 
 
@@ -41,6 +42,19 @@ def change_note(fixtures_dir: Path) -> dict:
     graph = Graph().parse(fixtures_dir / "change_note.ttl")
     dct = json.loads(graph.serialize(format="json-ld"))
     return [obj for obj in dct if obj["@id"][0] == "_"][0]
+
+
+@pytest.fixture
+def relationships(fixtures_dir: Path) -> list[Relationship]:
+    graph = Graph().parse(fixtures_dir / "cn.ttl")
+    return sorted(
+        [
+            Relationship(source=str(s), target=str(o), predicate=RelationshipVerbs.broader)
+            for s, p, o in graph
+            if str(p) == RelationshipVerbs.broader
+        ],
+        key=lambda x: x.source,
+    )
 
 
 @pytest.fixture
@@ -85,13 +99,17 @@ async def postgres(monkeypatch) -> None:
 
 
 @pytest.fixture
-async def cn_db_engine(entities: list) -> None:
+async def cn_db_engine(entities: list, relationships: list) -> None:
     from py_semantic_taxonomy.adapters.persistence.database import (
         create_engine,
         drop_db,
         init_db,
     )
-    from py_semantic_taxonomy.adapters.persistence.tables import concept_scheme_table, concept_table
+    from py_semantic_taxonomy.adapters.persistence.tables import (
+        concept_scheme_table,
+        concept_table,
+        relationship_table,
+    )
 
     engine = create_engine()
     await init_db(engine)
@@ -110,6 +128,7 @@ async def cn_db_engine(entities: list) -> None:
                 entities[2].to_db_dict(),
             ],
         )
+        await conn.execute(insert(relationship_table), [obj.to_db_dict() for obj in relationships])
         await conn.commit()
 
     yield engine
@@ -122,9 +141,9 @@ async def cn_db_engine(entities: list) -> None:
 async def client() -> TestClient:
     from httpx import ASGITransport, AsyncClient
 
-    from py_semantic_taxonomy.app import create_app
+    from py_semantic_taxonomy.app import test_app
 
-    async with AsyncClient(transport=ASGITransport(app=create_app()), base_url="http://") as ac:
+    async with AsyncClient(transport=ASGITransport(app=test_app()), base_url="http://") as ac:
         yield ac
 
 

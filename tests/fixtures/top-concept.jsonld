@@ -18,11 +18,6 @@
       "@language": "pt"
     }
   ],
-  "http://www.w3.org/2004/02/skos/core#narrower": [
-    {
-      "@id": "http://data.europa.eu/xsp/cn2024/010021000090"
-    }
-  ],
   "http://purl.org/dc/elements/1.1/identifier": [
     {
       "@value": "010011000090"

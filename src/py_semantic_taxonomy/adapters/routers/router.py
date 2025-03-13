@@ -16,6 +16,7 @@ class Paths(StrEnum):
     concept = "/concept/"
     concept_scheme = "/concept_scheme/"
     catchall = "/{_:path}"
+    relationship = "/relationships/"
 
 
 """
@@ -75,9 +76,13 @@ async def concept_create(
     service=Depends(GraphService),
 ) -> response.Concept:
     try:
-        concept = de.Concept.from_json_ld(await request.json())
-        result = await service.concept_create(concept)
+        incoming_data = await request.json()
+        concept = de.Concept.from_json_ld(incoming_data)
+        relationships = de.Relationship.from_json_ld(incoming_data)
+        # result = await service.concept_create(concept=concept)
+        result = await service.concept_create(concept=concept, relationships=relationships)
         return response.Concept(**result.to_json_ld())
+    # TBD: Catch DuplicateRelationship
     except de.DuplicateIRI:
         return JSONResponse(
             status_code=409,
@@ -219,6 +224,93 @@ async def concept_scheme_delete(
         status_code=200,
         content={
             "message": "Concept Scheme (possibly) deleted",
+            "count": count,
+        },
+    )
+
+
+# Relationship
+
+
+@router.get(
+    Paths.relationship,
+    summary="Get a list of Relationship objects",
+    response_model=list[response.Relationship],
+    response_model_exclude_unset=True,
+)
+async def relationships_get(
+    iri: str,
+    source: bool = True,
+    target: bool = False,
+    service=Depends(GraphService),
+) -> list[response.Relationship]:
+    lst = await service.relationships_get(iri=iri, source=source, target=target)
+    return [response.Relationship(**obj.to_json_ld()) for obj in lst]
+
+
+@router.post(
+    Paths.relationship,
+    summary="Create a list of Relationship objects",
+    response_model=list[response.Relationship],
+    response_model_exclude_unset=True,
+)
+async def relationships_create(
+    request: Request,
+    relationships: list[req.Relationship],
+    service=Depends(GraphService),
+) -> response.Concept:
+    try:
+        incoming = de.Relationship.from_json_ld_list(await request.json())
+        lst = await service.relationships_create(incoming)
+        return [response.Relationship(**obj.to_json_ld()) for obj in lst]
+    except de.DuplicateRelationship as exc:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "message": str(exc),
+            },
+        )
+
+
+@router.put(
+    Paths.relationship,
+    summary="Update a list of Relationship objects",
+    response_model=list[response.Relationship],
+    response_model_exclude_unset=True,
+)
+async def relationships_update(
+    request: Request,
+    relationships: list[req.Relationship],
+    service=Depends(GraphService),
+) -> response.Concept:
+    try:
+        incoming = de.Relationship.from_json_ld_list(await request.json())
+        lst = await service.relationships_update(incoming)
+        return [response.Relationship(**obj.to_json_ld()) for obj in lst]
+    except de.RelationshipNotFoundError as exc:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "message": str(exc),
+            },
+        )
+
+
+@router.delete(
+    Paths.relationship,
+    summary="Delete a list of Relationship objects",
+)
+async def relationship_delete(
+    request: Request,
+    relationships: list[req.Relationship],
+    service=Depends(GraphService),
+) -> JSONResponse:
+    incoming = de.Relationship.from_json_ld_list(await request.json())
+    count = await service.relationships_delete(incoming)
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "Relationships (possibly) deleted",
             "count": count,
         },
     )
