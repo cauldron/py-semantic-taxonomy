@@ -40,6 +40,7 @@ dependencies = [
     "rfc3987",
     "sqlalchemy>=2.0",
     "structlog",
+    "uvicorn",
 ]
 
 [project.urls]

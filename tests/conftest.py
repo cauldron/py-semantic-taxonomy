@@ -141,9 +141,9 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
 async def client() -> TestClient:
     from httpx import ASGITransport, AsyncClient
 
-    from py_semantic_taxonomy.app import create_app
+    from py_semantic_taxonomy.app import test_app
 
-    async with AsyncClient(transport=ASGITransport(app=create_app()), base_url="http://") as ac:
+    async with AsyncClient(transport=ASGITransport(app=test_app()), base_url="http://") as ac:
         yield ac
 
 
