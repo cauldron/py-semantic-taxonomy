@@ -61,6 +61,20 @@ async def test_relationship_create(relationships, client, monkeypatch):
     assert Relationship.from_json_ld_list(response.json()) == relationships
 
 
+async def test_relationship_create_already_exists(relationships, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "relationships_create",
+        AsyncMock(side_effect=DuplicateRelationship("Already exists")),
+    )
+
+    response = await client.post(
+        Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
+    )
+    assert response.status_code == 409
+    assert response.json() == {"message": "Already exists"}
+
+
 async def test_relationships_create_error_validation_errors_zero_relatioships(
     relationships, client, monkeypatch
 ):

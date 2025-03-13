@@ -166,9 +166,15 @@ class PostgresKOSGraph:
                 await conn.commit()
             except IntegrityError as exc:
                 await conn.rollback()
+                err = exc._message()
                 if (
+                    # SQLite: Unit tests
                     "UNIQUE constraint failed: relationship.source, relationship.target"
-                    in exc._message()
+                    in err
+                ) or (
+                    # Postgres: Integration tests
+                    'duplicate key value violates unique constraint "relationship_source_target_uniqueness"'
+                    in err
                 ):
                     # Provide useful feedback by identifying which relationship already exists
                     for obj in relationships:
@@ -177,6 +183,7 @@ class PostgresKOSGraph:
                             relationship_table.c.target == obj.target,
                         )
                         count = (await conn.execute(stmt)).first()[0]
+                        print(count, obj)
                         if count:
                             raise DuplicateRelationship(
                                 f"Relationship between source `{obj.source}` and target `{obj.target}` already exists"

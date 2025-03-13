@@ -76,9 +76,13 @@ async def concept_create(
     service=Depends(GraphService),
 ) -> response.Concept:
     try:
-        concept = de.Concept.from_json_ld(await request.json())
-        result = await service.concept_create(concept)
+        incoming_data = await request.json()
+        concept = de.Concept.from_json_ld(incoming_data)
+        relationships = de.Relationship.from_json_ld(incoming_data)
+        result = await service.concept_create(concept=concept)
+        # result = await service.concept_create(concept=concept, relationships=relationships)
         return response.Concept(**result.to_json_ld())
+    # TBD: Catch DuplicateRelationship
     except de.DuplicateIRI:
         return JSONResponse(
             status_code=409,
