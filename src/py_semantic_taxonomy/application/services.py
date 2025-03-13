@@ -17,8 +17,10 @@ class GraphService:
     async def concept_get(self, iri: str) -> Concept:
         return await self.graph.concept_get(iri=iri)
 
-    async def concept_create(self, concept: Concept) -> Concept:
-        return await self.graph.concept_create(concept=concept)
+    async def concept_create(
+        self, concept: Concept, relationships: list[Relationship] = []
+    ) -> Concept:
+        return await self.graph.concept_create(concept=concept, relationships=relationships)
 
     async def concept_update(self, concept: Concept) -> Concept:
         return await self.graph.concept_update(concept=concept)

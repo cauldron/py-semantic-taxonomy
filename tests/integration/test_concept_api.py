@@ -32,6 +32,8 @@ async def test_get_concept_404(postgres, cn_db_engine, client):
 
 @pytest.mark.postgres
 async def test_create_concept(postgres, cn_db_engine, cn, client):
+    # Broader relationship already given in `cn_db_engine` fixture
+    del cn.concept_low[f"{SKOS}broader"]
     response = await client.post(Paths.concept, json=cn.concept_low)
     assert response.status_code == 200
     expected = {

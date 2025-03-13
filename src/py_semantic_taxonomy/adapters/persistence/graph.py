@@ -49,7 +49,9 @@ class PostgresKOSGraph:
             await conn.rollback()
         return Concept(**result._mapping)
 
-    async def concept_create(self, concept: Concept) -> Concept:
+    async def concept_create(
+        self, concept: Concept, relationships: list[Relationship] = []
+    ) -> Concept:
         async with self.engine.connect() as conn:
             count = await self._get_count_from_iri(conn, concept.id_, concept_table)
             if count:
@@ -59,6 +61,8 @@ class PostgresKOSGraph:
                 insert(concept_table),
                 [concept.to_db_dict()],
             )
+            if relationships:
+                await self._relationships_create(relationships, conn)
             await conn.commit()
         return concept
 
@@ -159,34 +163,41 @@ class PostgresKOSGraph:
 
     async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
         async with self.engine.connect() as conn:
-            try:
-                await conn.execute(
-                    insert(relationship_table), [obj.to_db_dict() for obj in relationships]
-                )
-                await conn.commit()
-            except IntegrityError as exc:
-                await conn.rollback()
-                err = exc._message()
-                if (
-                    # SQLite: Unit tests
-                    "UNIQUE constraint failed: relationship.source, relationship.target"
-                    in err
-                ) or (
-                    # Postgres: Integration tests
-                    'duplicate key value violates unique constraint "relationship_source_target_uniqueness"'
-                    in err
-                ):
-                    # Provide useful feedback by identifying which relationship already exists
-                    for obj in relationships:
-                        stmt = select(func.count("*")).where(
-                            relationship_table.c.source == obj.source,
-                            relationship_table.c.target == obj.target,
+            result = await self._relationships_create(relationships, conn)
+            await conn.commit()
+        return result
+
+    async def _relationships_create(
+        self, relationships: list[Relationship], conn: Connection
+    ) -> list[Relationship]:
+        try:
+            await conn.execute(
+                insert(relationship_table), [obj.to_db_dict() for obj in relationships]
+            )
+        except IntegrityError as exc:
+            await conn.rollback()
+            err = exc._message()
+            if (
+                # SQLite: Unit tests
+                "UNIQUE constraint failed: relationship.source, relationship.target"
+                in err
+            ) or (
+                # Postgres: Integration tests
+                'duplicate key value violates unique constraint "relationship_source_target_uniqueness"'
+                in err
+            ):
+                # Provide useful feedback by identifying which relationship already exists
+                for obj in relationships:
+                    stmt = select(func.count("*")).where(
+                        relationship_table.c.source == obj.source,
+                        relationship_table.c.target == obj.target,
+                    )
+                    count = (await conn.execute(stmt)).first()[0]
+                    print(count, obj)
+                    if count:
+                        raise DuplicateRelationship(
+                            f"Relationship between source `{obj.source}` and target `{obj.target}` already exists"
                         )
-                        count = (await conn.execute(stmt)).first()[0]
-                        print(count, obj)
-                        if count:
-                            raise DuplicateRelationship(
-                                f"Relationship between source `{obj.source}` and target `{obj.target}` already exists"
-                            )
-                raise exc
+            # Fallback - should never happen, but no one is perfect
+            raise exc
         return relationships

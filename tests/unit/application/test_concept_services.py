@@ -13,7 +13,7 @@ async def test_concept_create(graph_service, entities):
 
     result = await graph_service.concept_create(entities[0])
     assert result == entities[0]
-    mock_kos_graph.concept_create.assert_called_with(concept=entities[0])
+    mock_kos_graph.concept_create.assert_called_with(concept=entities[0], relationships=[])
 
 
 async def test_concept_update(graph_service, entities):
