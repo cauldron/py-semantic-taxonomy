@@ -1,5 +1,5 @@
 from enum import StrEnum
-from urllib.parse import urljoin
+from urllib.parse import quote_plus, urljoin
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -327,7 +327,12 @@ async def generic_get_from_iri(request: Request, _: str, service=Depends(GraphSe
     try:
         iri = urljoin(str(request.base_url), request.url.path)
         object_type = await service.get_object_type(iri=iri)
-        mapping = {de.Concept: "get_concept_from_iri"}
-        return RedirectResponse(url=request.url_for(mapping[object_type], iri=iri))
+        mapping = {
+            de.Concept: "concept_get",
+            de.ConceptScheme: "concept_scheme_get",
+        }
+        return RedirectResponse(
+            url="{}?iri={}".format(request.url_for(mapping[object_type]), quote_plus(iri))
+        )
     except de.NotFoundError:
-        raise HTTPException(status_code=404, detail=f"KOS graph object with iri {iri} not found")
+        raise HTTPException(status_code=404, detail=f"KOS graph object with iri `{iri}` not found")

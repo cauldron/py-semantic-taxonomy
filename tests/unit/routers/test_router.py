@@ -5,7 +5,9 @@ import py_semantic_taxonomy.adapters.routers.router as router
 from py_semantic_taxonomy.domain.entities import Concept
 
 
-@pytest.mark.skip(reason="Needs to be integration test because of URL reverse needs FastAPI app")
+@pytest.mark.skip(
+    reason="Can only be covered in integration test because `url_for` needs FastAPI app"
+)
 async def test_concept_redirect(mock_kos_graph, graph_service, entities):
     mock_kos_graph.get_object_type.return_value = Concept
 

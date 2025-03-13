@@ -143,7 +143,9 @@ async def client() -> TestClient:
 
     from py_semantic_taxonomy.app import test_app
 
-    async with AsyncClient(transport=ASGITransport(app=test_app()), base_url="http://") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=test_app()), base_url="http://test.ninja"
+    ) as ac:
         yield ac
 
 
@@ -156,6 +158,7 @@ def mock_request() -> Callable:
         path: str = "/",
         headers: dict | None = None,
         body: str | None = None,
+        query_string: str = "",
     ) -> Request:
         if headers is None:
             headers = {}
@@ -166,6 +169,7 @@ def mock_request() -> Callable:
                 "headers": Headers(headers).raw,
                 "http_version": "1.1",
                 "method": method,
+                "query_string": query_string,
                 "scheme": "https",
                 "client": ("127.0.0.1", 8080),
                 "server": (server, 443),
