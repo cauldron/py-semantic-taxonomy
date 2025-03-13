@@ -62,7 +62,8 @@ async def test_create_concept_duplicate(postgres, cn_db_engine, cn, client):
 async def test_update_concept(postgres, cn_db_engine, cn, client):
     updated = cn.concept_top
     updated[f"{SKOS}altLabel"] = [{"@value": "Dream a little dream", "@language": "en"}]
-    del updated[f"{SKOS}narrower"]
+    if f"{SKOS}narrower" in updated:
+        del updated[f"{SKOS}narrower"]
     del updated[f"{SKOS}topConceptOf"]
 
     response = await client.put(Paths.concept, json=updated)
