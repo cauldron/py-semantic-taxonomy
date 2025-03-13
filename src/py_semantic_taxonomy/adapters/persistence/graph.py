@@ -1,15 +1,23 @@
 from sqlalchemy import Connection, Table, delete, func, insert, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from py_semantic_taxonomy.adapters.persistence.database import create_engine
-from py_semantic_taxonomy.adapters.persistence.tables import concept_scheme_table, concept_table
+from py_semantic_taxonomy.adapters.persistence.tables import (
+    concept_scheme_table,
+    concept_table,
+    relationship_table,
+)
 from py_semantic_taxonomy.domain.entities import (
     Concept,
     ConceptNotFoundError,
     ConceptScheme,
     ConceptSchemeNotFoundError,
     DuplicateIRI,
+    DuplicateRelationship,
     GraphObject,
+    Relationship,
+    RelationshipNotFoundError,
 )
 
 
@@ -42,7 +50,9 @@ class PostgresKOSGraph:
             await conn.rollback()
         return Concept(**result._mapping)
 
-    async def concept_create(self, concept: Concept) -> Concept:
+    async def concept_create(
+        self, concept: Concept, relationships: list[Relationship] = []
+    ) -> Concept:
         async with self.engine.connect() as conn:
             count = await self._get_count_from_iri(conn, concept.id_, concept_table)
             if count:
@@ -52,6 +62,8 @@ class PostgresKOSGraph:
                 insert(concept_table),
                 [concept.to_db_dict()],
             )
+            if relationships:
+                await self._relationships_create(relationships, conn)
             await conn.commit()
         return concept
 
@@ -120,3 +132,114 @@ class PostgresKOSGraph:
             )
             await conn.commit()
         return result.rowcount
+
+    # Relationship
+
+    async def relationships_get(
+        self, iri: str, source: bool = True, target: bool = False
+    ) -> list[Relationship]:
+        if not source and not target:
+            raise ValueError("Must choose at least one of source or target")
+        async with self.engine.connect() as conn:
+            rels = []
+            if source:
+                stmt = select(
+                    # Exclude id field
+                    relationship_table.c.source,
+                    relationship_table.c.target,
+                    relationship_table.c.predicate,
+                ).where(relationship_table.c.source == iri)
+                result = await conn.execute(stmt)
+                rels.extend([Relationship(**line._mapping) for line in result])
+            if target:
+                stmt = select(
+                    relationship_table.c.source,
+                    relationship_table.c.target,
+                    relationship_table.c.predicate,
+                ).where(relationship_table.c.target == iri)
+                result = await conn.execute(stmt)
+                rels.extend([Relationship(**line._mapping) for line in result])
+            await conn.rollback()
+        return rels
+
+    async def _relationships_create(
+        self, relationships: list[Relationship], conn: Connection
+    ) -> list[Relationship]:
+        try:
+            await conn.execute(
+                insert(relationship_table), [obj.to_db_dict() for obj in relationships]
+            )
+        except IntegrityError as exc:
+            await conn.rollback()
+            err = exc._message()
+            if (
+                # SQLite: Unit tests
+                "UNIQUE constraint failed: relationship.source, relationship.target"
+                in err
+            ) or (
+                # Postgres: Integration tests
+                'duplicate key value violates unique constraint "relationship_source_target_uniqueness"'
+                in err
+            ):
+                # Provide useful feedback by identifying which relationship already exists
+                for obj in relationships:
+                    stmt = select(func.count("*")).where(
+                        relationship_table.c.source == obj.source,
+                        relationship_table.c.target == obj.target,
+                    )
+                    count = (await conn.execute(stmt)).first()[0]
+                    if count:
+                        raise DuplicateRelationship(
+                            f"Relationship between source `{obj.source}` and target `{obj.target}` already exists"
+                        )
+            # Fallback - should never happen, but no one is perfect
+            raise exc
+        return relationships
+
+    async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
+        async with self.engine.connect() as conn:
+            result = await self._relationships_create(relationships, conn)
+            await conn.commit()
+        return result
+
+    async def _get_relationship_count(self, source: str, target: str, conn: Connection) -> int:
+        stmt = select(func.count("*")).where(
+            relationship_table.c.source == source, relationship_table.c.target == target
+        )
+        return (await conn.execute(stmt)).first()[0]
+
+    async def relationships_update(self, relationships: list[Relationship]) -> list[Relationship]:
+        async with self.engine.connect() as conn:
+            for rel in relationships:
+                count = await self._get_relationship_count(rel.source, rel.target, conn)
+                if not count:
+                    conn.rollback()
+                    raise RelationshipNotFoundError(
+                        f"Can't update non-existent relationship between source `{rel.source}` and target `{rel.target}`"
+                    )
+                await conn.execute(
+                    update(relationship_table)
+                    .where(
+                        relationship_table.c.source == rel.source,
+                        relationship_table.c.target == rel.target,
+                    )
+                    .values(predicate=rel.predicate)
+                )
+            await conn.commit()
+        return relationships
+
+    async def relationships_delete(self, relationships: list[Relationship]) -> int:
+        async with self.engine.connect() as conn:
+            count = 0
+            for rel in relationships:
+                print(rel, type(rel))
+                result = await conn.execute(
+                    delete(relationship_table).where(
+                        relationship_table.c.source == rel.source,
+                        relationship_table.c.target == rel.target,
+                        relationship_table.c.predicate == rel.predicate,
+                    )
+                )
+                count += result.rowcount
+            await conn.commit()
+        return count

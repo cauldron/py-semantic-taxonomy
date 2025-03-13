@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from py_semantic_taxonomy.adapters.routers.request_dto import Concept, ConceptCreate, ConceptUpdate
+from py_semantic_taxonomy.domain.constants import SKOS
 
 
 def test_top_level_concept(cn):
@@ -24,7 +25,7 @@ def test_concept_type(cn):
 
 def test_concept_pref_labels(cn):
     obj = cn.concept_top
-    obj["http://www.w3.org/2004/02/skos/core#prefLabel"] = [
+    obj[f"{SKOS}prefLabel"] = [
         {"@value": "Something", "@language": "en"},
         {"@value": "Something else", "@language": "en"},
     ]
@@ -34,7 +35,7 @@ def test_concept_pref_labels(cn):
 
 def test_concept_definition(cn):
     obj = cn.concept_top
-    obj["http://www.w3.org/2004/02/skos/core#definition"] = [
+    obj[f"{SKOS}definition"] = [
         {"@value": "Something", "@language": "en"},
         {"@value": "Something else", "@language": "en"},
     ]
@@ -54,45 +55,47 @@ def test_child_concept_model_dump(fixtures_dir, cn):
 def test_broader_self_reference(cn):
     obj = cn.concept_top
     assert ConceptCreate(**obj)
-    obj["http://www.w3.org/2004/02/skos/core#broader"] = [{"@id": obj["@id"]}]
+    obj[f"{SKOS}broader"] = [{"@id": obj["@id"]}]
     with pytest.raises(ValidationError):
         ConceptCreate(**obj)
 
 
 def test_broader_not_allowed_in_update(cn):
     obj = cn.concept_top
-    del obj["http://www.w3.org/2004/02/skos/core#narrower"]
-    del obj["http://www.w3.org/2004/02/skos/core#topConceptOf"]
+    if f"{SKOS}narrower" in obj:
+        del obj[f"{SKOS}narrower"]
+    del obj[f"{SKOS}topConceptOf"]
     assert ConceptUpdate(**obj)
     with pytest.raises(ValidationError):
-        ConceptUpdate(**(obj | {"http://www.w3.org/2004/02/skos/core#broader": []}))
+        ConceptUpdate(**(obj | {f"{SKOS}broader": []}))
     with pytest.raises(ValidationError):
-        ConceptUpdate(**(obj | {"http://www.w3.org/2004/02/skos/core#broaderTransitive": []}))
+        ConceptUpdate(**(obj | {f"{SKOS}broaderTransitive": []}))
 
 
 def test_narrower_self_reference(cn):
     obj = cn.concept_top
     assert ConceptCreate(**obj)
-    obj["http://www.w3.org/2004/02/skos/core#narrower"] = [{"@id": obj["@id"]}]
+    obj[f"{SKOS}narrower"] = [{"@id": obj["@id"]}]
     with pytest.raises(ValidationError):
         ConceptCreate(**obj)
 
 
 def test_narrower_not_allowed_in_update(cn):
     obj = cn.concept_top
-    del obj["http://www.w3.org/2004/02/skos/core#narrower"]
-    del obj["http://www.w3.org/2004/02/skos/core#topConceptOf"]
+    if f"{SKOS}narrower" in obj:
+        del obj[f"{SKOS}narrower"]
+    del obj[f"{SKOS}topConceptOf"]
     assert ConceptUpdate(**obj)
     with pytest.raises(ValidationError):
-        ConceptUpdate(**(obj | {"http://www.w3.org/2004/02/skos/core#narrower": []}))
+        ConceptUpdate(**(obj | {f"{SKOS}narrower": []}))
     with pytest.raises(ValidationError):
-        ConceptUpdate(**(obj | {"http://www.w3.org/2004/02/skos/core#narrowerTransitive": []}))
+        ConceptUpdate(**(obj | {f"{SKOS}narrowerTransitive": []}))
 
 
 def test_concept_must_be_in_at_least_one_scheme(cn):
     obj = cn.concept_top
     assert Concept(**obj)
-    obj["http://www.w3.org/2004/02/skos/core#inScheme"] = []
+    obj[f"{SKOS}inScheme"] = []
     with pytest.raises(ValidationError):
         Concept(**obj)
 
@@ -100,17 +103,17 @@ def test_concept_must_be_in_at_least_one_scheme(cn):
 def test_concept_can_be_in_more_than_one_scheme(cn):
     obj = cn.concept_top
     assert Concept(**obj)
-    obj["http://www.w3.org/2004/02/skos/core#inScheme"].append({"@id": "http://example.foo/scheme"})
+    obj[f"{SKOS}inScheme"].append({"@id": "http://example.foo/scheme"})
     assert Concept(**obj)
 
 
 def test_pref_label_notation_overlap_error(cn):
     obj = cn.concept_top
     assert Concept(**obj)
-    obj["http://www.w3.org/2004/02/skos/core#notation"] = [
+    obj[f"{SKOS}notation"] = [
         {
             "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
-            "@value": obj["http://www.w3.org/2004/02/skos/core#prefLabel"][0]["@value"],
+            "@value": obj[f"{SKOS}prefLabel"][0]["@value"],
         }
     ]
     with pytest.raises(ValidationError):
@@ -119,10 +122,8 @@ def test_pref_label_notation_overlap_error(cn):
 
 def test_alt_label_notation_overlap(cn):
     obj = cn.concept_top
-    obj["http://www.w3.org/2004/02/skos/core#altLabel"] = [
-        {"@value": "Cow goes moo", "@language": "en"}
-    ]
-    obj["http://www.w3.org/2004/02/skos/core#notation"] = [
+    obj[f"{SKOS}altLabel"] = [{"@value": "Cow goes moo", "@language": "en"}]
+    obj[f"{SKOS}notation"] = [
         {
             "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral",
             "@value": "Cow goes moo",

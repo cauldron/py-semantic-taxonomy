@@ -38,7 +38,6 @@
     dcterms:modified "2023-10-11T14:43:01"^^xsd:dateTime ;
     xkos:depth "1"^^xsd:positiveInteger ;
     skos:inScheme :cn2024 ;
-    skos:narrower :010021000090 ;
     skos:notation "I"^^rdfns:PlainLiteral ;
     skos:prefLabel "SECTION I - LIVE ANIMALS; ANIMAL PRODUCTS"@en,
         "SECÇÃO I - ANIMAIS VIVOS E PRODUTOS DO REINO ANIMAL"@pt ;

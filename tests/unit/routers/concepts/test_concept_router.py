@@ -3,8 +3,13 @@ from unittest.mock import AsyncMock
 import orjson
 
 from py_semantic_taxonomy.adapters.routers.router import GraphService, Paths
-from py_semantic_taxonomy.domain.constants import SKOS
-from py_semantic_taxonomy.domain.entities import Concept, ConceptNotFoundError, DuplicateIRI
+from py_semantic_taxonomy.domain.constants import SKOS, RelationshipVerbs
+from py_semantic_taxonomy.domain.entities import (
+    Concept,
+    ConceptNotFoundError,
+    DuplicateIRI,
+    Relationship,
+)
 
 
 async def test_concept_get(cn, client, monkeypatch):
@@ -39,6 +44,16 @@ async def test_concept_create(cn, client, monkeypatch):
 
     response = await client.post(Paths.concept, json=cn.concept_low)
     assert response.status_code == 200
+    GraphService.concept_create.assert_called_with(
+        concept=Concept.from_json_ld(cn.concept_low),
+        relationships=[
+            Relationship(
+                source="http://data.europa.eu/xsp/cn2024/010100000080",
+                target="http://data.europa.eu/xsp/cn2024/010021000090",
+                predicate=RelationshipVerbs.broader,
+            )
+        ],
+    )
 
 
 async def test_concept_create_error_validation_errors(cn, client, monkeypatch):
@@ -71,7 +86,8 @@ async def test_concept_update(cn, client, monkeypatch):
 
     updated = cn.concept_top
     updated[f"{SKOS}altLabel"] = [{"@value": "Dream a little dream", "@language": "en"}]
-    del updated[f"{SKOS}narrower"]
+    if f"{SKOS}narrower" in updated:
+        del updated[f"{SKOS}narrower"]
     del updated[f"{SKOS}topConceptOf"]
     response = await client.put(Paths.concept, json=updated)
     assert response.status_code == 200
