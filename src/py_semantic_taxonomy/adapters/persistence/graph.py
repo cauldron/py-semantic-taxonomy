@@ -170,7 +170,16 @@ class PostgresKOSGraph:
                     "UNIQUE constraint failed: relationship.source, relationship.target"
                     in exc._message()
                 ):
-                    raise DuplicateRelationship
-                else:
-                    raise exc
+                    # Provide useful feedback by identifying which relationship already exists
+                    for obj in relationships:
+                        stmt = select(func.count("*")).where(
+                            relationship_table.c.source == obj.source,
+                            relationship_table.c.target == obj.target,
+                        )
+                        count = (await conn.execute(stmt)).first()[0]
+                        if count:
+                            raise DuplicateRelationship(
+                                f"Relationship between source `{obj.source}` and target `{obj.target}` already exists"
+                            )
+                raise exc
         return relationships

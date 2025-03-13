@@ -33,5 +33,8 @@ async def test_create_relationships(sqlite, graph):
 
 
 async def test_create_relationships_duplicate(sqlite, graph, relationships):
-    with pytest.raises(DuplicateRelationship):
-        await graph.relationships_create(relationships)
+    with pytest.raises(DuplicateRelationship) as excinfo:
+        await graph.relationships_create([relationships[0]])
+    assert excinfo.match(
+        f"Relationship between source `{relationships[0].source}` and target `{relationships[0].target}` already exists"
+    )
