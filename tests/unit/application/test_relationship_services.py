@@ -17,13 +17,13 @@ async def test_relationships_get(graph_service, relationships):
     )
 
 
-# async def test_relationship_create(graph_service, entities):
-#     mock_kos_graph = graph_service.graph
-#     mock_kos_graph.relationship_create.return_value = entities[2]
+async def test_relationship_create(graph_service, entities, relationships):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.relationships_create.return_value = relationships
 
-#     result = await graph_service.relationship_create(entities[2])
-#     assert result == entities[2]
-#     mock_kos_graph.relationship_create.assert_called_with(relationship=entities[2])
+    result = await graph_service.relationships_create(relationships)
+    assert result == relationships
+    mock_kos_graph.relationships_create.assert_called_with(relationships)
 
 
 # async def test_relationship_update(graph_service, entities):

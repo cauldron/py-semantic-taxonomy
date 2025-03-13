@@ -244,6 +244,30 @@ async def relationships_get(
     return [response.Relationship(**obj.to_json_ld()) for obj in lst]
 
 
+@router.post(
+    Paths.relationship,
+    summary="Create a list of Relationship objects",
+    response_model=list[response.Relationship],
+    response_model_exclude_unset=True,
+)
+async def relationships_create(
+    request: Request,
+    relationships: list[req.Relationship],
+    service=Depends(GraphService),
+) -> response.Concept:
+    try:
+        incoming = de.Relationship.from_json_ld_list(await request.json())
+        lst = await service.relationships_create(incoming)
+        return [response.Relationship(**obj.to_json_ld()) for obj in lst]
+    except de.DuplicateRelationship as exc:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "message": str(exc),
+            },
+        )
+
+
 # TBD: Add in static route before generic catch-all function
 
 

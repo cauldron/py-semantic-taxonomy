@@ -46,3 +46,6 @@ class GraphService:
         self, iri: str, source: bool = True, target: bool = False
     ) -> list[Relationship]:
         return await self.graph.relationships_get(iri=iri, source=source, target=target)
+
+    async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
+        return await self.graph.relationships_create(relationships)

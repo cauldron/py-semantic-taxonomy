@@ -31,3 +31,21 @@ def test_relationship_one_relationship_type(relationships):
             id_=relationships[0].source,
         )
     assert excinfo.match("Found zero relationships")
+
+
+def test_relationship_self_reference(relationships):
+    with pytest.raises(ValueError) as excinfo:
+        Relationship(
+            id_=relationships[0].source,
+            broader=[{"@id": relationships[0].source}],
+        )
+    assert excinfo.match("Relationship has same source and target")
+
+
+def test_relationship_multiple_same_type(relationships):
+    with pytest.raises(ValueError) as excinfo:
+        Relationship(
+            id_=relationships[0].source,
+            broader=[{"@id": relationships[1].source}, {"@id": relationships[0].target}],
+        )
+    assert excinfo.match("Found multiple relationships of type `broader`")

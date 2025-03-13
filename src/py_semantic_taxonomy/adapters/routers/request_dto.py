@@ -159,23 +159,40 @@ class Relationship(BaseModel):
     narrow_match: list[Node] = Field(alias=f"{SKOS}narrowMatch", default=[])
     related_match: list[Node] = Field(alias=f"{SKOS}relatedMatch", default=[])
 
+    _RELATIONSHIP_FIELDS = (
+        "broader",
+        "narrower",
+        "exact_match",
+        "close_match",
+        "broad_match",
+        "narrow_match",
+        "related_match",
+    )
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     def model_dump(self, exclude_unset=True, by_alias=True, *args, **kwargs):
         return super().model_dump(*args, exclude_unset=exclude_unset, by_alias=by_alias, **kwargs)
 
     @model_validator(mode="after")
+    def no_self_references(self) -> Self:
+        for field in self._RELATIONSHIP_FIELDS:
+            for obj in getattr(self, field, []):
+                if obj.id_ == self.id_:
+                    raise ValueError("Relationship has same source and target")
+
+        return self
+
+    @model_validator(mode="after")
+    def two_relationships_of_same_type(self) -> Self:
+        for field in self._RELATIONSHIP_FIELDS:
+            if len(getattr(self, field, [])) > 1:
+                raise ValueError(f"Found multiple relationships of type `{field}`")
+        return self
+
+    @model_validator(mode="after")
     def exactly_one_relationship_type(self) -> Self:
-        FIELDS = (
-            "broader",
-            "narrower",
-            "exact_match",
-            "close_match",
-            "broad_match",
-            "narrow_match",
-            "related_match",
-        )
-        truthy = {field for field in FIELDS if getattr(self, field)}
+        truthy = sorted({field for field in self._RELATIONSHIP_FIELDS if getattr(self, field)})
 
         if len(truthy) > 1:
             raise ValueError(f"Found multiple relationships {truthy} where only one is allowed")
