@@ -16,6 +16,7 @@ from py_semantic_taxonomy.domain.entities import (
     DuplicateIRI,
     DuplicateRelationship,
     GraphObject,
+    NotFoundError,
     Relationship,
     RelationshipNotFoundError,
 )
@@ -27,12 +28,11 @@ class PostgresKOSGraph:
 
     async def get_object_type(self, iri: str) -> GraphObject:
         async with self.engine.connect() as conn:
-            is_concept = await self._get_count_from_iri(conn, iri, concept_table)
-            if is_concept:
+            if await self._get_count_from_iri(conn, iri, concept_table):
                 return Concept
-            is_cs = await self._get_count_from_iri(conn, iri, concept_scheme_table)
-            if is_cs:
+            if await self._get_count_from_iri(conn, iri, concept_scheme_table):
                 return ConceptScheme
+        raise NotFoundError(f"Given IRI `{iri}` is not a known object")
 
     # Concepts
 
