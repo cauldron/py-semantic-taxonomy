@@ -51,3 +51,6 @@ class GraphService:
 
     async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
         return await self.graph.relationships_create(relationships)
+
+    async def relationships_update(self, relationships: list[Relationship]) -> list[Relationship]:
+        return await self.graph.relationships_update(relationships)

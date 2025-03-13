@@ -4,7 +4,11 @@ import orjson
 
 from py_semantic_taxonomy.adapters.routers.router import GraphService, Paths
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
-from py_semantic_taxonomy.domain.entities import DuplicateRelationship, Relationship
+from py_semantic_taxonomy.domain.entities import (
+    DuplicateRelationship,
+    Relationship,
+    RelationshipNotFoundError,
+)
 
 
 async def test_relationships_get(cn, client, monkeypatch, relationships):
@@ -161,12 +165,28 @@ async def test_relationships_create_error_validation_errors_self_reference(
     )
 
 
-# async def test_relationships_create_error_already_exists(cn, client, monkeypatch):
-#     monkeypatch.setattr(GraphService, "relationships_create", AsyncMock(side_effect=DuplicateIRI))
+async def test_relationships_update(relationships, client, monkeypatch):
+    monkeypatch.setattr(GraphService, "relationships_update", AsyncMock(return_value=relationships))
 
-#     response = await client.post(Paths.relationships, json=cn.relationships_low)
-#     assert orjson.loads(response.content) == {
-#         "message": "Resource with `@id` already exists",
-#         "detail": {"@id": "http://data.europa.eu/xsp/cn2024/010100000080"},
-#     }
-#     assert response.status_code == 409
+    updated = Relationship(
+        source=relationships[0].source,
+        target=relationships[0].target,
+        predicate=RelationshipVerbs.exact_match,
+    )
+    response = await client.put(Paths.relationship, json=[updated.to_json_ld()])
+    assert response.status_code == 200
+    assert response.json()
+
+
+async def test_relationship_update_error_missing(relationships, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "relationships_update",
+        AsyncMock(side_effect=RelationshipNotFoundError("Test message")),
+    )
+
+    response = await client.put(Paths.relationship, json=[relationships[0].to_json_ld()])
+    assert response.status_code == 404
+    assert response.json() == {
+        "message": "Test message",
+    }

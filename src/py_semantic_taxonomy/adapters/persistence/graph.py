@@ -17,6 +17,7 @@ from py_semantic_taxonomy.domain.entities import (
     DuplicateRelationship,
     GraphObject,
     Relationship,
+    RelationshipNotFoundError,
 )
 
 
@@ -161,12 +162,6 @@ class PostgresKOSGraph:
             await conn.rollback()
         return rels
 
-    async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
-        async with self.engine.connect() as conn:
-            result = await self._relationships_create(relationships, conn)
-            await conn.commit()
-        return result
-
     async def _relationships_create(
         self, relationships: list[Relationship], conn: Connection
     ) -> list[Relationship]:
@@ -199,4 +194,36 @@ class PostgresKOSGraph:
                         )
             # Fallback - should never happen, but no one is perfect
             raise exc
+        return relationships
+
+    async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
+        async with self.engine.connect() as conn:
+            result = await self._relationships_create(relationships, conn)
+            await conn.commit()
+        return result
+
+    async def _get_relationship_count(self, source: str, target: str, conn: Connection) -> int:
+        stmt = select(func.count("*")).where(
+            relationship_table.c.source == source, relationship_table.c.target == target
+        )
+        return (await conn.execute(stmt)).first()[0]
+
+    async def relationships_update(self, relationships: list[Relationship]) -> list[Relationship]:
+        async with self.engine.connect() as conn:
+            for rel in relationships:
+                count = await self._get_relationship_count(rel.source, rel.target, conn)
+                if not count:
+                    conn.rollback()
+                    raise RelationshipNotFoundError(
+                        f"Can't update non-existent relationship between source `{rel.source}` and target `{rel.target}`"
+                    )
+                await conn.execute(
+                    update(relationship_table)
+                    .where(
+                        relationship_table.c.source == rel.source,
+                        relationship_table.c.target == rel.target,
+                    )
+                    .values(predicate=rel.predicate)
+                )
+            await conn.commit()
         return relationships

@@ -130,6 +130,10 @@ class ConceptSchemeNotFoundError(NotFoundError):
     pass
 
 
+class RelationshipNotFoundError(NotFoundError):
+    pass
+
+
 class DuplicateIRI(Exception):
     pass
 

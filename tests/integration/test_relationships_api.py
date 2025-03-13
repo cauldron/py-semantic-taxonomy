@@ -2,6 +2,7 @@ import pytest
 
 from py_semantic_taxonomy.adapters.routers.router import Paths
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
+from py_semantic_taxonomy.domain.entities import Relationship
 
 
 @pytest.mark.postgres
@@ -64,3 +65,33 @@ async def test_create_relationships_duplicate(postgres, cn_db_engine, client, re
     assert response.json() == {
         "message": "Relationship between source `http://data.europa.eu/xsp/cn2024/010021000090` and target `http://data.europa.eu/xsp/cn2024/010011000090` already exists"
     }, "API return value incorrect"
+
+
+@pytest.mark.postgres
+async def test_update_relationships(postgres, cn_db_engine, client, relationships):
+    updated = Relationship(
+        source=relationships[0].source,
+        target=relationships[0].target,
+        predicate=RelationshipVerbs.exact_match,
+    )
+    response = await client.put(Paths.relationship, json=[updated.to_json_ld()])
+    assert response.status_code == 200
+    assert response.json() == [updated.to_json_ld()]
+
+    response = await client.get(Paths.relationship, params={"iri": updated.source})
+    assert response.status_code == 200
+    assert response.json() == [updated.to_json_ld()]
+
+
+@pytest.mark.postgres
+async def test_update_relationships_not_found(postgres, cn_db_engine, client, relationships):
+    updated = Relationship(
+        source="http://example.com/foo",
+        target="http://example.com/bar",
+        predicate=RelationshipVerbs.exact_match,
+    )
+    response = await client.put(Paths.relationship, json=[updated.to_json_ld()])
+    assert response.status_code == 404
+    assert response.json() == {
+        "message": "Can't update non-existent relationship between source `http://example.com/foo` and target `http://example.com/bar`"
+    }

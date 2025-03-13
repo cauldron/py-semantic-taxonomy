@@ -1,7 +1,11 @@
 import pytest
 
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
-from py_semantic_taxonomy.domain.entities import DuplicateRelationship, Relationship
+from py_semantic_taxonomy.domain.entities import (
+    DuplicateRelationship,
+    Relationship,
+    RelationshipNotFoundError,
+)
 
 
 async def test_get_relationships_source(sqlite, graph, relationships):
@@ -38,3 +42,28 @@ async def test_create_relationships_duplicate(sqlite, graph, relationships):
     assert excinfo.match(
         f"Relationship between source `{relationships[0].source}` and target `{relationships[0].target}` already exists"
     )
+
+
+async def test_update_relationships(sqlite, graph, relationships):
+    result = await graph.relationships_get(iri=relationships[0].source)
+    assert result == [relationships[0]]
+
+    rel = Relationship(
+        source=relationships[0].source,
+        target=relationships[0].target,
+        predicate=RelationshipVerbs.exact_match,
+    )
+    await graph.relationships_update([rel])
+
+    result = await graph.relationships_get(iri=rel.source)
+    assert result == [rel]
+
+
+async def test_update_relationships_not_found_error(sqlite, graph):
+    missing = Relationship(
+        source="http://example.com/foo",
+        target="http://example.com/bar",
+        predicate=RelationshipVerbs.exact_match,
+    )
+    with pytest.raises(RelationshipNotFoundError):
+        await graph.relationships_update([missing])
