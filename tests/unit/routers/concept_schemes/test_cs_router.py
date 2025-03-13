@@ -20,10 +20,12 @@ async def test_concept_scheme_get(cn, client, monkeypatch):
 
     response = await client.get(Paths.concept_scheme, params={"iri": cn.scheme["@id"]})
     assert response.status_code == 200
-    cs = orjson.loads(response.content)
-    for key, value in cs.items():
+    for key, value in response.json().items():
         if value:
             assert cn.scheme[key] == value
+
+    GraphService.concept_scheme_get.assert_called_once()
+    assert isinstance(GraphService.concept_scheme_get.call_args[1]["iri"], str)
 
 
 async def test_concept_get_not_found(cn, client, monkeypatch):
@@ -32,9 +34,8 @@ async def test_concept_get_not_found(cn, client, monkeypatch):
     )
 
     response = await client.get(Paths.concept_scheme, params={"iri": "foo"})
-    concept = orjson.loads(response.content)
     assert response.status_code == 404
-    assert concept == {
+    assert response.json() == {
         "message": "Concept Scheme with IRI 'foo' not found",
         "detail": {"iri": "foo"},
     }
@@ -49,6 +50,9 @@ async def test_concept_scheme_create(cn, client, monkeypatch):
 
     response = await client.post(Paths.concept_scheme, json=cn.scheme)
     assert response.status_code == 200
+
+    GraphService.concept_scheme_create.assert_called_once()
+    assert isinstance(GraphService.concept_scheme_create.call_args[0][0], ConceptScheme)
 
 
 async def test_concept_scheme_create_error_validation_errors(cn, client, monkeypatch):
@@ -85,6 +89,9 @@ async def test_concept_scheme_update(cn, client, monkeypatch):
     updated[f"{SKOS}prefLabel"] = [{"@value": "Combine all them nommies", "@language": "en"}]
     response = await client.put(Paths.concept_scheme, json=updated)
     assert response.status_code == 200
+
+    GraphService.concept_scheme_update.assert_called_once()
+    assert isinstance(GraphService.concept_scheme_update.call_args[0][0], ConceptScheme)
 
 
 async def test_concept_scheme_update_error_validation_errors(cn, client, monkeypatch):
@@ -125,3 +132,6 @@ async def test_concept_scheme_delete(cn, client, monkeypatch):
         "message": "Concept Scheme (possibly) deleted",
         "count": 1,
     }
+
+    GraphService.concept_scheme_delete.assert_called_once()
+    assert isinstance(GraphService.concept_scheme_delete.call_args[1]["iri"], str)

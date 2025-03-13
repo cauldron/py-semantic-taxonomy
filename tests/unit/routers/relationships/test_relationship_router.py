@@ -18,13 +18,17 @@ async def test_relationships_get(cn, client, monkeypatch, relationships):
 
     response = await client.get(Paths.relationship, params={"iri": relationships[0].source})
     assert response.status_code == 200
-    rels = orjson.loads(response.content)
-    assert rels == [
+    assert response.json() == [
         {
             "@id": relationships[0].source,
             relationships[0].predicate.value: [{"@id": relationships[0].target}],
         }
     ], "API return value incorrect"
+
+    GraphService.relationships_get.assert_called_once()
+    assert isinstance(GraphService.relationships_get.call_args[1]["iri"], str)
+    assert isinstance(GraphService.relationships_get.call_args[1]["source"], bool)
+    assert isinstance(GraphService.relationships_get.call_args[1]["target"], bool)
 
 
 async def test_relationships_get_args(cn, client, monkeypatch, relationships):
@@ -63,6 +67,10 @@ async def test_relationship_create(relationships, client, monkeypatch):
     )
     assert response.status_code == 200
     assert Relationship.from_json_ld_list(response.json()) == relationships
+
+    GraphService.relationships_create.assert_called_once()
+    assert isinstance(GraphService.relationships_create.call_args[0][0], list)
+    assert isinstance(GraphService.relationships_create.call_args[0][0][0], Relationship)
 
 
 async def test_relationship_create_already_exists(relationships, client, monkeypatch):
@@ -177,6 +185,10 @@ async def test_relationships_update(relationships, client, monkeypatch):
     assert response.status_code == 200
     assert response.json()
 
+    GraphService.relationships_update.assert_called_once()
+    assert isinstance(GraphService.relationships_update.call_args[0][0], list)
+    assert isinstance(GraphService.relationships_update.call_args[0][0][0], Relationship)
+
 
 async def test_relationship_update_error_missing(relationships, client, monkeypatch):
     monkeypatch.setattr(
@@ -206,3 +218,6 @@ async def test_relationship_delete(relationships, client, monkeypatch):
         "message": "Relationships (possibly) deleted",
         "count": 1,
     }
+    GraphService.relationships_delete.assert_called_once()
+    assert isinstance(GraphService.relationships_delete.call_args[0][0], list)
+    assert isinstance(GraphService.relationships_delete.call_args[0][0][0], Relationship)
