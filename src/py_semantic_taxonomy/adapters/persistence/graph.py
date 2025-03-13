@@ -193,7 +193,6 @@ class PostgresKOSGraph:
                         relationship_table.c.target == obj.target,
                     )
                     count = (await conn.execute(stmt)).first()[0]
-                    print(count, obj)
                     if count:
                         raise DuplicateRelationship(
                             f"Relationship between source `{obj.source}` and target `{obj.target}` already exists"

@@ -12,6 +12,11 @@ SKOS_RELATIONSHIP_PREDICATES = {
     f"{SKOS}broader",
     f"{SKOS}topConceptOf",
     f"{SKOS}hasTopConcept",
+    f"{SKOS}broadMatch",
+    f"{SKOS}closeMatch",
+    f"{SKOS}exactMatch",
+    f"{SKOS}narrowMatch",
+    f"{SKOS}relatedMatch",
 }
 
 RDF_MAPPING = {

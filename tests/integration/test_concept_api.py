@@ -55,6 +55,41 @@ async def test_create_concept(postgres, cn_db_engine, cn, client):
 
 
 @pytest.mark.postgres
+async def test_create_concept_relationships(postgres, cn_db_engine, cn, client):
+    # Broader relationship already given in `cn_db_engine` fixture
+    cn.concept_low[f"{SKOS}broader"] = [{"@id": "http://example.com/foo"}]
+    cn.concept_low[f"{SKOS}exactMatch"] = [{"@id": "http://example.com/bar"}]
+    response = await client.post(Paths.concept, json=cn.concept_low)
+    assert response.status_code == 200
+    expected = {
+        key: value
+        for key, value in cn.concept_low.items()
+        if key not in SKOS_RELATIONSHIP_PREDICATES
+    }
+    given = response.json()
+
+    # https://fastapi.tiangolo.com/tutorial/response-model/#response-model-encoding-parameters
+    # Child models don't call `model_dump`, which means that `exclude_unset` or `by_alias` is
+    # ignored. See https://github.com/pydantic/pydantic/issues/8792
+    for key, value in expected.items():
+        assert given[key] == value
+
+    given = (await client.get(Paths.concept, params={"iri": cn.concept_low["@id"]})).json()
+    for key, value in expected.items():
+        assert given[key] == value
+
+    given = (await client.get(Paths.relationship, params={"iri": cn.concept_low["@id"]})).json()
+    assert {
+        "@id": cn.concept_low["@id"],
+        f"{SKOS}broader": [{"@id": "http://example.com/foo"}],
+    } in given, "Missing relationship"
+    assert {
+        "@id": cn.concept_low["@id"],
+        f"{SKOS}exactMatch": [{"@id": "http://example.com/bar"}],
+    } in given, "Missing relationship"
+
+
+@pytest.mark.postgres
 async def test_create_concept_duplicate(postgres, cn_db_engine, cn, client):
     response = await client.post(Paths.concept, json=cn.concept_top)
     assert response.status_code == 409
