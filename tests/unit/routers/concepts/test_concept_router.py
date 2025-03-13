@@ -71,7 +71,8 @@ async def test_concept_update(cn, client, monkeypatch):
 
     updated = cn.concept_top
     updated[f"{SKOS}altLabel"] = [{"@value": "Dream a little dream", "@language": "en"}]
-    del updated[f"{SKOS}narrower"]
+    if f"{SKOS}narrower" in updated:
+        del updated[f"{SKOS}narrower"]
     del updated[f"{SKOS}topConceptOf"]
     response = await client.put(Paths.concept, json=updated)
     assert response.status_code == 200
