@@ -24,6 +24,9 @@ async def test_concept_get(cn, client, monkeypatch):
         if value:
             assert cn.concept_top[key] == value
 
+    GraphService.concept_get.assert_called_once()
+    assert isinstance(GraphService.concept_get.call_args[1]["iri"], str)
+
 
 async def test_concept_get_not_found(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "concept_get", AsyncMock(side_effect=ConceptNotFoundError()))
@@ -54,6 +57,7 @@ async def test_concept_create(cn, client, monkeypatch):
             )
         ],
     )
+    GraphService.concept_create.assert_called_once()
 
 
 async def test_concept_create_error_validation_errors(cn, client, monkeypatch):
@@ -91,6 +95,9 @@ async def test_concept_update(cn, client, monkeypatch):
     del updated[f"{SKOS}topConceptOf"]
     response = await client.put(Paths.concept, json=updated)
     assert response.status_code == 200
+
+    GraphService.concept_update.assert_called_once()
+    assert isinstance(GraphService.concept_update.call_args[0][0], Concept)
 
 
 async def test_concept_update_error_validation_errors(cn, client, monkeypatch):
@@ -130,3 +137,6 @@ async def test_concept_delete(cn, client, monkeypatch):
         "message": "Concept (possibly) deleted",
         "count": 1,
     }
+
+    GraphService.concept_delete.assert_called_once()
+    assert isinstance(GraphService.concept_delete.call_args[1]["iri"], str)
