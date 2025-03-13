@@ -43,6 +43,6 @@ class GraphService:
     # Relationships
 
     async def relationships_get(
-        self, iri: str, source: bool = False, target: bool = False
+        self, iri: str, source: bool = True, target: bool = False
     ) -> list[Relationship]:
         return await self.graph.relationships_get(iri=iri, source=source, target=target)

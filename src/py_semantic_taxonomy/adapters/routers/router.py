@@ -16,6 +16,7 @@ class Paths(StrEnum):
     concept = "/concept/"
     concept_scheme = "/concept_scheme/"
     catchall = "/{_:path}"
+    relationship = "/relationships/"
 
 
 """
@@ -222,6 +223,25 @@ async def concept_scheme_delete(
             "count": count,
         },
     )
+
+
+# Relationship
+
+
+@router.get(
+    Paths.relationship,
+    summary="Get a list of Relationship objects",
+    response_model=list[response.Relationship],
+    response_model_exclude_unset=True,
+)
+async def relationships_get(
+    iri: str,
+    source: bool = True,
+    target: bool = False,
+    service=Depends(GraphService),
+) -> list[response.Relationship]:
+    lst = await service.relationships_get(iri=iri, source=source, target=target)
+    return [response.Relationship(**obj.to_json_ld()) for obj in lst]
 
 
 # TBD: Add in static route before generic catch-all function
