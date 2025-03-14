@@ -1,4 +1,5 @@
 @prefix : <http://data.europa.eu/xsp/cn2024/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
 @prefix cv: <http://data.europa.eu/m8g/> .
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
@@ -31,6 +32,7 @@
     skos:notation "CN 2024"^^rdfns:PlainLiteral ;
     skos:prefLabel "Combined Nomenclature, 2024 (CN 2024)"@en,
         "Nomenclatura Combinada, 2024 (NC 2024)"@pt ;
+    bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
     skos:scopeNote "http://publications.europa.eu/resource/oj/JOC_2019_119_R_0001"^^xsd:anyURI .
 
 :010011000090 a skos:Concept ;
@@ -42,6 +44,7 @@
     skos:prefLabel "SECTION I - LIVE ANIMALS; ANIMAL PRODUCTS"@en,
         "SECÇÃO I - ANIMAIS VIVOS E PRODUTOS DO REINO ANIMAL"@pt ;
     skos:scopeNote "LIVE ANIMALS; ANIMAL PRODUCTS"@en ;
+    bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
     skos:topConceptOf :cn2024 .
 
 :010021000090 a skos:Concept ;
@@ -54,6 +57,7 @@
     skos:notation "01"^^rdfns:PlainLiteral ;
     skos:prefLabel "CHAPTER 1 - LIVE ANIMALS"@en,
         "CAPÍTULO 1 - ANIMAIS VIVOS"@pt ;
+    bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
     skos:scopeNote "LIVE ANIMALS"@en .
 
 :010100000080 a skos:Concept ;
@@ -64,6 +68,7 @@
     skos:broader :010021000090 ;
     skos:inScheme :cn2024 ;
     skos:notation "0101" ;
+    bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
     skos:prefLabel "0101 Pferde, Esel, Maultiere und Maulesel, lebend"@de,
         "0101 Live horses, asses, mules and hinnies"@en ;
     skos:scopeNote "Pferde, Esel, Maultiere und Maulesel, lebend"@de,

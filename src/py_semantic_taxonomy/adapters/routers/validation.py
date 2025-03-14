@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Annotated, Literal
 
 import langcodes
@@ -106,6 +106,18 @@ class Node(BaseModel):
     id_: IRI = Field(alias="@id")
 
     model_config = ConfigDict(extra="allow")
+
+
+class StatusChoice(StrEnum):
+    accepted = "http://purl.org/ontology/bibo/status/accepted"
+    draft = "http://purl.org/ontology/bibo/status/draft"
+    rejected = "http://purl.org/ontology/bibo/status/rejected"
+
+
+class Status(BaseModel):
+    id_: StatusChoice = Field(alias="@id")
+
+    model_config = ConfigDict(extra="allow", allow_enum_values=True)
 
 
 def one_per_language(values: list[MultilingualString], label: str) -> list[MultilingualString]:

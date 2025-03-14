@@ -44,6 +44,11 @@ def test_concept_to_db_dict(cn):
         notations=[
             {"@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral", "@value": "I"}
         ],
+        status=[
+            {
+                '@id': 'http://purl.org/ontology/bibo/status/accepted',
+            },
+        ],
         extra={
             "http://purl.org/dc/elements/1.1/identifier": [{"@value": "010011000090"}],
             "http://rdf-vocabulary.ddialliance.org/xkos#depth": [
@@ -82,6 +87,11 @@ def test_concept_from_json_ld(cn):
             },
         ],
         schemes=[{"@id": "http://data.europa.eu/xsp/cn2024/cn2024"}],
+        status=[
+            {
+                '@id': 'http://purl.org/ontology/bibo/status/accepted',
+            },
+        ],
         notations=[
             {"@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral", "@value": "I"}
         ],

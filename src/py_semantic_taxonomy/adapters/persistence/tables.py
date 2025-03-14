@@ -22,6 +22,7 @@ concept_table = Table(
     Column("change_notes", BetterJSON, default=[]),
     Column("history_notes", BetterJSON, default=[]),
     Column("editorial_notes", BetterJSON, default=[]),
+    Column("status", BetterJSON, default=[]),
     Column("extra", BetterJSON, default={}),
 )
 
@@ -42,6 +43,7 @@ concept_scheme_table = Table(
     Column("change_notes", BetterJSON, default=[]),
     Column("history_notes", BetterJSON, default=[]),
     Column("editorial_notes", BetterJSON, default=[]),
+    Column("status", BetterJSON, default=[]),
     Column("extra", BetterJSON, default={}),
 )
 
