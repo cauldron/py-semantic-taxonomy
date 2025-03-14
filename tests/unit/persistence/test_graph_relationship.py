@@ -1,7 +1,9 @@
 import pytest
 
-from py_semantic_taxonomy.domain.constants import RelationshipVerbs
+from py_semantic_taxonomy.domain.constants import SKOS, RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
+    Concept,
+    ConceptScheme,
     DuplicateRelationship,
     Relationship,
     RelationshipNotFoundError,
@@ -75,3 +77,48 @@ async def test_delete_concept(sqlite, graph, relationships):
 
     response = await graph.relationships_delete(relationships)
     assert response == 0, "Wrong number of deleted concepts"
+
+
+async def test_relationship_source_target_share_known_concept_scheme_internal(
+    sqlite, graph, cn, relationships
+):
+    assert await graph.relationship_source_target_share_known_concept_scheme(relationships[0])
+
+
+async def test_relationship_source_target_share_known_concept_scheme_external(
+    sqlite, graph, cn, relationships
+):
+    external = Relationship(
+        source=relationships[0].source,
+        target="http://example.com/bar",
+        predicate=RelationshipVerbs.exact_match,
+    )
+    assert await graph.relationship_source_target_share_known_concept_scheme(external)
+
+
+async def test_relationship_source_target_share_known_concept_scheme_cross_cs_hierarchical(
+    sqlite, graph, cn, relationships
+):
+    new_scheme = cn.scheme
+    new_scheme["@id"] = "http://example.com/foo"
+    await graph.concept_scheme_create(ConceptScheme.from_json_ld(new_scheme))
+
+    new_concept = cn.concept_low
+    new_concept[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
+    new_concept["@id"] = "http://example.com/bar"
+    await graph.concept_create(Concept.from_json_ld(new_concept))
+
+    cross_cs = Relationship(
+        source=relationships[0].source,
+        target=new_concept["@id"],
+        predicate=RelationshipVerbs.broader,
+    )
+    assert not (await graph.relationship_source_target_share_known_concept_scheme(cross_cs))
+
+    # Method doesn't care about predicate type (associate versus hierarchical)
+    cross_cs = Relationship(
+        source=relationships[0].source,
+        target=new_concept["@id"],
+        predicate=RelationshipVerbs.broad_match,
+    )
+    assert not (await graph.relationship_source_target_share_known_concept_scheme(cross_cs))

@@ -1,7 +1,15 @@
 from fastapi.params import Depends
 
 from py_semantic_taxonomy.adapters.routers.dependencies import get_kos_graph
-from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject, Relationship
+from py_semantic_taxonomy.domain.constants import SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES
+from py_semantic_taxonomy.domain.entities import (
+    Concept,
+    ConceptScheme,
+    DuplicateRelationship,
+    GraphObject,
+    HierarchicRelationshipAcrossConceptScheme,
+    Relationship,
+)
 from py_semantic_taxonomy.domain.ports import KOSGraph
 
 
@@ -20,7 +28,14 @@ class GraphService:
     async def concept_create(
         self, concept: Concept, relationships: list[Relationship] = []
     ) -> Concept:
-        return await self.graph.concept_create(concept=concept, relationships=relationships)
+        await self.graph.concept_create(concept=concept)
+        if relationships:
+            try:
+                await self.relationships_create(relationships)
+            except (HierarchicRelationshipAcrossConceptScheme, DuplicateRelationship) as err:
+                await self.concept_delete(concept.id_)
+                raise err
+        return concept
 
     async def concept_update(self, concept: Concept) -> Concept:
         return await self.graph.concept_update(concept=concept)
@@ -49,10 +64,23 @@ class GraphService:
     ) -> list[Relationship]:
         return await self.graph.relationships_get(iri=iri, source=source, target=target)
 
+    async def _relationships_check_source_target_share_known_concept_scheme(
+        self, relationships: list[Relationship]
+    ) -> None:
+        for rel in relationships:
+            if rel.predicate in SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES and not (
+                await self.graph.relationship_source_target_share_known_concept_scheme(rel)
+            ):
+                raise HierarchicRelationshipAcrossConceptScheme(
+                    f"Hierarchical relationship between `{rel.source}` and `{rel.target}` crosses Concept Schemes. Use an associative relationship like `skos:broadMatch` instead."
+                )
+
     async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
+        await self._relationships_check_source_target_share_known_concept_scheme(relationships)
         return await self.graph.relationships_create(relationships)
 
     async def relationships_update(self, relationships: list[Relationship]) -> list[Relationship]:
+        await self._relationships_check_source_target_share_known_concept_scheme(relationships)
         return await self.graph.relationships_update(relationships)
 
     async def relationships_delete(self, relationships: list[Relationship]) -> int:

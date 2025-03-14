@@ -140,3 +140,7 @@ class DuplicateIRI(Exception):
 
 class DuplicateRelationship(Exception):
     pass
+
+
+class HierarchicRelationshipAcrossConceptScheme(Exception):
+    pass

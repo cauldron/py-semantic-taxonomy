@@ -4,20 +4,25 @@ SKOS = "http://www.w3.org/2004/02/skos/core#"
 DCTERMS = "http://purl.org/dc/terms/"
 OWL = "http://www.w3.org/2002/07/owl#"
 
-
-SKOS_RELATIONSHIP_PREDICATES = {
-    f"{SKOS}narrowerTransitive",
-    f"{SKOS}narrower",
-    f"{SKOS}broaderTransitive",
-    f"{SKOS}broader",
-    f"{SKOS}topConceptOf",
-    f"{SKOS}hasTopConcept",
+SKOS_ASSOCIATE_RELATIONSHIP_PREDICATES = {
     f"{SKOS}broadMatch",
     f"{SKOS}closeMatch",
     f"{SKOS}exactMatch",
     f"{SKOS}narrowMatch",
     f"{SKOS}relatedMatch",
 }
+SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES = {
+    f"{SKOS}narrowerTransitive",
+    f"{SKOS}narrower",
+    f"{SKOS}broaderTransitive",
+    f"{SKOS}broader",
+    f"{SKOS}topConceptOf",
+    f"{SKOS}hasTopConcept",
+}
+SKOS_RELATIONSHIP_PREDICATES = SKOS_ASSOCIATE_RELATIONSHIP_PREDICATES.union(
+    SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES
+)
+
 
 RDF_MAPPING = {
     "id_": "@id",

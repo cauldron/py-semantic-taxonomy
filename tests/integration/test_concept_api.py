@@ -90,6 +90,43 @@ async def test_create_concept_relationships(postgres, cn_db_engine, cn, client):
 
 
 @pytest.mark.postgres
+async def test_create_concept_relationships_across_scheme(
+    postgres, cn_db_engine, cn, client, relationships
+):
+    new_scheme = cn.scheme
+    new_scheme["@id"] = "http://example.com/foo"
+    await client.post(Paths.concept_scheme, json=new_scheme)
+
+    new_concept = cn.concept_low
+    new_concept[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
+    new_concept["@id"] = "http://example.com/bar"
+    response = await client.post(Paths.concept, json=new_concept)
+
+    assert response.status_code == 422
+    assert response.json()["message"].endswith(
+        "`skos:broadMatch` instead."
+    ), "API return value incorrect"
+
+    response = await client.get(Paths.concept, params={"iri": new_concept["@id"]})
+    assert response.status_code == 404
+
+
+@pytest.mark.postgres
+async def test_create_concept_relationships_duplicate(
+    postgres, cn_db_engine, cn, client, relationships
+):
+    new_concept = cn.concept_low
+    new_concept[f"{SKOS}broader"].extend(new_concept[f"{SKOS}broader"])
+    response = await client.post(Paths.concept, json=new_concept)
+
+    assert response.status_code == 422
+    assert response.json()["message"].endswith("already exists"), "API return value incorrect"
+
+    response = await client.get(Paths.concept, params={"iri": new_concept["@id"]})
+    assert response.status_code == 404
+
+
+@pytest.mark.postgres
 async def test_create_concept_duplicate(postgres, cn_db_engine, cn, client):
     response = await client.post(Paths.concept, json=cn.concept_top)
     assert response.status_code == 409

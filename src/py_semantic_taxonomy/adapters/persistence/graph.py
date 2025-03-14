@@ -50,9 +50,7 @@ class PostgresKOSGraph:
             await conn.rollback()
         return Concept(**result._mapping)
 
-    async def concept_create(
-        self, concept: Concept, relationships: list[Relationship] = []
-    ) -> Concept:
+    async def concept_create(self, concept: Concept) -> Concept:
         async with self.engine.connect() as conn:
             count = await self._get_count_from_iri(conn, concept.id_, concept_table)
             if count:
@@ -62,8 +60,6 @@ class PostgresKOSGraph:
                 insert(concept_table),
                 [concept.to_db_dict()],
             )
-            if relationships:
-                await self._relationships_create(relationships, conn)
             await conn.commit()
         return concept
 
@@ -162,45 +158,39 @@ class PostgresKOSGraph:
             await conn.rollback()
         return rels
 
-    async def _relationships_create(
-        self, relationships: list[Relationship], conn: Connection
-    ) -> list[Relationship]:
-        try:
-            await conn.execute(
-                insert(relationship_table), [obj.to_db_dict() for obj in relationships]
-            )
-        except IntegrityError as exc:
-            await conn.rollback()
-            err = exc._message()
-            if (
-                # SQLite: Unit tests
-                "UNIQUE constraint failed: relationship.source, relationship.target"
-                in err
-            ) or (
-                # Postgres: Integration tests
-                'duplicate key value violates unique constraint "relationship_source_target_uniqueness"'
-                in err
-            ):
-                # Provide useful feedback by identifying which relationship already exists
-                for obj in relationships:
-                    stmt = select(func.count("*")).where(
-                        relationship_table.c.source == obj.source,
-                        relationship_table.c.target == obj.target,
-                    )
-                    count = (await conn.execute(stmt)).first()[0]
-                    if count:
-                        raise DuplicateRelationship(
-                            f"Relationship between source `{obj.source}` and target `{obj.target}` already exists"
-                        )
-            # Fallback - should never happen, but no one is perfect
-            raise exc
-        return relationships
-
     async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
         async with self.engine.connect() as conn:
-            result = await self._relationships_create(relationships, conn)
+            try:
+                await conn.execute(
+                    insert(relationship_table), [obj.to_db_dict() for obj in relationships]
+                )
+            except IntegrityError as exc:
+                await conn.rollback()
+                err = exc._message()
+                if (
+                    # SQLite: Unit tests
+                    "UNIQUE constraint failed: relationship.source, relationship.target"
+                    in err
+                ) or (
+                    # Postgres: Integration tests
+                    'duplicate key value violates unique constraint "relationship_source_target_uniqueness"'
+                    in err
+                ):
+                    # Provide useful feedback by identifying which relationship already exists
+                    for obj in relationships:
+                        stmt = select(func.count("*")).where(
+                            relationship_table.c.source == obj.source,
+                            relationship_table.c.target == obj.target,
+                        )
+                        count = (await conn.execute(stmt)).first()[0]
+                        if count:
+                            raise DuplicateRelationship(
+                                f"Relationship between source `{obj.source}` and target `{obj.target}` already exists"
+                            )
+                # Fallback - should never happen, but no one is perfect
+                raise exc
             await conn.commit()
-        return result
+        return relationships
 
     async def _get_relationship_count(self, source: str, target: str, conn: Connection) -> int:
         stmt = select(func.count("*")).where(
@@ -232,7 +222,6 @@ class PostgresKOSGraph:
         async with self.engine.connect() as conn:
             count = 0
             for rel in relationships:
-                print(rel, type(rel))
                 result = await conn.execute(
                     delete(relationship_table).where(
                         relationship_table.c.source == rel.source,
@@ -243,3 +232,15 @@ class PostgresKOSGraph:
                 count += result.rowcount
             await conn.commit()
         return count
+
+    async def relationship_source_target_share_known_concept_scheme(
+        self, relationship: Relationship
+    ) -> bool:
+        async with self.engine.connect() as conn:
+            stmt = select(concept_table.c.schemes).where(
+                concept_table.c.id_.in_([relationship.source, relationship.target])
+            )
+            cursor = (await conn.execute(stmt)).scalars()
+            results = [{obj["@id"] for obj in result} for result in cursor]
+            await conn.rollback()
+        return bool((len(results) < 2) or results[0].intersection(results[1]))
