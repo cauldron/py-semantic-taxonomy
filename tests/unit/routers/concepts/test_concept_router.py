@@ -10,6 +10,7 @@ from py_semantic_taxonomy.domain.entities import (
     DuplicateIRI,
     DuplicateRelationship,
     Relationship,
+    RelationshipsInCurrentConceptScheme,
 )
 
 
@@ -124,6 +125,19 @@ async def test_concept_update_error_validation_errors(cn, client, monkeypatch):
     assert response.json()["detail"][0]["type"] == "missing"
     assert response.json()["detail"][0]["loc"] == ["body", f"{SKOS}prefLabel"]
     assert response.status_code == 422
+
+
+async def test_concept_update_error_relationships_concept_schemes(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "concept_update",
+        AsyncMock(side_effect=RelationshipsInCurrentConceptScheme("Problem")),
+    )
+
+    del cn.concept_top[f"{SKOS}topConceptOf"]
+    response = await client.put(Paths.concept, json=cn.concept_top)
+    assert response.status_code == 422
+    assert response.json() == {"message": "Problem"}
 
 
 async def test_concept_update_error_missing(cn, client, monkeypatch):

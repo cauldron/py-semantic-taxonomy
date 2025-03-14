@@ -159,6 +159,25 @@ async def test_update_concept(postgres, cn_db_engine, cn, client):
 
 
 @pytest.mark.postgres
+async def test_update_concept_relationship_cross_concept_scheme(postgres, cn_db_engine, cn, client):
+    new_scheme = cn.scheme
+    new_scheme["@id"] = "http://example.com/foo"
+    await client.post(Paths.concept_scheme, json=new_scheme)
+
+    updated = cn.concept_top
+    if f"{SKOS}narrower" in updated:
+        del updated[f"{SKOS}narrower"]
+    del updated[f"{SKOS}topConceptOf"]
+    updated[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
+
+    response = await client.put(Paths.concept, json=updated)
+    assert response.status_code == 422
+    assert response.json() == {
+        "message": "Update asked to change concept schemes, but existing concept scheme {'http://data.europa.eu/xsp/cn2024/cn2024'} had hierarchical relationships."
+    }
+
+
+@pytest.mark.postgres
 async def test_update_concept_not_found(postgres, cn_db_engine, cn, client):
     obj = cn.concept_low
     del obj[f"{SKOS}broader"]

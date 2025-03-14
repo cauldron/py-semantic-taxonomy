@@ -145,3 +145,7 @@ class DuplicateRelationship(Exception):
 
 class HierarchicRelationshipAcrossConceptScheme(Exception):
     pass
+
+
+class RelationshipsInCurrentConceptScheme(Exception):
+    pass

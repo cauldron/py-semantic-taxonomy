@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import pytest
 
 from py_semantic_taxonomy.domain.constants import SKOS, RelationshipVerbs
@@ -122,3 +124,76 @@ async def test_relationship_source_target_share_known_concept_scheme_cross_cs_hi
         predicate=RelationshipVerbs.broad_match,
     )
     assert not (await graph.relationship_source_target_share_known_concept_scheme(cross_cs))
+
+
+async def test_known_concept_schemes_for_concept_hierarchical_relationships_none(sqlite, graph, cn):
+    new_concept = cn.concept_low
+    del new_concept[f"{SKOS}broader"]
+    new_concept["@id"] = "http://example.com/a"
+    await graph.concept_create(Concept.from_json_ld(new_concept))
+
+    found = await graph.known_concept_schemes_for_concept_hierarchical_relationships(
+        new_concept["@id"]
+    )
+    assert found == []
+
+
+async def test_known_concept_schemes_for_concept_hierarchical_relationships(
+    sqlite, graph, cn, relationships
+):
+    """
+    Concept schemes: A, B, C, D, E
+    Concepts: 1 [A], 2 [A], 3 [A, B], 4 [C], 5 [A, D], 6 [A, E]
+
+    Hierarchical relationships:
+    1 -> 2, 1 -> 3, 6 -> 1
+
+    Associative relationships:
+    1 -> 5, 4 -> 1
+
+    Expected for 1: A, B, E
+    """
+    del cn.concept_low[f"{SKOS}broader"]
+
+    async def new_scheme(code: str) -> str:
+        new_scheme = deepcopy(cn.scheme)
+        new_scheme["@id"] = f"http://example.com/{code}"
+        await graph.concept_scheme_create(ConceptScheme.from_json_ld(new_scheme))
+        return f"http://example.com/{code}"
+
+    async def new_concept(code: str, cs: list[str]) -> str:
+        new_concept = deepcopy(cn.concept_low)
+        new_concept["@id"] = f"http://example.com/{code}"
+        new_concept[f"{SKOS}inScheme"] = [{"@id": obj} for obj in cs]
+        await graph.concept_create(Concept.from_json_ld(new_concept))
+        return f"http://example.com/{code}"
+
+    async def new_relationship(source: str, target: str, hierarchical: bool = True) -> None:
+        rel = Relationship(
+            source=source,
+            target=target,
+            predicate=RelationshipVerbs.broader if hierarchical else RelationshipVerbs.exact_match,
+        )
+        await graph.relationships_create([rel])
+
+    a = await new_scheme("A")
+    b = await new_scheme("B")
+    c = await new_scheme("C")
+    d = await new_scheme("D")
+    e = await new_scheme("E")
+
+    one = await new_concept("1", [a])
+    two = await new_concept("2", [a])
+    three = await new_concept("3", [a, b])
+    four = await new_concept("4", [c])
+    five = await new_concept("5", [a, d])
+    six = await new_concept("6", [a, e])
+
+    await new_relationship(one, two)
+    await new_relationship(one, three)
+    await new_relationship(six, one)
+    await new_relationship(one, five, False)
+    await new_relationship(four, one, False)
+
+    found = await graph.known_concept_schemes_for_concept_hierarchical_relationships(one)
+    assert found == [a, b, e]

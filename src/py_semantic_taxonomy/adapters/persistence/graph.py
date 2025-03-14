@@ -1,4 +1,4 @@
-from sqlalchemy import Connection, Table, delete, func, insert, select, update
+from sqlalchemy import Connection, Table, delete, func, insert, join, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -7,6 +7,10 @@ from py_semantic_taxonomy.adapters.persistence.tables import (
     concept_scheme_table,
     concept_table,
     relationship_table,
+)
+from py_semantic_taxonomy.domain.constants import (
+    SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES,
+    RelationshipVerbs,
 )
 from py_semantic_taxonomy.domain.entities import (
     Concept,
@@ -244,3 +248,41 @@ class PostgresKOSGraph:
             results = [{obj["@id"] for obj in result} for result in cursor]
             await conn.rollback()
         return bool((len(results) < 2) or results[0].intersection(results[1]))
+
+    async def known_concept_schemes_for_concept_hierarchical_relationships(
+        self, iri: str
+    ) -> list[str]:
+        """Get list of all concept schemes for all known concepts with relationships to input iri"""
+        h_verbs = [v for v in SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES if v in RelationshipVerbs]
+
+        async with self.engine.connect() as conn:
+            join_source = join(
+                relationship_table,
+                concept_table,
+                relationship_table.c.source == concept_table.c.id_,
+            )
+            join_target = join(
+                relationship_table,
+                concept_table,
+                relationship_table.c.target == concept_table.c.id_,
+            )
+            stmt = (
+                select(concept_table.c.schemes)
+                .select_from(join_source)
+                .where(
+                    relationship_table.c.target == iri,
+                    relationship_table.c.predicate.in_(h_verbs),
+                )
+                .union(
+                    select(concept_table.c.schemes)
+                    .select_from(join_target)
+                    .where(
+                        relationship_table.c.source == iri,
+                        relationship_table.c.predicate.in_(h_verbs),
+                    )
+                )
+            )
+            cursor = (await conn.execute(stmt)).scalars()
+            results = {obj["@id"] for result in cursor for obj in result}
+            await conn.rollback()
+        return sorted(results)

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from py_semantic_taxonomy.domain.constants import SKOS, BIBO
+from py_semantic_taxonomy.domain.constants import BIBO, SKOS
 
 
 class ErrorMessage(BaseModel):

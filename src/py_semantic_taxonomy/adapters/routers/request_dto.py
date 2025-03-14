@@ -6,16 +6,16 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     IRI,
     DateTime,
     MultilingualString,
-    Status,
     Node,
     NonLiteralNote,
     Notation,
+    Status,
     VersionString,
     one_per_language,
 )
 from py_semantic_taxonomy.domain.constants import (
-    SKOS,
     BIBO,
+    SKOS,
     SKOS_RELATIONSHIP_PREDICATES,
 )
 

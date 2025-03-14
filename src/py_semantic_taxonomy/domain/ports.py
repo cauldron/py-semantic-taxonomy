@@ -40,3 +40,7 @@ class KOSGraph(Protocol):
     async def relationship_source_target_share_known_concept_scheme(
         self, relationship: Relationship
     ) -> bool: ...
+
+    async def known_concept_schemes_for_concept_hierarchical_relationships(
+        self, iri: str
+    ) -> list[str]: ...
