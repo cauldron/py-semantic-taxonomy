@@ -66,7 +66,8 @@ In addition to the above requirements, we assume that concepts within a concept 
 For `Concept`, we enforce or expect the following SKOS ontology best practices:
 
 * Each `Concept` must be in at least one `ConceptScheme`.
-* `skos:related` is for *associative* relationships, not *hierarchical* ones. You shouldn't specify associative relationshpis for two concepts which are related through a transitive chain of either `skos:broader` or `skos:narrower` relationships, but this is not enforced. Concepts can't have relationships with themselves.
+* `skos:related` is for *associative* relationships, not *hierarchical* ones. You shouldn't specify associative relationships for two concepts which are related through a transitive chain of either `skos:broader` or `skos:narrower` relationships, but this is not enforced.
+* We do enforce that concepts with hierarchical relationships must share a concept scheme. Concepts also can't have relationships with themselves.
 * The use of `skos:note` is discouraged (but not prohibited) in favor of the specific `skos:note` subclasses: `skos:scopeNote`, `skos:definition`, `skos:example`, `skos:historyNote`, `skos:editorialNote`, and `skos:changeNote`. Their use should follow the intended use as documented in the [SKOS Primer](https://www.w3.org/TR/skos-primer/#secdocumentation).
 * Hierarchical relationships (`skos:narrower` and `skos:broader`) are reserved for concepts in the same concept scheme. Use `skos:narrowMatch` and `skos:broadMatch` for describing mappings to concepts outside the source concept scheme.
 * `skos:notation` must be a [typed literal](https://www.w3.org/TR/2004/REC-rdf-concepts-20040210/#dfn-typed-literal) - not a string literal - and not include a `@language` tag. The default datatype should be `http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral`.

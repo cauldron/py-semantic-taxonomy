@@ -8,6 +8,7 @@ from py_semantic_taxonomy.domain.entities import (
     Concept,
     ConceptNotFoundError,
     DuplicateIRI,
+    DuplicateRelationship,
     Relationship,
 )
 
@@ -81,6 +82,18 @@ async def test_concept_create_error_already_exists(cn, client, monkeypatch):
         "detail": {"@id": "http://data.europa.eu/xsp/cn2024/010100000080"},
     }
     assert response.status_code == 409
+
+
+async def test_concept_create_error_relationships(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService, "concept_create", AsyncMock(side_effect=DuplicateRelationship("Test"))
+    )
+
+    response = await client.post(Paths.concept, json=cn.concept_low)
+    assert orjson.loads(response.content) == {
+        "message": "Test",
+    }
+    assert response.status_code == 422
 
 
 async def test_concept_update(cn, client, monkeypatch):

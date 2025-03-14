@@ -2,7 +2,7 @@ import orjson
 import pytest
 
 from py_semantic_taxonomy.adapters.routers.router import Paths
-from py_semantic_taxonomy.domain.constants import RelationshipVerbs
+from py_semantic_taxonomy.domain.constants import SKOS, RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import Relationship
 
 
@@ -65,6 +65,34 @@ async def test_create_relationships_duplicate(postgres, cn_db_engine, client, re
     assert response.status_code == 409
     assert response.json() == {
         "message": "Relationship between source `http://data.europa.eu/xsp/cn2024/010021000090` and target `http://data.europa.eu/xsp/cn2024/010011000090` already exists"
+    }, "API return value incorrect"
+
+
+@pytest.mark.postgres
+async def test_create_relationships_across_scheme(
+    postgres, cn_db_engine, cn, client, relationships
+):
+    new_scheme = cn.scheme
+    new_scheme["@id"] = "http://example.com/foo"
+    await client.post(Paths.concept_scheme, json=new_scheme)
+
+    new_concept = cn.concept_low
+    new_concept[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
+    if f"{SKOS}broader" in new_concept:
+        del new_concept[f"{SKOS}broader"]
+    new_concept["@id"] = "http://example.com/bar"
+    await client.post(Paths.concept, json=new_concept)
+
+    cross_cs = Relationship(
+        source=relationships[0].source,
+        target=new_concept["@id"],
+        predicate=RelationshipVerbs.broader,
+    )
+    response = await client.post(Paths.relationship, json=[cross_cs.to_json_ld()])
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "message": f"Hierarchical relationship between `{cross_cs.source}` and `{cross_cs.target}` crosses Concept Schemes. Use an associative relationship like `skos:broadMatch` instead."
     }, "API return value incorrect"
 
 

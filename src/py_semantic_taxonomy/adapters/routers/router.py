@@ -79,16 +79,24 @@ async def concept_create(
         incoming_data = await request.json()
         concept = de.Concept.from_json_ld(incoming_data)
         relationships = de.Relationship.from_json_ld(incoming_data)
-        # result = await service.concept_create(concept=concept)
         result = await service.concept_create(concept=concept, relationships=relationships)
         return response.Concept(**result.to_json_ld())
-    # TBD: Catch DuplicateRelationship
     except de.DuplicateIRI:
         return JSONResponse(
             status_code=409,
             content={
                 "message": f"Resource with `@id` already exists",
                 "detail": {"@id": concept.id_},
+            },
+        )
+    except (
+        de.HierarchicRelationshipAcrossConceptScheme,
+        de.DuplicateRelationship,
+    ) as exc:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "message": str(exc),
             },
         )
 
@@ -270,6 +278,13 @@ async def relationships_create(
                 "message": str(exc),
             },
         )
+    except de.HierarchicRelationshipAcrossConceptScheme as exc:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "message": str(exc),
+            },
+        )
 
 
 @router.put(
@@ -290,6 +305,15 @@ async def relationships_update(
     except de.RelationshipNotFoundError as exc:
         return JSONResponse(
             status_code=404,
+            content={
+                "message": str(exc),
+            },
+        )
+    except de.HierarchicRelationshipAcrossConceptScheme as exc:
+        # TBD: This doesn't have an integration test. You would need to be very creative
+        # to have a valid relationship which triggered this error on updates.
+        return JSONResponse(
+            status_code=422,
             content={
                 "message": str(exc),
             },

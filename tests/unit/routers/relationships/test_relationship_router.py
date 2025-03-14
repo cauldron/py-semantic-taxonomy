@@ -6,6 +6,7 @@ from py_semantic_taxonomy.adapters.routers.router import GraphService, Paths
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     DuplicateRelationship,
+    HierarchicRelationshipAcrossConceptScheme,
     Relationship,
     RelationshipNotFoundError,
 )
@@ -85,6 +86,20 @@ async def test_relationship_create_already_exists(relationships, client, monkeyp
     )
     assert response.status_code == 409
     assert response.json() == {"message": "Already exists"}
+
+
+async def test_relationship_create_across_schemes(relationships, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "relationships_create",
+        AsyncMock(side_effect=HierarchicRelationshipAcrossConceptScheme("Nope")),
+    )
+
+    response = await client.post(
+        Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
+    )
+    assert response.status_code == 422
+    assert response.json() == {"message": "Nope"}
 
 
 async def test_relationships_create_error_validation_errors_zero_relatioships(
@@ -188,6 +203,20 @@ async def test_relationships_update(relationships, client, monkeypatch):
     GraphService.relationships_update.assert_called_once()
     assert isinstance(GraphService.relationships_update.call_args[0][0], list)
     assert isinstance(GraphService.relationships_update.call_args[0][0][0], Relationship)
+
+
+async def test_relationship_update_across_schemes(relationships, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "relationships_update",
+        AsyncMock(side_effect=HierarchicRelationshipAcrossConceptScheme("Nope")),
+    )
+
+    response = await client.put(
+        Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
+    )
+    assert response.status_code == 422
+    assert response.json() == {"message": "Nope"}
 
 
 async def test_relationship_update_error_missing(relationships, client, monkeypatch):
