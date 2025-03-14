@@ -6,6 +6,7 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     IRI,
     DateTime,
     MultilingualString,
+    Status,
     Node,
     NonLiteralNote,
     Notation,
@@ -14,8 +15,8 @@ from py_semantic_taxonomy.adapters.routers.validation import (
 )
 from py_semantic_taxonomy.domain.constants import (
     SKOS,
+    BIBO,
     SKOS_RELATIONSHIP_PREDICATES,
-    RelationshipVerbs,
 )
 
 
@@ -23,6 +24,7 @@ class KOSCommon(BaseModel):
     id_: IRI = Field(alias="@id")
     types: conlist(item_type=IRI) = Field(alias="@type")
     pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}prefLabel")
+    status: conlist(Status, min_length=1) = Field(alias=f"{BIBO}status")
     notations: list[Notation] = Field(alias=f"{SKOS}notation", default=[])
     change_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}changeNote", default=[])
     history_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}historyNote", default=[])

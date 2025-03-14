@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from py_semantic_taxonomy.domain.constants import SKOS
+from py_semantic_taxonomy.domain.constants import SKOS, BIBO
 
 
 class ErrorMessage(BaseModel):
@@ -12,6 +12,7 @@ class KOSCommon(BaseModel):
     id_: str = Field(alias="@id")
     types: list[str] = Field(alias="@type")
     pref_labels: list[dict[str, str]] = Field(alias=f"{SKOS}prefLabel")
+    status: list[dict[str, str]] = Field(alias=f"{BIBO}status")
     definitions: list[dict[str, str]] = Field(alias=f"{SKOS}definition", default=[])
     notations: list[dict[str, str]] = Field(alias=f"{SKOS}notation", default=[])
     change_notes: list[dict] = Field(alias=f"{SKOS}changeNote", default=[])

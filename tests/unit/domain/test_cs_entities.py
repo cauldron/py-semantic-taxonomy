@@ -59,6 +59,11 @@ def test_concept_scheme_to_db_dict(cn):
             {"@id": "http://publications.europa.eu/resource/authority/corporate-body/TAXUD"},
         ],
         version=[{"@value": "2024"}],
+        status=[
+            {
+                '@id': 'http://purl.org/ontology/bibo/status/accepted',
+            },
+        ],
         extra={
             "http://data.europa.eu/eli/ontology#based_on": [
                 {"@id": "http://data.europa.eu/eli/reg_impl/2023/2364/oj"}
@@ -138,6 +143,11 @@ def test_concept_scheme_from_json_ld(cn):
             {"@id": "http://publications.europa.eu/resource/authority/corporate-body/TAXUD"},
         ],
         version=[{"@value": "2024"}],
+        status=[
+            {
+                '@id': 'http://purl.org/ontology/bibo/status/accepted',
+            },
+        ],
         extra={
             "http://data.europa.eu/eli/ontology#based_on": [
                 {"@id": "http://data.europa.eu/eli/reg_impl/2023/2364/oj"}

@@ -16,6 +16,7 @@ class SKOS:
     id_: str
     types: list[str]
     pref_labels: list[dict[str, str]]
+    status: list[dict]
     notations: list[dict[str, str]] = field(default_factory=list)
     definitions: list[dict[str, str]] = field(default_factory=list)
     change_notes: list[dict] = field(default_factory=list)

@@ -12,6 +12,7 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     NonLiteralNote,
     Notation,
     VersionString,
+    Status,
     one_per_language,
 )
 
@@ -154,3 +155,15 @@ def test_notation_forbid_extra_values():
 
 def test_change_note_format(change_note):
     assert NonLiteralNote(**change_note)
+
+
+def test_status():
+    assert Status(**{"@id": 'http://purl.org/ontology/bibo/status/accepted'})
+    assert Status(**{
+        "@id": 'http://purl.org/ontology/bibo/status/accepted',
+        "foo": "bar"
+    })
+    with pytest.raises(ValidationError):
+        assert Status()
+    with pytest.raises(ValidationError):
+        assert Status(**{"@id": 'http://purl.org/ontology/bibo/status/random'})

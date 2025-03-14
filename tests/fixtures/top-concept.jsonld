@@ -23,6 +23,11 @@
       "@value": "010011000090"
     }
   ],
+  "http://purl.org/ontology/bibo/status": [
+    {
+      "@id": "http://purl.org/ontology/bibo/status/accepted"
+    }
+  ],
   "http://purl.org/dc/terms/modified": [
     {
       "@type": "http://www.w3.org/2001/XMLSchema#dateTime",

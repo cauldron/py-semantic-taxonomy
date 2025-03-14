@@ -22,6 +22,11 @@
       "@value": "2024"
     }
   ],
+  "http://purl.org/ontology/bibo/status": [
+    {
+      "@id": "http://purl.org/ontology/bibo/status/accepted"
+    }
+  ],
   "http://www.w3.org/2004/02/skos/core#prefLabel": [
     {
       "@value": "Combined Nomenclature, 2024 (CN 2024)",
