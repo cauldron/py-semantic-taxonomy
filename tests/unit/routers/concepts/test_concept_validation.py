@@ -56,6 +56,18 @@ def test_broader_self_reference(cn):
         ConceptCreate(**obj)
 
 
+def test_transitive_on_concept_create(cn):
+    obj = cn.concept_top
+    assert ConceptCreate(**obj)
+    obj[f"{SKOS}broaderTransitive"] = [{"@id": "http://example.com/a"}]
+    with pytest.raises(ValueError):
+        ConceptCreate(**obj)
+    del obj[f"{SKOS}broaderTransitive"]
+    obj[f"{SKOS}narrowerTransitive"] = [{"@id": "http://example.com/a"}]
+    with pytest.raises(ValueError):
+        ConceptCreate(**obj)
+
+
 def test_broader_not_allowed_in_update(cn):
     obj = cn.concept_top
     if f"{SKOS}narrower" in obj:
