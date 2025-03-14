@@ -81,6 +81,9 @@ class Concept(KOSCommon):
 
 
 class ConceptCreate(Concept):
+    broader: list[Node] = Field(alias=f"{SKOS}broader", default=[])
+    narrower: list[Node] = Field(alias=f"{SKOS}narrower", default=[])
+
     @model_validator(mode="after")
     def hierarchy_doesnt_reference_self(self) -> Self:
         for node in self.broader:
@@ -91,8 +94,16 @@ class ConceptCreate(Concept):
                 raise ValueError("Concept can't have `narrower` relationship to itself")
         return self
 
-    broader: list[Node] = Field(alias=f"{SKOS}broader", default=[])
-    narrower: list[Node] = Field(alias=f"{SKOS}narrower", default=[])
+    @model_validator(mode="before")
+    @classmethod
+    def check_no_transitive_relationships(cls, data: dict) -> dict:
+        for key in data:
+            if key in {f"{SKOS}broaderTransitive", f"{SKOS}narrowerTransitive"}:
+                short = key[len(SKOS) :]
+                raise ValueError(
+                    f"Found `{short}` in new concept; transitive relationships are implied and should be omitted."
+                )
+        return data
 
 
 class ConceptUpdate(Concept):
