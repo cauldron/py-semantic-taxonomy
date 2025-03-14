@@ -61,7 +61,7 @@ def test_concept_scheme_to_db_dict(cn):
         version=[{"@value": "2024"}],
         status=[
             {
-                '@id': 'http://purl.org/ontology/bibo/status/accepted',
+                "@id": "http://purl.org/ontology/bibo/status/accepted",
             },
         ],
         extra={
@@ -145,7 +145,7 @@ def test_concept_scheme_from_json_ld(cn):
         version=[{"@value": "2024"}],
         status=[
             {
-                '@id': 'http://purl.org/ontology/bibo/status/accepted',
+                "@id": "http://purl.org/ontology/bibo/status/accepted",
             },
         ],
         extra={

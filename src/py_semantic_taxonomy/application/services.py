@@ -9,6 +9,7 @@ from py_semantic_taxonomy.domain.entities import (
     GraphObject,
     HierarchicRelationshipAcrossConceptScheme,
     Relationship,
+    RelationshipsInCurrentConceptScheme,
 )
 from py_semantic_taxonomy.domain.ports import KOSGraph
 
@@ -38,6 +39,21 @@ class GraphService:
         return concept
 
     async def concept_update(self, concept: Concept) -> Concept:
+        current = await self.graph.concept_get(concept.id_)
+        current_schemes = {cs["@id"] for cs in current.schemes}
+        new_schemes = {cs["@id"] for cs in concept.schemes}
+        if current_schemes.difference(new_schemes):
+            # Can remove a ConceptScheme only if it doesn't create cross-scheme hierarchical
+            # relationships
+            rel_schemes = (
+                await self.graph.known_concept_schemes_for_concept_hierarchical_relationships(
+                    concept.id_
+                )
+            )
+            if missing := set(rel_schemes).difference(new_schemes):
+                raise RelationshipsInCurrentConceptScheme(
+                    f"Update asked to change concept schemes, but existing concept scheme {missing} had hierarchical relationships."
+                )
         return await self.graph.concept_update(concept=concept)
 
     async def concept_delete(self, iri: str) -> int:

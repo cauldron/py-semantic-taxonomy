@@ -230,10 +230,10 @@ Here is an example of a valid 1-to-N `ConceptAssociation` in JSON-LD; in this ca
   "@id": "http://data.europa.eu/xsp/cn2024/CN2024_CN2023_010239100080",
   "@type": ["http://rdf-vocabulary.ddialliance.org/xkos#ConceptAssociation"],
   "http://rdf-vocabulary.ddialliance.org/xkos#sourceConcept": [
-      {"@id": "http://data.europa.eu/xsp/cn2024/010239100080"}
-  ],
-  "http://rdf-vocabulary.ddialliance.org/xkos#sourceConcept": [
       {"@id": "http://data.europa.eu/xsp/cn2023/010239100080"}
+  ],
+  "http://rdf-vocabulary.ddialliance.org/xkos#targetConcept": [
+      {"@id": "http://data.europa.eu/xsp/cn2024/010239100080"}
   ]
 }
 ```

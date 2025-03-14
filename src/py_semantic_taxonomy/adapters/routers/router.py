@@ -123,6 +123,13 @@ async def concept_update(
                 "detail": {"@id": concept.id_},
             },
         )
+    except de.RelationshipsInCurrentConceptScheme as exc:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "message": str(exc),
+            },
+        )
 
 
 @router.delete(

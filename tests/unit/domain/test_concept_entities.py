@@ -46,7 +46,7 @@ def test_concept_to_db_dict(cn):
         ],
         status=[
             {
-                '@id': 'http://purl.org/ontology/bibo/status/accepted',
+                "@id": "http://purl.org/ontology/bibo/status/accepted",
             },
         ],
         extra={
@@ -89,7 +89,7 @@ def test_concept_from_json_ld(cn):
         schemes=[{"@id": "http://data.europa.eu/xsp/cn2024/cn2024"}],
         status=[
             {
-                '@id': 'http://purl.org/ontology/bibo/status/accepted',
+                "@id": "http://purl.org/ontology/bibo/status/accepted",
             },
         ],
         notations=[
