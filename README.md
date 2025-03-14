@@ -53,24 +53,27 @@ In `py_semantic_taxonomy`, we impose some <a name="additional-requirements">addi
 
 * All string literals **must specify** an `@language` code, and can specify an `@direction`.
 * At least one preferred label (`http://www.w3.org/2004/02/skos/core#prefLabel`) is **required**.
-* At least one definition (`http://www.w3.org/2004/02/skos/core#definition`) is **required**.
 * One only definition per language code is allowed.
 
 For `ConceptScheme`, we also require the following:
 
 * Exactly one `http://purl.org/dc/terms/created` value is specified
 * Exactly one `http://www.w3.org/2002/07/owl#versionInfo` value is specified
+* At least one definition (`http://www.w3.org/2004/02/skos/core#definition`) is given
 
-In addition to the above requirements, we assume that concepts within a concept scheme have a transitive hierarchy; therefore, there is no need to specify `broaderTransitive` or `narrowerTransitive`, these are always implied. Similarly, as `broader` and `narrower` are reciprocal, API inputs may only specify `broader` relationships. Specifying `narrower`, `broaderTransitive`, or `narrowerTransitive` will not raise an error, but they will be ignored and the hierarchy will be reconstituted solely from the `broader` definitions.
+In addition to the above requirements, we assume that concepts within a concept scheme have a strictly **transitive hierarchy** - e.g. if `A` is broader than `B`, and `B` is broader than `C`, then `A` is always broader than `C`. There is therefore no need to specify `broaderTransitive` or `narrowerTransitive`, these are implicit in the taxonomy graph. Similarly, as `broader` and `narrower` are reciprocal, API inputs should only specify `broader` relationships - giving both `broader` and `narrower` relationships will raise a `DuplicateRelationship` error.
 
 For `Concept`, we enforce or expect the following SKOS ontology best practices:
 
 * Each `Concept` must be in at least one `ConceptScheme`.
-* `skos:related` is for *associative* relationships, not *hierarchical* ones. Two concepts which are related through a chain of either `skos:broader` or `skos:narrower` concept relationships is not allowed. A concept also can't be `related` to itself.
-* `skos:scopeNote`, `skos:definition`, `skos:example`, and `skos:historyNote` should follow the intended use as documented in section 2.4 of the [SKOS Primer](https://www.w3.org/TR/skos-primer/).
-* The use of `skos:note` is discouraged (but not prohibited) in favor of the specific `skos:note` subclasses.
+* `skos:related` is for *associative* relationships, not *hierarchical* ones. You shouldn't specify associative relationshpis for two concepts which are related through a transitive chain of either `skos:broader` or `skos:narrower` relationships, but this is not enforced. Concepts can't have relationships with themselves.
+* The use of `skos:note` is discouraged (but not prohibited) in favor of the specific `skos:note` subclasses: `skos:scopeNote`, `skos:definition`, `skos:example`, `skos:historyNote`, `skos:editorialNote`, and `skos:changeNote`. Their use should follow the intended use as documented in the [SKOS Primer](https://www.w3.org/TR/skos-primer/#secdocumentation).
 * Hierarchical relationships (`skos:narrower` and `skos:broader`) are reserved for concepts in the same concept scheme. Use `skos:narrowMatch` and `skos:broadMatch` for describing mappings to concepts outside the source concept scheme.
 * `skos:notation` must be a [typed literal](https://www.w3.org/TR/2004/REC-rdf-concepts-20040210/#dfn-typed-literal) - not a string literal - and not include a `@language` tag. The default datatype should be `http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral`.
+
+Additionally, we **break from** [SKOS guidance](https://www.w3.org/TR/skos-reference/#L2613) to prohibit `skos:notation` having the same value as `skos:prefLabel`. A notation is ['a string of characters such as "T58.5" or "303.4833" used to uniquely identify a concept within the scope of a given concept scheme'](https://www.w3.org/TR/skos-reference/#L2064); this definition is inconsistent with [lexical labels](https://www.w3.org/TR/skos-reference/#L2831) like `skos:prefLabel`, which are human-readable and in a natural language. In our system, `skos:prefLabel` is required but `skos:notation` is optional.
+
+### Tracking changes
 
 We follow the SKOS Primer guidance on [documentary notes](https://www.w3.org/TR/skos-primer/#secdocumentation) for the fields `skos:changeNote`, `skos:editorialNote`, and `skos:historyNote`:
 
@@ -78,9 +81,17 @@ We follow the SKOS Primer guidance on [documentary notes](https://www.w3.org/TR/
 * `skos:editorialNote` supplies information that is an aid to administrative housekeeping, such as reminders of editorial work still to be done, e.g. "Check spelling with John Doe"
 * `skos:historyNote` describes significant changes to the meaning or the form of a concept, e.g. "estab. 1975; heading was: Cruelty to children [1952-1975]"
 
-All three of these notes are required to be RDF resources instead of string literals, and in addition to their values (`rdf:value`), they **must** also include a creator (`dcterms:creator`) and an issuance timestamp (`dcterms:issued`). The API documentation has examples these notes.
+All three of these notes are required to be RDF resources instead of string literals, and in addition to their values (`rdf:value`), they **must** also include a creator (`dcterms:creator`) and an issuance timestamp (`dcterms:issued`).
 
-Additionally, we **break from** [SKOS guidance](https://www.w3.org/TR/skos-reference/#L2613) to prohibit `skos:notation` having the same value as `skos:prefLabel`. A notation is ['a string of characters such as "T58.5" or "303.4833" used to uniquely identify a concept within the scope of a given concept scheme'](https://www.w3.org/TR/skos-reference/#L2064); this definition is inconsistent [lexical labels](https://www.w3.org/TR/skos-reference/#L2831) like `skos:prefLabel`, which are human-readable and in a natural language. In our system, `skos:prefLabel` is required but `skos:notation` is optional.
+SKOS and XKOS don't provide constructs for tracking status. We have [chosen to use](https://github.com/cauldron/py-semantic-taxonomy/issues/16) a subset of the [BIBO](https://en.wikipedia.org/wiki/Bibliographic_Ontology) ontology, and support three different status options:
+
+* draft (`http://purl.org/ontology/bibo/status/draft`)
+* accepted (`http://purl.org/ontology/bibo/status/accepted`)
+* rejected (`http://purl.org/ontology/bibo/status/rejected`)
+
+The predicate verb is `http://purl.org/ontology/bibo/status`.
+
+### Examples
 
 Here is an example of a valid `ConceptScheme` in JSON-LD:
 
@@ -97,6 +108,9 @@ Here is an example of a valid `ConceptScheme` in JSON-LD:
   "http://purl.org/dc/terms/creator": [
     {"@id": "http://publications.europa.eu/resource/authority/corporate-body/ESTAT"},
     {"@id": "http://publications.europa.eu/resource/authority/corporate-body/TAXUD"}
+  ],
+  "http://purl.org/ontology/bibo/status": [
+    {"@id": "http://purl.org/ontology/bibo/status/accepted"}
   ],
   "http://www.w3.org/2002/07/owl#versionInfo": [{"@value": "2024"}],
   "http://www.w3.org/2004/02/skos/core#prefLabel": [
@@ -129,6 +143,9 @@ Here is an example of a valid `Concept` in JSON-LD:
   "@type": ["http://www.w3.org/2004/02/skos/core#Concept"],
   "http://www.w3.org/2004/02/skos/core#inScheme": [
     {"@id": "http://data.europa.eu/xsp/cn2024/cn2024"}
+  ],
+  "http://purl.org/ontology/bibo/status": [
+    {"@id": "http://purl.org/ontology/bibo/status/accepted"}
   ],
   "http://www.w3.org/2004/02/skos/core#prefLabel": [
     {

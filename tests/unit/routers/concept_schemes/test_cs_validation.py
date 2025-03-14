@@ -27,3 +27,10 @@ def test_concept_scheme_no_top_concept(cn):
     cn.scheme[f"{SKOS}hasTopConcept"] = [{"@id": "http://data.europa.eu/xsp/cn2024/010011000090"}]
     with pytest.raises(ValidationError):
         ConceptScheme(**cn.scheme)
+
+
+def test_concept_scheme_definition(cn):
+    obj = cn.scheme
+    obj[f"{SKOS}definition"] = []
+    with pytest.raises(ValidationError):
+        ConceptScheme(**obj)
