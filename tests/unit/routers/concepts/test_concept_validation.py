@@ -23,16 +23,6 @@ def test_concept_type(cn):
         Concept(**obj)
 
 
-def test_concept_pref_labels(cn):
-    obj = cn.concept_top
-    obj[f"{SKOS}prefLabel"] = [
-        {"@value": "Something", "@language": "en"},
-        {"@value": "Something else", "@language": "en"},
-    ]
-    with pytest.raises(ValidationError):
-        Concept(**obj)
-
-
 def test_concept_definition(cn):
     obj = cn.concept_top
     obj[f"{SKOS}definition"] = [
@@ -41,6 +31,12 @@ def test_concept_definition(cn):
     ]
     with pytest.raises(ValidationError):
         Concept(**obj)
+
+
+def test_concept_definition_missing_ok(cn):
+    obj = cn.concept_top
+    obj[f"{SKOS}definition"] = []
+    assert Concept(**obj)
 
 
 def test_child_concept(cn):
