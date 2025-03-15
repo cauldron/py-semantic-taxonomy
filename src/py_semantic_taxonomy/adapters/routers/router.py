@@ -17,7 +17,7 @@ class Paths(StrEnum):
     concept_scheme = "/concept_scheme/"
     catchall = "/{_:path}"
     relationship = "/relationships/"
-    correspondence = "/correspondence"
+    correspondence = "/correspondence/"
 
 
 """
@@ -403,6 +403,29 @@ async def correspondence_create(
         )
 
 
+@router.put(
+    Paths.correspondence,
+    summary="Update a Correspondence object",
+    response_model=response.Correspondence,
+)
+async def correspondence_update(
+    request: Request,
+    concept_scheme: req.Correspondence,
+    service=Depends(GraphService),
+) -> response.Correspondence:
+    try:
+        corr = de.Correspondence.from_json_ld(await request.json())
+        result = await service.correspondence_update(corr)
+        return response.Correspondence(**result.to_json_ld())
+    except de.CorrespondenceNotFoundError:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "message": f"Correspondence with `@id` {corr.id_} not present",
+                "detail": {"@id": corr.id_},
+            },
+        )
+
 
 # TBD: Add in static route before generic catch-all function
 
@@ -418,6 +441,7 @@ async def generic_get_from_iri(request: Request, _: str, service=Depends(GraphSe
         mapping = {
             de.Concept: "concept_get",
             de.ConceptScheme: "concept_scheme_get",
+            de.Correspondence: "correspondence_get",
         }
         return RedirectResponse(
             url="{}?iri={}".format(request.url_for(mapping[object_type]), quote_plus(iri))

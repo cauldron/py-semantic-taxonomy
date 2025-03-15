@@ -257,7 +257,7 @@ class PostgresKOSGraph:
             for rel in relationships:
                 count = await self._get_relationship_count(rel.source, rel.target, conn)
                 if not count:
-                    conn.rollback()
+                    await conn.rollback()
                     raise RelationshipNotFoundError(
                         f"Can't update non-existent relationship between source `{rel.source}` and target `{rel.target}`"
                     )
@@ -319,6 +319,25 @@ class PostgresKOSGraph:
             await conn.execute(
                 insert(correspondence_table),
                 [correspondence.to_db_dict()],
+            )
+            await conn.commit()
+        return correspondence
+
+    async def correspondence_update(self, correspondence: Correspondence) -> Correspondence:
+        async with self.engine.connect() as conn:
+            count = await self._get_count_from_iri(conn, correspondence.id_, correspondence_table)
+            if not count:
+                raise CorrespondenceNotFoundError
+
+            # Updates to `made_of` can only come via dedicated API calls
+            values = correspondence.to_db_dict()
+            if "made_of" in values:
+                del values["made_of"]
+
+            await conn.execute(
+                update(correspondence_table)
+                .where(correspondence_table.c.id_ == correspondence.id_)
+                .values(**values)
             )
             await conn.commit()
         return correspondence

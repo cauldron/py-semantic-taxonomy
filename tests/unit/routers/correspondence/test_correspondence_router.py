@@ -80,3 +80,50 @@ async def test_correspondence_create_error_already_exists(cn, client, monkeypatc
         "detail": {"@id": "http://pyst-tests.ninja/correspondence/cn2023_cn2024"},
     }
     assert response.status_code == 409
+
+
+async def test_correspondence_update(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "correspondence_update",
+        AsyncMock(return_value=Correspondence.from_json_ld(cn.correspondence)),
+    )
+
+    updated = cn.correspondence
+    response = await client.put(Paths.correspondence, json=updated)
+    assert response.status_code == 200
+
+    GraphService.correspondence_update.assert_called_once()
+    assert isinstance(GraphService.correspondence_update.call_args[0][0], Correspondence)
+
+
+async def test_correspondence_update_error_validation_errors(cn, client, monkeypatch):
+    monkeypatch.setattr(GraphService, "correspondence_update", AsyncMock())
+
+    obj = cn.correspondence
+    obj[f"{XKOS}madeOf"] = ["a"]
+
+    response = await client.put(Paths.correspondence, json=obj)
+    assert response.json()["detail"][0]["type"] == "value_error"
+    assert (
+        response.json()["detail"][0]["msg"]
+        == "Value error, Found `http://rdf-vocabulary.ddialliance.org/xkos#madeOf` in new correspondence; use dedicated API calls for this data."
+    )
+    assert response.status_code == 422
+
+
+async def test_correspondence_update_error_missing(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService, "correspondence_update", AsyncMock(side_effect=CorrespondenceNotFoundError)
+    )
+
+    obj = cn.correspondence
+    obj["@id"] = "http://pyst-tests.ninja/correspondence/missing"
+    id_ = obj["@id"]
+
+    response = await client.put(Paths.correspondence, json=obj)
+    assert response.json() == {
+        "message": f"Correspondence with `@id` {id_} not present",
+        "detail": {"@id": id_},
+    }
+    assert response.status_code == 404

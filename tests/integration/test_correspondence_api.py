@@ -1,6 +1,7 @@
 import pytest
 
 from py_semantic_taxonomy.adapters.routers.router import Paths
+from py_semantic_taxonomy.domain.constants import SKOS
 
 
 @pytest.mark.postgres
@@ -41,3 +42,28 @@ async def test_create_correspondence(postgres, cn_db_engine, cn, client):
 async def test_create_correspondence_duplicate(postgres, cn_db_engine, cn, client):
     response = await client.post(Paths.correspondence, json=cn.correspondence)
     assert response.status_code == 409
+
+
+@pytest.mark.postgres
+async def test_update_correspondence(postgres, cn_db_engine, cn, client):
+    updated = cn.correspondence
+    updated[f"{SKOS}prefLabel"] = [{"@value": "Don't read my correspondence", "@language": "en"}]
+
+    response = await client.put(Paths.correspondence, json=updated)
+    assert response.status_code == 200
+    given = response.json()
+    for key, value in updated.items():
+        assert given[key] == value
+
+    given = (await client.get(Paths.correspondence, params={"iri": updated["@id"]})).json()
+    for key, value in updated.items():
+        assert given[key] == value
+
+
+@pytest.mark.postgres
+async def test_update_correspondence_not_found(postgres, cn_db_engine, cn, client):
+    obj = cn.correspondence
+    obj["@id"] = "http://pyst-tests.ninja/correspondence/missing"
+
+    response = await client.put(Paths.correspondence, json=obj)
+    assert response.status_code == 404

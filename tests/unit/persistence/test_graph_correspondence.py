@@ -36,27 +36,26 @@ async def test_create_correspondence(sqlite, cn, entities, graph):
     assert given == expected, "Data attributes from database differ"
 
 
-# async def test_create_correspondence_duplicate(sqlite, cn, entities, graph):
-#     with pytest.raises(DuplicateIRI):
-#         await graph.correspondence_create(correspondence=correspondence.from_json_ld(cn.correspondence_top))
+async def test_update_correspondence(sqlite, cn, entities, graph):
+    expected = Correspondence.from_json_ld(cn.correspondence)
+    # This will be ignored
+    expected.made_of = ["foo", "bar"]
+
+    response = await graph.correspondence_update(correspondence=expected)
+    assert isinstance(response, Correspondence), "Wrong result type"
+
+    expected.made_of = []
+    assert response == expected, "Data attributes from database differ"
+
+    given = await graph.correspondence_get(iri=cn.correspondence["@id"])
+    assert given == expected, "Data attributes from database differ"
 
 
-# async def test_update_correspondence(sqlite, cn, entities, graph):
-#     expected = correspondence.from_json_ld(cn.correspondence_top)
-#     expected.alt_labels = [{"@value": "Dream a little dream", "@language": "en"}]
-
-#     response = await graph.correspondence_update(correspondence=expected)
-#     assert isinstance(response, correspondence), "Wrong result type"
-#     assert response == expected, "Data attributes from database differ"
-
-#     given = await graph.correspondence_get(iri=cn.correspondence_top["@id"])
-#     assert given == expected, "Data attributes from database differ"
-
-
-# async def test_update_correspondence_missing(sqlite, cn, entities, graph):
-#     expected = correspondence.from_json_ld(cn.correspondence_low)
-#     with pytest.raises(correspondenceNotFoundError):
-#         await graph.correspondence_update(correspondence=expected)
+async def test_update_correspondence_missing(sqlite, cn, entities, graph):
+    expected = Correspondence.from_json_ld(cn.correspondence)
+    expected.id_ = "http://pyst-tests.ninja/correspondence/missing"
+    with pytest.raises(CorrespondenceNotFoundError):
+        await graph.correspondence_update(correspondence=expected)
 
 
 # async def test_delete_correspondence(sqlite, cn, entities, graph):

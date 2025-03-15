@@ -2,7 +2,6 @@ from dataclasses import fields
 
 from py_semantic_taxonomy.adapters.routers import request_dto as request
 from py_semantic_taxonomy.adapters.routers import response_dto as response
-from py_semantic_taxonomy.domain.constants import SKOS_RELATIONSHIP_PREDICATES
 from py_semantic_taxonomy.domain.entities import Correspondence
 
 
