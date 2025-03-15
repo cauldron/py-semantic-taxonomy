@@ -24,52 +24,44 @@ async def test_get_correspondence_not_found(sqlite, graph):
         await graph.correspondence_get(iri="http://pyst-tests.ninja/correspondence/missing")
 
 
-# async def test_create_concept(sqlite, cn, entities, graph):
-#     expected = Concept.from_json_ld(cn.concept_low)
+async def test_create_correspondence(sqlite, cn, entities, graph):
+    cn.correspondence["@id"] = "http://pyst-tests.ninja/correspondence/new"
+    expected = Correspondence.from_json_ld(cn.correspondence)
 
-#     response = await graph.concept_create(concept=expected)
-#     assert isinstance(response, Concept), "Wrong result type"
-#     assert response == expected, "Data attributes from database differ"
+    response = await graph.correspondence_create(correspondence=expected)
+    assert isinstance(response, Correspondence), "Wrong result type"
+    assert response == expected, "Data attributes from database differ"
 
-#     given = await graph.concept_get(iri=cn.concept_low["@id"])
-#     assert given == expected, "Data attributes from database differ"
-
-#     given = await graph.relationships_get(iri=cn.concept_low["@id"])
-#     assert given == [
-#         Relationship(
-#             source="http://data.europa.eu/xsp/cn2024/010100000080",
-#             target="http://data.europa.eu/xsp/cn2024/010021000090",
-#             predicate=RelationshipVerbs.broader,
-#         )
-#     ], "Relationship not created"
+    given = await graph.correspondence_get(iri=cn.correspondence["@id"])
+    assert given == expected, "Data attributes from database differ"
 
 
-# async def test_create_concept_duplicate(sqlite, cn, entities, graph):
+# async def test_create_correspondence_duplicate(sqlite, cn, entities, graph):
 #     with pytest.raises(DuplicateIRI):
-#         await graph.concept_create(concept=Concept.from_json_ld(cn.concept_top))
+#         await graph.correspondence_create(correspondence=correspondence.from_json_ld(cn.correspondence_top))
 
 
-# async def test_update_concept(sqlite, cn, entities, graph):
-#     expected = Concept.from_json_ld(cn.concept_top)
+# async def test_update_correspondence(sqlite, cn, entities, graph):
+#     expected = correspondence.from_json_ld(cn.correspondence_top)
 #     expected.alt_labels = [{"@value": "Dream a little dream", "@language": "en"}]
 
-#     response = await graph.concept_update(concept=expected)
-#     assert isinstance(response, Concept), "Wrong result type"
+#     response = await graph.correspondence_update(correspondence=expected)
+#     assert isinstance(response, correspondence), "Wrong result type"
 #     assert response == expected, "Data attributes from database differ"
 
-#     given = await graph.concept_get(iri=cn.concept_top["@id"])
+#     given = await graph.correspondence_get(iri=cn.correspondence_top["@id"])
 #     assert given == expected, "Data attributes from database differ"
 
 
-# async def test_update_concept_missing(sqlite, cn, entities, graph):
-#     expected = Concept.from_json_ld(cn.concept_low)
-#     with pytest.raises(ConceptNotFoundError):
-#         await graph.concept_update(concept=expected)
+# async def test_update_correspondence_missing(sqlite, cn, entities, graph):
+#     expected = correspondence.from_json_ld(cn.correspondence_low)
+#     with pytest.raises(correspondenceNotFoundError):
+#         await graph.correspondence_update(correspondence=expected)
 
 
-# async def test_delete_concept(sqlite, cn, entities, graph):
-#     response = await graph.concept_delete(iri=cn.concept_mid["@id"])
-#     assert response == 1, "Wrong number of deleted concepts"
+# async def test_delete_correspondence(sqlite, cn, entities, graph):
+#     response = await graph.correspondence_delete(iri=cn.correspondence_mid["@id"])
+#     assert response == 1, "Wrong number of deleted correspondences"
 
-#     response = await graph.concept_delete(iri=cn.concept_mid["@id"])
-#     assert response == 0, "Wrong number of deleted concepts"
+#     response = await graph.correspondence_delete(iri=cn.correspondence_mid["@id"])
+#     assert response == 0, "Wrong number of deleted correspondences"

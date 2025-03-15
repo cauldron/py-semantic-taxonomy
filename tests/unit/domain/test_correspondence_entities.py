@@ -10,7 +10,8 @@ def test_correspondence_domain_request_dto_same_fields():
     domain_fields = {f.name for f in fields(Correspondence)}
     request_fields = set(request.Correspondence.model_fields)
     assert domain_fields.difference(request_fields) == {
-        "extra"
+        "extra",
+        "made_of",
     }, "Request validation and domain `Correspondence` model fields differ"
     assert not request_fields.difference(
         domain_fields
@@ -47,6 +48,7 @@ def test_correspondence_to_db_dict(cn):
                 "@id": "http://purl.org/ontology/bibo/status/accepted",
             },
         ],
+        made_of=[],
         compares=[
             {"@id": "http://data.europa.eu/xsp/cn2024/cn2024"},
             {"@id": "http://data.europa.eu/xsp/cn2023/cn2023"},

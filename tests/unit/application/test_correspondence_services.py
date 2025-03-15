@@ -1,14 +1,3 @@
-from unittest.mock import AsyncMock
-
-import pytest
-
-# from py_semantic_taxonomy.domain.entities import (
-#     correspondenceSchemesNotInDatabase,
-#     DuplicateRelationship,
-#     RelationshipsInCurrentcorrespondenceScheme,
-# )
-
-
 async def test_correspondence_get(graph_service, entities):
     mock_kos_graph = graph_service.graph
     mock_kos_graph.correspondence_get.return_value = entities[3]
@@ -18,18 +7,13 @@ async def test_correspondence_get(graph_service, entities):
     mock_kos_graph.correspondence_get.assert_called_with(iri=entities[3].id_)
 
 
-# async def test_correspondence_create(graph_service, cn, entities, relationships):
-#     mock_kos_graph = graph_service.graph
-#     mock_kos_graph.correspondence_create.return_value = entities[0]
-#     mock_kos_graph.correspondence_scheme_get_all_iris.return_value = [cn.scheme["@id"]]
+async def test_correspondence_create(graph_service, cn, entities, relationships):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.correspondence_create.return_value = entities[3]
 
-#     result = await graph_service.correspondence_create(entities[0])
-#     assert result == entities[0]
-#     mock_kos_graph.correspondence_create.assert_called_with(correspondence=entities[0])
-
-#     result = await graph_service.correspondence_create(entities[0], relationships)
-#     assert result == entities[0]
-#     mock_kos_graph.correspondence_create.assert_called_with(correspondence=entities[0])
+    result = await graph_service.correspondence_create(entities[3])
+    assert result == entities[3]
+    mock_kos_graph.correspondence_create.assert_called_with(correspondence=entities[3])
 
 
 # async def test_correspondence_create_missing_correspondence_scheme(graph_service, cn, entities, relationships):

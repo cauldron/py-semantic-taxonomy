@@ -379,6 +379,30 @@ async def correspondence_get(
         )
 
 
+@router.post(
+    Paths.correspondence,
+    summary="Create a Correspondence object",
+    response_model=response.Correspondence,
+)
+async def correspondence_create(
+    request: Request,
+    correspondence: req.Correspondence,
+    service=Depends(GraphService),
+) -> response.Correspondence:
+    try:
+        corr = de.Correspondence.from_json_ld(await request.json())
+        result = await service.correspondence_create(corr)
+        return response.Correspondence(**result.to_json_ld())
+    except de.DuplicateIRI:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "message": f"Resource with `@id` already exists",
+                "detail": {"@id": corr.id_},
+            },
+        )
+
+
 # TBD: Add in static route before generic catch-all function
 
 

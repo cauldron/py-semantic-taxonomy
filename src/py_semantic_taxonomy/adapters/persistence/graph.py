@@ -309,3 +309,16 @@ class PostgresKOSGraph:
                 raise CorrespondenceNotFoundError
             await conn.rollback()
         return Correspondence(**result._mapping)
+
+    async def correspondence_create(self, correspondence: Correspondence) -> Correspondence:
+        async with self.engine.connect() as conn:
+            count = await self._get_count_from_iri(conn, correspondence.id_, correspondence_table)
+            if count:
+                raise DuplicateIRI
+
+            await conn.execute(
+                insert(correspondence_table),
+                [correspondence.to_db_dict()],
+            )
+            await conn.commit()
+        return correspondence

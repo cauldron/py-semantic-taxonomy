@@ -135,3 +135,6 @@ class GraphService:
 
     async def correspondence_get(self, iri: str) -> Correspondence:
         return await self.graph.correspondence_get(iri=iri)
+
+    async def correspondence_create(self, correspondence: Correspondence) -> Correspondence:
+        return await self.graph.correspondence_create(correspondence=correspondence)
