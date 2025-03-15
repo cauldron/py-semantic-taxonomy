@@ -149,3 +149,7 @@ class HierarchicRelationshipAcrossConceptScheme(Exception):
 
 class RelationshipsInCurrentConceptScheme(Exception):
     pass
+
+
+class RelationshipsReferencesConceptScheme(Exception):
+    pass

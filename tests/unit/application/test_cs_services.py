@@ -7,6 +7,15 @@ async def test_concept_scheme_get(graph_service, entities):
     mock_kos_graph.concept_scheme_get.assert_called_with(iri=entities[2].id_)
 
 
+async def test_concept_scheme_get_all_iris(graph_service):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.concept_scheme_get_all_iris.return_value = ["http://example.com/foo"]
+
+    result = await graph_service.concept_scheme_get_all_iris()
+    assert result == ["http://example.com/foo"]
+    mock_kos_graph.concept_scheme_get_all_iris.assert_called_with()
+
+
 async def test_concept_scheme_create(graph_service, entities):
     mock_kos_graph = graph_service.graph
     mock_kos_graph.concept_scheme_create.return_value = entities[2]

@@ -9,6 +9,7 @@ from py_semantic_taxonomy.domain.entities import (
     HierarchicRelationshipAcrossConceptScheme,
     Relationship,
     RelationshipNotFoundError,
+    RelationshipsReferencesConceptScheme,
 )
 
 
@@ -93,6 +94,20 @@ async def test_relationship_create_across_schemes(relationships, client, monkeyp
         GraphService,
         "relationships_create",
         AsyncMock(side_effect=HierarchicRelationshipAcrossConceptScheme("Nope")),
+    )
+
+    response = await client.post(
+        Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
+    )
+    assert response.status_code == 422
+    assert response.json() == {"message": "Nope"}
+
+
+async def test_relationship_create_cs_reference(relationships, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "relationships_create",
+        AsyncMock(side_effect=RelationshipsReferencesConceptScheme("Nope")),
     )
 
     response = await client.post(

@@ -18,6 +18,11 @@ async def test_get_concept_scheme(sqlite, entities, graph):
     assert cs == entities[2]  # Check all data attributes correct
 
 
+async def test_concept_scheme_get_all_iris(sqlite, graph):
+    cs = await graph.concept_scheme_get_all_iris()
+    assert cs == ["http://data.europa.eu/xsp/cn2024/cn2024"]
+
+
 async def test_get_concept_scheme_not_found(sqlite, graph):
     with pytest.raises(ConceptSchemeNotFoundError):
         await graph.concept_scheme_get(iri="http://data.europa.eu/xsp/cn2024/woof")
