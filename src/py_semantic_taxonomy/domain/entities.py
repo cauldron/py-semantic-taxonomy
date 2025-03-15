@@ -153,3 +153,7 @@ class RelationshipsInCurrentConceptScheme(Exception):
 
 class RelationshipsReferencesConceptScheme(Exception):
     pass
+
+
+class ConceptSchemesNotInDatabase(Exception):
+    pass
