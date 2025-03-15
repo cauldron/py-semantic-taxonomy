@@ -43,6 +43,8 @@ RDF_MAPPING = {
     "status": f"{BIBO}status",
     "version": f"{OWL}versionInfo",
     "compares": f"{XKOS}compares",
+    "source_concept": f"{XKOS}sourceConcept",
+    "target_concept": f"{XKOS}targetConcept",
 }
 
 
@@ -54,3 +56,8 @@ class RelationshipVerbs(enum.StrEnum):
     broad_match = f"{SKOS}broadMatch"
     narrow_match = f"{SKOS}narrowMatch"
     related_match = f"{SKOS}relatedMatch"
+
+
+class AssociationKind(enum.StrEnum):
+    simple = "simple"
+    conditional = "conditional"

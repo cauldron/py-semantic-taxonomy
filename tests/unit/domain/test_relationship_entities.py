@@ -3,7 +3,7 @@ from py_semantic_taxonomy.domain.entities import Relationship
 
 
 def test_relationship_to_db_dict(relationships):
-    first = relationships[0]
+    first = relationships[1]
 
     assert first.to_db_dict() == dict(
         source="http://data.europa.eu/xsp/cn2024/010021000090",
@@ -13,7 +13,7 @@ def test_relationship_to_db_dict(relationships):
 
 
 def test_relationship_to_json_ld(relationships):
-    first = relationships[0]
+    first = relationships[1]
 
     assert first.to_json_ld() == {
         "@id": "http://data.europa.eu/xsp/cn2024/010021000090",

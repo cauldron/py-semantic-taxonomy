@@ -20,7 +20,10 @@ async def test_get_concept_scheme(sqlite, entities, graph):
 
 async def test_concept_scheme_get_all_iris(sqlite, graph):
     cs = await graph.concept_scheme_get_all_iris()
-    assert cs == ["http://data.europa.eu/xsp/cn2024/cn2024"]
+    assert sorted(cs) == [
+        "http://data.europa.eu/xsp/cn2023/cn2023",
+        "http://data.europa.eu/xsp/cn2024/cn2024",
+    ]
 
 
 async def test_get_concept_scheme_not_found(sqlite, graph):

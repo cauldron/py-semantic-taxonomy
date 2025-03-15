@@ -12,18 +12,18 @@ async def test_relationships_get(graph_service, relationships):
     mock_kos_graph = graph_service.graph
     mock_kos_graph.relationships_get.return_value = relationships
 
-    result = await graph_service.relationships_get(iri=relationships[0].source)
+    result = await graph_service.relationships_get(iri=relationships[1].source)
     assert result == relationships
     mock_kos_graph.relationships_get.assert_called_with(
-        iri=relationships[0].source, source=True, target=False
+        iri=relationships[1].source, source=True, target=False
     )
 
     result = await graph_service.relationships_get(
-        iri=relationships[0].source, source=False, target=True
+        iri=relationships[1].source, source=False, target=True
     )
     assert result == relationships
     mock_kos_graph.relationships_get.assert_called_with(
-        iri=relationships[0].source, source=False, target=True
+        iri=relationships[1].source, source=False, target=True
     )
 
 
@@ -40,7 +40,7 @@ async def test_relationship_create_cross_concept_scheme_hierarchical(graph_servi
     mock_kos_graph = graph_service.graph
     mock_kos_graph.relationship_source_target_share_known_concept_scheme.return_value = False
 
-    rel = relationships[0]
+    rel = relationships[1]
 
     with pytest.raises(HierarchicRelationshipAcrossConceptScheme) as excinfo:
         await graph_service.relationships_create([rel])
@@ -70,8 +70,8 @@ async def test_relationship_create_cross_concept_scheme_associative(graph_servic
     mock_kos_graph.relationship_source_target_share_known_concept_scheme.return_value = False
 
     associative = Relationship(
-        source=relationships[0].source,
-        target=relationships[0].target,
+        source=relationships[1].source,
+        target=relationships[1].target,
         predicate=RelationshipVerbs.broad_match,
     )
     await graph_service.relationships_create([associative])
@@ -91,7 +91,7 @@ async def test_relationship_update_cross_concept_scheme_hierarchical(graph_servi
     mock_kos_graph = graph_service.graph
     mock_kos_graph.relationship_source_target_share_known_concept_scheme.return_value = False
 
-    rel = relationships[0]
+    rel = relationships[1]
 
     with pytest.raises(HierarchicRelationshipAcrossConceptScheme) as excinfo:
         await graph_service.relationships_update([rel])
@@ -106,8 +106,8 @@ async def test_relationship_update_cross_concept_scheme_associative(graph_servic
     mock_kos_graph.relationship_source_target_share_known_concept_scheme.return_value = False
 
     associative = Relationship(
-        source=relationships[0].source,
-        target=relationships[0].target,
+        source=relationships[1].source,
+        target=relationships[1].target,
         predicate=RelationshipVerbs.broad_match,
     )
     await graph_service.relationships_update([associative])
