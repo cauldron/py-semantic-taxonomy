@@ -73,3 +73,12 @@
         "0101 Live horses, asses, mules and hinnies"@en ;
     skos:scopeNote "Pferde, Esel, Maultiere und Maulesel, lebend"@de,
         "Live horses, asses, mules and hinnies"@en .
+
+<http://pyst-tests.ninja/correspondence/cn2023_cn2024> a xkos:Correspondence ;
+    dcterms:created "2025-01-01T12:34:56"^^xsd:dateTime ;
+    dcterms:creator <http://publications.europa.eu/resource/authority/corporate-body/ESTAT> ;
+    skos:notation "CN 2023-CN 2024"^^rdfns:PlainLiteral ;
+    skos:prefLabel "Combined Nomenclature 2023 to 2024"@en ;
+    owl:versionInfo "1.0" ;
+    xkos:compares :cn2024, <http://data.europa.eu/xsp/cn2023/cn2023> ;
+    bibo:status <http://purl.org/ontology/bibo/status/accepted> .

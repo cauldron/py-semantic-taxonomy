@@ -4,6 +4,7 @@ BIBO = "http://purl.org/ontology/bibo/"
 DCTERMS = "http://purl.org/dc/terms/"
 OWL = "http://www.w3.org/2002/07/owl#"
 SKOS = "http://www.w3.org/2004/02/skos/core#"
+XKOS = "http://rdf-vocabulary.ddialliance.org/xkos#"
 
 SKOS_ASSOCIATE_RELATIONSHIP_PREDICATES = {
     f"{SKOS}broadMatch",
@@ -41,6 +42,7 @@ RDF_MAPPING = {
     "schemes": f"{SKOS}inScheme",
     "status": f"{BIBO}status",
     "version": f"{OWL}versionInfo",
+    "compares": f"{XKOS}compares",
 }
 
 

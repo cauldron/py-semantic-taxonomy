@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from py_semantic_taxonomy.domain.constants import BIBO, SKOS
+from py_semantic_taxonomy.domain.constants import BIBO, SKOS, XKOS
 
 
 class ErrorMessage(BaseModel):
@@ -51,3 +51,8 @@ class Relationship(BaseModel):
 
     def model_dump(self, exclude_unset=True, by_alias=True, *args, **kwargs):
         return super().model_dump(*args, exclude_unset=exclude_unset, by_alias=by_alias, **kwargs)
+
+
+class Correspondence(ConceptScheme):
+    compares: list[dict] = Field(alias=f"{XKOS}compares")
+    made_of: list[dict] = Field(alias=f"{XKOS}madeOf", default=[])
