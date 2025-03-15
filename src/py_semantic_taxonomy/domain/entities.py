@@ -121,7 +121,7 @@ class Correspondence(ConceptScheme):
 
 # For type hinting
 # Will be Concept | ConceptScheme | Correspondence | Association
-GraphObject = Concept | ConceptScheme
+GraphObject = Concept | ConceptScheme | Correspondence
 
 
 class NotFoundError(Exception):
@@ -137,6 +137,10 @@ class ConceptSchemeNotFoundError(NotFoundError):
 
 
 class RelationshipNotFoundError(NotFoundError):
+    pass
+
+
+class CorrespondenceNotFoundError(NotFoundError):
     pass
 
 

@@ -116,6 +116,7 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
     from py_semantic_taxonomy.adapters.persistence.tables import (
         concept_scheme_table,
         concept_table,
+        correspondence_table,
         relationship_table,
     )
 
@@ -134,6 +135,12 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
             insert(concept_scheme_table),
             [
                 entities[2].to_db_dict(),
+            ],
+        )
+        await conn.execute(
+            insert(correspondence_table),
+            [
+                entities[3].to_db_dict(),
             ],
         )
         await conn.execute(insert(relationship_table), [obj.to_db_dict() for obj in relationships])

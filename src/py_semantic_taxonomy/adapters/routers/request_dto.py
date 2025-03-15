@@ -220,7 +220,7 @@ class Relationship(BaseModel):
 
 class Correspondence(ConceptSchemeCommon):
     definitions: list[MultilingualString] = Field(alias=f"{SKOS}definition", default=[])
-    compares: conlist(MultilingualString, min_length=1) = Field(alias=f"{XKOS}compares")
+    compares: conlist(Node, min_length=1) = Field(alias=f"{XKOS}compares")
 
     @field_validator("types", mode="after")
     @classmethod

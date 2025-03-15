@@ -6,6 +6,7 @@ from py_semantic_taxonomy.domain.entities import (
     Concept,
     ConceptScheme,
     ConceptSchemesNotInDatabase,
+    Correspondence,
     DuplicateRelationship,
     GraphObject,
     HierarchicRelationshipAcrossConceptScheme,
@@ -129,3 +130,8 @@ class GraphService:
 
     async def relationships_delete(self, relationships: list[Relationship]) -> int:
         return await self.graph.relationships_delete(relationships)
+
+    # Correspondence
+
+    async def correspondence_get(self, iri: str) -> Correspondence:
+        return await self.graph.correspondence_get(iri=iri)
