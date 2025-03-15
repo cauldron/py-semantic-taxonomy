@@ -5,6 +5,7 @@ from datetime import datetime
 from py_semantic_taxonomy.domain.constants import (
     RDF_MAPPING,
     SKOS_RELATIONSHIP_PREDICATES,
+    AssociationKind,
     RelationshipVerbs,
 )
 
@@ -12,18 +13,7 @@ from py_semantic_taxonomy.domain.constants import (
 # Allow mixing non-default and default values in dataclasses
 # See https://www.trueblade.com/blogs/news/python-3-10-new-dataclass-features
 @dataclass(kw_only=True)
-class SKOS:
-    id_: str
-    types: list[str]
-    pref_labels: list[dict[str, str]]
-    status: list[dict]
-    notations: list[dict[str, str]] = field(default_factory=list)
-    definitions: list[dict[str, str]] = field(default_factory=list)
-    change_notes: list[dict] = field(default_factory=list)
-    history_notes: list[dict] = field(default_factory=list)
-    editorial_notes: list[dict] = field(default_factory=list)
-    extra: dict = field(default_factory=dict)
-
+class PySTBase:
     def to_db_dict(self) -> dict:
         return asdict(self)
 
@@ -40,8 +30,8 @@ class SKOS:
         return dct
 
     @classmethod
-    def from_json_ld(cls, concept_dict: dict) -> "Concept":
-        source_dict, data = copy(concept_dict), {}
+    def from_json_ld(cls, dict_: dict) -> "PySTBase":
+        source_dict, data = copy(dict_), {}
         class_fields = {f.name for f in fields(cls)}.difference({"extra"})
         for dataclass_label, skos_label in RDF_MAPPING.items():
             if dataclass_label in class_fields and skos_label in source_dict:
@@ -52,6 +42,20 @@ class SKOS:
             if key not in SKOS_RELATIONSHIP_PREDICATES
         }
         return cls(**data)
+
+
+@dataclass(kw_only=True)
+class SKOS(PySTBase):
+    id_: str
+    types: list[str]
+    pref_labels: list[dict[str, str]]
+    status: list[dict]
+    notations: list[dict[str, str]] = field(default_factory=list)
+    definitions: list[dict[str, str]] = field(default_factory=list)
+    change_notes: list[dict] = field(default_factory=list)
+    history_notes: list[dict] = field(default_factory=list)
+    editorial_notes: list[dict] = field(default_factory=list)
+    extra: dict = field(default_factory=dict)
 
 
 @dataclass(kw_only=True)
@@ -120,9 +124,18 @@ class Correspondence(ConceptScheme):
     made_of: list[dict] = field(default_factory=list)
 
 
+@dataclass(kw_only=True)
+class Association(PySTBase):
+    id_: str
+    types: list[str]
+    source_concept: list[dict]
+    target_concept: list[dict]
+    kind: AssociationKind = AssociationKind.simple
+    extra: dict = field(default_factory=dict)
+
+
 # For type hinting
-# Will be Concept | ConceptScheme | Correspondence | Association
-GraphObject = Concept | ConceptScheme | Correspondence
+GraphObject = Concept | ConceptScheme | Correspondence | Association
 
 
 class NotFoundError(Exception):
@@ -142,6 +155,10 @@ class RelationshipNotFoundError(NotFoundError):
 
 
 class CorrespondenceNotFoundError(NotFoundError):
+    pass
+
+
+class AssociationNotFoundError(NotFoundError):
     pass
 
 
