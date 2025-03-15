@@ -4,6 +4,7 @@ from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     HierarchicRelationshipAcrossConceptScheme,
     Relationship,
+    RelationshipsReferencesConceptScheme,
 )
 
 
@@ -47,6 +48,21 @@ async def test_relationship_create_cross_concept_scheme_hierarchical(graph_servi
     assert excinfo.match(
         f"Hierarchical relationship between `{rel.source}` and `{rel.target}` crosses Concept Schemes. Use an associative relationship like `skos:broadMatch` instead."
     )
+
+
+async def test_relationship_create_reference_concept_scheme(graph_service, relationships):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.concept_scheme_get_all_iris.return_value = ["a"]
+
+    rel = Relationship(source="a", target="b", predicate=RelationshipVerbs.broad_match)
+    with pytest.raises(RelationshipsReferencesConceptScheme) as excinfo:
+        await graph_service.relationships_create([rel])
+    assert excinfo.match(r"source refers to concept scheme `a`")
+
+    rel = Relationship(source="b", target="a", predicate=RelationshipVerbs.broad_match)
+    with pytest.raises(RelationshipsReferencesConceptScheme) as excinfo:
+        await graph_service.relationships_create([rel])
+    assert excinfo.match(r"target refers to concept scheme `a`")
 
 
 async def test_relationship_create_cross_concept_scheme_associative(graph_service, relationships):

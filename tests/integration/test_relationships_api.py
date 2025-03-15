@@ -97,6 +97,23 @@ async def test_create_relationships_across_scheme(
 
 
 @pytest.mark.postgres
+async def test_create_relationships_reference_concept_scheme(
+    postgres, cn_db_engine, cn, client, relationships
+):
+    rel = Relationship(
+        source=cn.concept_low["@id"],
+        target=cn.scheme["@id"],
+        predicate=RelationshipVerbs.broader,
+    )
+    response = await client.post(Paths.relationship, json=[rel.to_json_ld()])
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "message": "Relationship `Relationship(source='http://data.europa.eu/xsp/cn2024/010100000080', target='http://data.europa.eu/xsp/cn2024/cn2024', predicate=<RelationshipVerbs.broader: 'http://www.w3.org/2004/02/skos/core#broader'>)` target refers to concept scheme `http://data.europa.eu/xsp/cn2024/cn2024`"
+    }, "API return value incorrect"
+
+
+@pytest.mark.postgres
 async def test_update_relationships(postgres, cn_db_engine, client, relationships):
     updated = Relationship(
         source=relationships[0].source,

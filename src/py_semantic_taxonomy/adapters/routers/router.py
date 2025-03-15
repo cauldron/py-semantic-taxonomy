@@ -285,7 +285,10 @@ async def relationships_create(
                 "message": str(exc),
             },
         )
-    except de.HierarchicRelationshipAcrossConceptScheme as exc:
+    except (
+        de.HierarchicRelationshipAcrossConceptScheme,
+        de.RelationshipsReferencesConceptScheme,
+    ) as exc:
         return JSONResponse(
             status_code=422,
             content={

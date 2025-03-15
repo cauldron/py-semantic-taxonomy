@@ -10,6 +10,7 @@ from py_semantic_taxonomy.domain.entities import (
     HierarchicRelationshipAcrossConceptScheme,
     Relationship,
     RelationshipsInCurrentConceptScheme,
+    RelationshipsReferencesConceptScheme,
 )
 from py_semantic_taxonomy.domain.ports import KOSGraph
 
@@ -64,6 +65,9 @@ class GraphService:
     async def concept_scheme_get(self, iri: str) -> ConceptScheme:
         return await self.graph.concept_scheme_get(iri=iri)
 
+    async def concept_scheme_get_all_iris(self) -> list[str]:
+        return await self.graph.concept_scheme_get_all_iris()
+
     async def concept_scheme_create(self, concept_scheme: ConceptScheme) -> ConceptScheme:
         return await self.graph.concept_scheme_create(concept_scheme=concept_scheme)
 
@@ -92,6 +96,17 @@ class GraphService:
                 )
 
     async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
+        concept_schemes = await self.concept_scheme_get_all_iris()
+        for rel in relationships:
+            if rel.source in concept_schemes:
+                raise RelationshipsReferencesConceptScheme(
+                    f"Relationship `{rel}` source refers to concept scheme `{rel.source}`"
+                )
+            if rel.target in concept_schemes:
+                raise RelationshipsReferencesConceptScheme(
+                    f"Relationship `{rel}` target refers to concept scheme `{rel.target}`"
+                )
+
         await self._relationships_check_source_target_share_known_concept_scheme(relationships)
         return await self.graph.relationships_create(relationships)
 
