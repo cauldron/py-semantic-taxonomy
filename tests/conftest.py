@@ -13,7 +13,13 @@ from testcontainers.postgres import PostgresContainer
 
 from py_semantic_taxonomy.application.services import GraphService
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
-from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject, Relationship
+from py_semantic_taxonomy.domain.entities import (
+    Concept,
+    ConceptScheme,
+    Correspondence,
+    GraphObject,
+    Relationship,
+)
 from py_semantic_taxonomy.domain.ports import KOSGraph
 
 
@@ -33,6 +39,7 @@ def cn(fixtures_dir: Path) -> object:
         concept_mid = data[1]
         concept_low = data[2]
         scheme = data[3]
+        correspondence = data[4]
 
     return CN()
 
@@ -63,6 +70,7 @@ def entities(cn) -> list[GraphObject]:
         Concept.from_json_ld(cn.concept_top),
         Concept.from_json_ld(cn.concept_mid),
         ConceptScheme.from_json_ld(cn.scheme),
+        Correspondence.from_json_ld(cn.correspondence),
     ]
 
 
@@ -108,6 +116,7 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
     from py_semantic_taxonomy.adapters.persistence.tables import (
         concept_scheme_table,
         concept_table,
+        correspondence_table,
         relationship_table,
     )
 
@@ -126,6 +135,12 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
             insert(concept_scheme_table),
             [
                 entities[2].to_db_dict(),
+            ],
+        )
+        await conn.execute(
+            insert(correspondence_table),
+            [
+                entities[3].to_db_dict(),
             ],
         )
         await conn.execute(insert(relationship_table), [obj.to_db_dict() for obj in relationships])

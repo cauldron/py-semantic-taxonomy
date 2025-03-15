@@ -114,9 +114,15 @@ class Relationship:
         )
 
 
+@dataclass(kw_only=True)
+class Correspondence(ConceptScheme):
+    compares: list[dict]
+    made_of: list[dict] = field(default_factory=list)
+
+
 # For type hinting
 # Will be Concept | ConceptScheme | Correspondence | Association
-GraphObject = Concept | ConceptScheme
+GraphObject = Concept | ConceptScheme | Correspondence
 
 
 class NotFoundError(Exception):
@@ -132,6 +138,10 @@ class ConceptSchemeNotFoundError(NotFoundError):
 
 
 class RelationshipNotFoundError(NotFoundError):
+    pass
+
+
+class CorrespondenceNotFoundError(NotFoundError):
     pass
 
 

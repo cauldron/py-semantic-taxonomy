@@ -1,6 +1,12 @@
 from typing import Protocol, runtime_checkable
 
-from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject, Relationship
+from py_semantic_taxonomy.domain.entities import (
+    Concept,
+    ConceptScheme,
+    Correspondence,
+    GraphObject,
+    Relationship,
+)
 
 
 @runtime_checkable
@@ -46,3 +52,11 @@ class KOSGraph(Protocol):
     async def known_concept_schemes_for_concept_hierarchical_relationships(
         self, iri: str
     ) -> list[str]: ...
+
+    async def correspondence_get(self, iri: str) -> Correspondence: ...
+
+    async def correspondence_create(self, correspondence: Correspondence) -> Correspondence: ...
+
+    async def correspondence_update(self, correspondence: Correspondence) -> Correspondence: ...
+
+    async def correspondence_delete(self, iri: str) -> int: ...

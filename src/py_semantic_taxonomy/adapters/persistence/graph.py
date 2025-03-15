@@ -6,6 +6,7 @@ from py_semantic_taxonomy.adapters.persistence.database import create_engine
 from py_semantic_taxonomy.adapters.persistence.tables import (
     concept_scheme_table,
     concept_table,
+    correspondence_table,
     relationship_table,
 )
 from py_semantic_taxonomy.domain.constants import (
@@ -17,6 +18,8 @@ from py_semantic_taxonomy.domain.entities import (
     ConceptNotFoundError,
     ConceptScheme,
     ConceptSchemeNotFoundError,
+    Correspondence,
+    CorrespondenceNotFoundError,
     DuplicateIRI,
     DuplicateRelationship,
     GraphObject,
@@ -36,6 +39,8 @@ class PostgresKOSGraph:
                 return Concept
             if await self._get_count_from_iri(conn, iri, concept_scheme_table):
                 return ConceptScheme
+            if await self._get_count_from_iri(conn, iri, correspondence_table):
+                return Correspondence
         raise NotFoundError(f"Given IRI `{iri}` is not a known object")
 
     # Concepts
@@ -140,6 +145,44 @@ class PostgresKOSGraph:
             await conn.commit()
         return result.rowcount
 
+    async def known_concept_schemes_for_concept_hierarchical_relationships(
+        self, iri: str
+    ) -> list[str]:
+        """Get list of all concept schemes for all known concepts with relationships to input iri"""
+        h_verbs = [v for v in SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES if v in RelationshipVerbs]
+
+        async with self.engine.connect() as conn:
+            join_source = join(
+                relationship_table,
+                concept_table,
+                relationship_table.c.source == concept_table.c.id_,
+            )
+            join_target = join(
+                relationship_table,
+                concept_table,
+                relationship_table.c.target == concept_table.c.id_,
+            )
+            stmt = (
+                select(concept_table.c.schemes)
+                .select_from(join_source)
+                .where(
+                    relationship_table.c.target == iri,
+                    relationship_table.c.predicate.in_(h_verbs),
+                )
+                .union(
+                    select(concept_table.c.schemes)
+                    .select_from(join_target)
+                    .where(
+                        relationship_table.c.source == iri,
+                        relationship_table.c.predicate.in_(h_verbs),
+                    )
+                )
+            )
+            cursor = (await conn.execute(stmt)).scalars()
+            results = {obj["@id"] for result in cursor for obj in result}
+            await conn.rollback()
+        return sorted(results)
+
     # Relationship
 
     async def relationships_get(
@@ -214,7 +257,7 @@ class PostgresKOSGraph:
             for rel in relationships:
                 count = await self._get_relationship_count(rel.source, rel.target, conn)
                 if not count:
-                    conn.rollback()
+                    await conn.rollback()
                     raise RelationshipNotFoundError(
                         f"Can't update non-existent relationship between source `{rel.source}` and target `{rel.target}`"
                     )
@@ -256,40 +299,53 @@ class PostgresKOSGraph:
             await conn.rollback()
         return bool((len(results) < 2) or results[0].intersection(results[1]))
 
-    async def known_concept_schemes_for_concept_hierarchical_relationships(
-        self, iri: str
-    ) -> list[str]:
-        """Get list of all concept schemes for all known concepts with relationships to input iri"""
-        h_verbs = [v for v in SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES if v in RelationshipVerbs]
+    # Correspondence
 
+    async def correspondence_get(self, iri: str) -> Correspondence:
         async with self.engine.connect() as conn:
-            join_source = join(
-                relationship_table,
-                concept_table,
-                relationship_table.c.source == concept_table.c.id_,
-            )
-            join_target = join(
-                relationship_table,
-                concept_table,
-                relationship_table.c.target == concept_table.c.id_,
-            )
-            stmt = (
-                select(concept_table.c.schemes)
-                .select_from(join_source)
-                .where(
-                    relationship_table.c.target == iri,
-                    relationship_table.c.predicate.in_(h_verbs),
-                )
-                .union(
-                    select(concept_table.c.schemes)
-                    .select_from(join_target)
-                    .where(
-                        relationship_table.c.source == iri,
-                        relationship_table.c.predicate.in_(h_verbs),
-                    )
-                )
-            )
-            cursor = (await conn.execute(stmt)).scalars()
-            results = {obj["@id"] for result in cursor for obj in result}
+            stmt = select(correspondence_table).where(correspondence_table.c.id_ == iri)
+            result = (await conn.execute(stmt)).first()
+            if not result:
+                raise CorrespondenceNotFoundError
             await conn.rollback()
-        return sorted(results)
+        return Correspondence(**result._mapping)
+
+    async def correspondence_create(self, correspondence: Correspondence) -> Correspondence:
+        async with self.engine.connect() as conn:
+            count = await self._get_count_from_iri(conn, correspondence.id_, correspondence_table)
+            if count:
+                raise DuplicateIRI
+
+            await conn.execute(
+                insert(correspondence_table),
+                [correspondence.to_db_dict()],
+            )
+            await conn.commit()
+        return correspondence
+
+    async def correspondence_update(self, correspondence: Correspondence) -> Correspondence:
+        async with self.engine.connect() as conn:
+            count = await self._get_count_from_iri(conn, correspondence.id_, correspondence_table)
+            if not count:
+                raise CorrespondenceNotFoundError
+
+            # Updates to `made_of` can only come via dedicated API calls
+            values = correspondence.to_db_dict()
+            if "made_of" in values:
+                del values["made_of"]
+
+            await conn.execute(
+                update(correspondence_table)
+                .where(correspondence_table.c.id_ == correspondence.id_)
+                .values(**values)
+            )
+            await conn.commit()
+        return correspondence
+
+    async def correspondence_delete(self, iri: str) -> int:
+        async with self.engine.connect() as conn:
+            result = await conn.execute(
+                delete(correspondence_table).where(correspondence_table.c.id_ == iri)
+            )
+            await conn.commit()
+        return result.rowcount

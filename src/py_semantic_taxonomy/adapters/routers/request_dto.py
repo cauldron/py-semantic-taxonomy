@@ -17,6 +17,7 @@ from py_semantic_taxonomy.domain.constants import (
     BIBO,
     SKOS,
     SKOS_RELATIONSHIP_PREDICATES,
+    XKOS,
 )
 
 
@@ -119,21 +120,23 @@ class ConceptUpdate(Concept):
         return data
 
 
-class ConceptScheme(KOSCommon):
-    """Validation class for SKOS Concept Schemes.
-
-    Checks that required fields are included and have correct type."""
-
-    # One definition per language, at least one definition
-    definitions: conlist(MultilingualString, min_length=1) = Field(
-        alias=f"{SKOS}definition",
-    )
+class ConceptSchemeCommon(KOSCommon):
     created: conlist(DateTime, min_length=1, max_length=1) = Field(
         alias="http://purl.org/dc/terms/created"
     )
     creators: list[Node] = Field(alias="http://purl.org/dc/terms/creator")
     version: conlist(VersionString, min_length=1, max_length=1) = Field(
         alias="http://www.w3.org/2002/07/owl#versionInfo"
+    )
+
+
+class ConceptScheme(ConceptSchemeCommon):
+    """Validation class for SKOS Concept Schemes.
+
+    Checks that required fields are included and have correct type."""
+
+    definitions: conlist(MultilingualString, min_length=1) = Field(
+        alias=f"{SKOS}definition",
     )
 
     @field_validator("types", mode="after")
@@ -144,13 +147,6 @@ class ConceptScheme(KOSCommon):
             raise ValueError(f"`@type` must include `{SCHEME}`")
         return value
 
-    @field_validator("definitions", mode="after")
-    @classmethod
-    def definition_one_per_language(
-        cls, value: list[MultilingualString]
-    ) -> list[MultilingualString]:
-        return one_per_language(value, "definition")
-
     @model_validator(mode="before")
     @classmethod
     def check_no_top_concept(cls, data: dict) -> dict:
@@ -160,6 +156,13 @@ class ConceptScheme(KOSCommon):
                 f"Found `hasTopConcept` in concept scheme; Use specific API calls to create or update this relationship."
             )
         return data
+
+    @field_validator("definitions", mode="after")
+    @classmethod
+    def definition_one_per_language(
+        cls, value: list[MultilingualString]
+    ) -> list[MultilingualString]:
+        return one_per_language(value, "definition")
 
 
 class Relationship(BaseModel):
@@ -213,3 +216,33 @@ class Relationship(BaseModel):
             raise ValueError(f"Found zero relationships")
 
         return self
+
+
+class Correspondence(ConceptSchemeCommon):
+    definitions: list[MultilingualString] = Field(alias=f"{SKOS}definition", default=[])
+    compares: conlist(Node, min_length=1) = Field(alias=f"{XKOS}compares")
+
+    @field_validator("types", mode="after")
+    @classmethod
+    def type_includes_correspondence(cls, value: list[str]) -> list[str]:
+        CONCEPT = f"{XKOS}Correspondence"
+        if CONCEPT not in value:
+            raise ValueError(f"`@type` values must include `{CONCEPT}`")
+        return value
+
+    @field_validator("definitions", mode="after")
+    @classmethod
+    def definition_one_per_language(
+        cls, value: list[MultilingualString]
+    ) -> list[MultilingualString]:
+        return one_per_language(value, "definition")
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_no_made_of(cls, data: dict) -> dict:
+        for key in data:
+            if key == f"{XKOS}madeOf":
+                raise ValueError(
+                    f"Found `{XKOS}madeOf` in new correspondence; use dedicated API calls for this data."
+                )
+        return data
