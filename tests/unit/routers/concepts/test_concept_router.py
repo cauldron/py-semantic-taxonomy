@@ -7,6 +7,7 @@ from py_semantic_taxonomy.domain.constants import SKOS, RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     Concept,
     ConceptNotFoundError,
+    ConceptSchemesNotInDatabase,
     DuplicateIRI,
     DuplicateRelationship,
     Relationship,
@@ -74,6 +75,19 @@ async def test_concept_create_error_validation_errors(cn, client, monkeypatch):
     assert response.status_code == 422
 
 
+async def test_concept_create_error_concept_schemes_not_in_database(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "concept_create",
+        AsyncMock(side_effect=ConceptSchemesNotInDatabase("Problem")),
+    )
+
+    del cn.concept_top[f"{SKOS}topConceptOf"]
+    response = await client.post(Paths.concept, json=cn.concept_top)
+    assert response.status_code == 422
+    assert response.json() == {"message": "Problem"}
+
+
 async def test_concept_create_error_already_exists(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "concept_create", AsyncMock(side_effect=DuplicateIRI))
 
@@ -125,6 +139,19 @@ async def test_concept_update_error_validation_errors(cn, client, monkeypatch):
     assert response.json()["detail"][0]["type"] == "missing"
     assert response.json()["detail"][0]["loc"] == ["body", f"{SKOS}prefLabel"]
     assert response.status_code == 422
+
+
+async def test_concept_update_error_concept_schemes_not_in_database(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "concept_update",
+        AsyncMock(side_effect=ConceptSchemesNotInDatabase("Problem")),
+    )
+
+    del cn.concept_top[f"{SKOS}topConceptOf"]
+    response = await client.put(Paths.concept, json=cn.concept_top)
+    assert response.status_code == 422
+    assert response.json() == {"message": "Problem"}
 
 
 async def test_concept_update_error_relationships_concept_schemes(cn, client, monkeypatch):

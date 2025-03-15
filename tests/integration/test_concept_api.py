@@ -55,6 +55,21 @@ async def test_create_concept(postgres, cn_db_engine, cn, client):
 
 
 @pytest.mark.postgres
+async def test_create_concept_concept_scheme_not_in_database(postgres, cn_db_engine, cn, client):
+    updated = cn.concept_top
+    if f"{SKOS}narrower" in updated:
+        del updated[f"{SKOS}narrower"]
+    del updated[f"{SKOS}topConceptOf"]
+    updated[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
+
+    response = await client.post(Paths.concept, json=updated)
+    assert response.status_code == 422
+    assert response.json() == {
+        "message": "At least one of the specified concept schemes must be in the database: {'http://example.com/foo'}"
+    }
+
+
+@pytest.mark.postgres
 async def test_create_concept_relationships(postgres, cn_db_engine, cn, client):
     # Broader relationship already given in `cn_db_engine` fixture
     cn.concept_low[f"{SKOS}broader"] = [{"@id": "http://example.com/foo"}]
@@ -156,6 +171,21 @@ async def test_update_concept(postgres, cn_db_engine, cn, client):
     given = (await client.get(Paths.concept, params={"iri": updated["@id"]})).json()
     for key, value in expected.items():
         assert given[key] == value
+
+
+@pytest.mark.postgres
+async def test_update_concept_concept_scheme_not_in_database(postgres, cn_db_engine, cn, client):
+    updated = cn.concept_top
+    if f"{SKOS}narrower" in updated:
+        del updated[f"{SKOS}narrower"]
+    del updated[f"{SKOS}topConceptOf"]
+    updated[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
+
+    response = await client.put(Paths.concept, json=updated)
+    assert response.status_code == 422
+    assert response.json() == {
+        "message": "At least one of the specified concept schemes must be in the database: {'http://example.com/foo'}"
+    }
 
 
 @pytest.mark.postgres

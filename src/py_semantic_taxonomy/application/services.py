@@ -5,6 +5,7 @@ from py_semantic_taxonomy.domain.constants import SKOS_HIERARCHICAL_RELATIONSHIP
 from py_semantic_taxonomy.domain.entities import (
     Concept,
     ConceptScheme,
+    ConceptSchemesNotInDatabase,
     DuplicateRelationship,
     GraphObject,
     HierarchicRelationshipAcrossConceptScheme,
@@ -27,9 +28,19 @@ class GraphService:
     async def concept_get(self, iri: str) -> Concept:
         return await self.graph.concept_get(iri=iri)
 
+    async def _concept_refers_to_concept_scheme_in_database(self, concept: Concept) -> None:
+        concept_schemes = set(await self.concept_scheme_get_all_iris())
+        given_cs = {cs["@id"] for cs in concept.schemes}
+        if not given_cs.intersection(concept_schemes):
+            raise ConceptSchemesNotInDatabase(
+                f"At least one of the specified concept schemes must be in the database: {given_cs}"
+            )
+
     async def concept_create(
         self, concept: Concept, relationships: list[Relationship] = []
     ) -> Concept:
+        await self._concept_refers_to_concept_scheme_in_database(concept)
+
         await self.graph.concept_create(concept=concept)
         if relationships:
             try:
@@ -40,6 +51,8 @@ class GraphService:
         return concept
 
     async def concept_update(self, concept: Concept) -> Concept:
+        await self._concept_refers_to_concept_scheme_in_database(concept)
+
         current = await self.graph.concept_get(concept.id_)
         current_schemes = {cs["@id"] for cs in current.schemes}
         new_schemes = {cs["@id"] for cs in concept.schemes}

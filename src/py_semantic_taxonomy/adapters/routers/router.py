@@ -92,6 +92,7 @@ async def concept_create(
     except (
         de.HierarchicRelationshipAcrossConceptScheme,
         de.DuplicateRelationship,
+        de.ConceptSchemesNotInDatabase,
     ) as exc:
         return JSONResponse(
             status_code=422,
@@ -123,7 +124,10 @@ async def concept_update(
                 "detail": {"@id": concept.id_},
             },
         )
-    except de.RelationshipsInCurrentConceptScheme as exc:
+    except (
+        de.RelationshipsInCurrentConceptScheme,
+        de.ConceptSchemesNotInDatabase,
+    ) as exc:
         return JSONResponse(
             status_code=422,
             content={
