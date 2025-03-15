@@ -68,6 +68,7 @@ correspondence_table = Table(
     Column("id_", String, primary_key=True),
     Column("types", BetterJSON, default=[]),
     Column("compares", BetterJSON, default=[]),
+    Column("made_of", BetterJSON, default=[]),
     Column("pref_labels", BetterJSON, default=[]),
     Column("created", BetterJSON, default=[]),
     Column("creators", BetterJSON, default=[]),
