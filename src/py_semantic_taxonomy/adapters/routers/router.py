@@ -320,8 +320,6 @@ async def relationships_update(
             },
         )
     except de.HierarchicRelationshipAcrossConceptScheme as exc:
-        # TBD: This doesn't have an integration test. You would need to be very creative
-        # to have a valid relationship which triggered this error on updates.
         return JSONResponse(
             status_code=422,
             content={

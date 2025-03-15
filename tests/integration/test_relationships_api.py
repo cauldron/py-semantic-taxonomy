@@ -144,6 +144,40 @@ async def test_update_relationships_not_found(postgres, cn_db_engine, client, re
 
 
 @pytest.mark.postgres
+async def test_update_relationships_cross_cs_change_to_hierarchical(
+    postgres, cn_db_engine, cn, client, relationships
+):
+    new_scheme = cn.scheme
+    new_scheme["@id"] = "http://example.com/foo"
+    await client.post(Paths.concept_scheme, json=new_scheme)
+
+    new_concept = cn.concept_low
+    new_concept[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
+    if f"{SKOS}broader" in new_concept:
+        del new_concept[f"{SKOS}broader"]
+    new_concept["@id"] = "http://example.com/bar"
+    await client.post(Paths.concept, json=new_concept)
+
+    cross_cs = Relationship(
+        source=relationships[0].source,
+        target=new_concept["@id"],
+        predicate=RelationshipVerbs.broad_match,
+    )
+    response = await client.post(Paths.relationship, json=[cross_cs.to_json_ld()])
+
+    updated = Relationship(
+        source=relationships[0].source,
+        target=new_concept["@id"],
+        predicate=RelationshipVerbs.broader,
+    )
+    response = await client.put(Paths.relationship, json=[updated.to_json_ld()])
+    assert response.status_code == 422
+    assert response.json() == {
+        "message": "Hierarchical relationship between `http://data.europa.eu/xsp/cn2024/010021000090` and `http://example.com/bar` crosses Concept Schemes. Use an associative relationship like `skos:broadMatch` instead."
+    }
+
+
+@pytest.mark.postgres
 async def test_relationship_delete(postgres, cn_db_engine, client, relationships):
     # https://www.python-httpx.org/compatibility/#request-body-on-http-methods
     response = await client.request(
