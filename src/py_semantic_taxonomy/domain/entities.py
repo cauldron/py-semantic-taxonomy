@@ -114,6 +114,11 @@ class Relationship:
         )
 
 
+@dataclass(kw_only=True)
+class Correspondence(ConceptScheme):
+    compares: list[dict[str, str]]
+
+
 # For type hinting
 # Will be Concept | ConceptScheme | Correspondence | Association
 GraphObject = Concept | ConceptScheme

@@ -13,7 +13,13 @@ from testcontainers.postgres import PostgresContainer
 
 from py_semantic_taxonomy.application.services import GraphService
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
-from py_semantic_taxonomy.domain.entities import Concept, ConceptScheme, GraphObject, Relationship
+from py_semantic_taxonomy.domain.entities import (
+    Concept,
+    ConceptScheme,
+    Correspondence,
+    GraphObject,
+    Relationship,
+)
 from py_semantic_taxonomy.domain.ports import KOSGraph
 
 
@@ -33,6 +39,7 @@ def cn(fixtures_dir: Path) -> object:
         concept_mid = data[1]
         concept_low = data[2]
         scheme = data[3]
+        correspondence = data[4]
 
     return CN()
 
@@ -63,6 +70,7 @@ def entities(cn) -> list[GraphObject]:
         Concept.from_json_ld(cn.concept_top),
         Concept.from_json_ld(cn.concept_mid),
         ConceptScheme.from_json_ld(cn.scheme),
+        Correspondence.from_json_ld(cn.correspondence),
     ]
 
 
