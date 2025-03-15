@@ -116,7 +116,8 @@ class Relationship:
 
 @dataclass(kw_only=True)
 class Correspondence(ConceptScheme):
-    compares: list[dict[str, str]]
+    compares: list[dict]
+    made_of: list[dict] = field(default_factory=list)
 
 
 # For type hinting

@@ -54,4 +54,5 @@ class Relationship(BaseModel):
 
 
 class Correspondence(ConceptScheme):
-    compares: list[dict[str, str]] = Field(alias=f"{XKOS}compares")
+    compares: list[dict] = Field(alias=f"{XKOS}compares")
+    made_of: list[dict] = Field(alias=f"{XKOS}madeOf", default=[])

@@ -236,3 +236,13 @@ class Correspondence(ConceptSchemeCommon):
         cls, value: list[MultilingualString]
     ) -> list[MultilingualString]:
         return one_per_language(value, "definition")
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_no_made_of(cls, data: dict) -> dict:
+        for key in data:
+            if key == f"{XKOS}madeOf":
+                raise ValueError(
+                    f"Found `{XKOS}madeOf` in new correspondence; use dedicated API calls for this data."
+                )
+        return data
