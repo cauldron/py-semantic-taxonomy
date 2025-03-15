@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from py_semantic_taxonomy.adapters.persistence.database import create_engine
 from py_semantic_taxonomy.adapters.persistence.tables import (
+    association_table,
     concept_scheme_table,
     concept_table,
     correspondence_table,
@@ -14,6 +15,8 @@ from py_semantic_taxonomy.domain.constants import (
     RelationshipVerbs,
 )
 from py_semantic_taxonomy.domain.entities import (
+    Association,
+    AssociationNotFoundError,
     Concept,
     ConceptNotFoundError,
     ConceptScheme,
@@ -349,3 +352,14 @@ class PostgresKOSGraph:
             )
             await conn.commit()
         return result.rowcount
+
+    # Correspondence
+
+    async def association_get(self, iri: str) -> Association:
+        async with self.engine.connect() as conn:
+            stmt = select(association_table).where(association_table.c.id_ == iri)
+            result = (await conn.execute(stmt)).first()
+            if not result:
+                raise AssociationNotFoundError
+            await conn.rollback()
+        return Association(**result._mapping)
