@@ -341,3 +341,11 @@ class PostgresKOSGraph:
             )
             await conn.commit()
         return correspondence
+
+    async def correspondence_delete(self, iri: str) -> int:
+        async with self.engine.connect() as conn:
+            result = await conn.execute(
+                delete(correspondence_table).where(correspondence_table.c.id_ == iri)
+            )
+            await conn.commit()
+        return result.rowcount

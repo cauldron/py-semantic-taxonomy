@@ -24,7 +24,7 @@ async def test_get_correspondence_not_found(sqlite, graph):
         await graph.correspondence_get(iri="http://pyst-tests.ninja/correspondence/missing")
 
 
-async def test_create_correspondence(sqlite, cn, entities, graph):
+async def test_create_correspondence(sqlite, cn, graph):
     cn.correspondence["@id"] = "http://pyst-tests.ninja/correspondence/new"
     expected = Correspondence.from_json_ld(cn.correspondence)
 
@@ -36,7 +36,7 @@ async def test_create_correspondence(sqlite, cn, entities, graph):
     assert given == expected, "Data attributes from database differ"
 
 
-async def test_update_correspondence(sqlite, cn, entities, graph):
+async def test_update_correspondence(sqlite, cn, graph):
     expected = Correspondence.from_json_ld(cn.correspondence)
     # This will be ignored
     expected.made_of = ["foo", "bar"]
@@ -51,16 +51,16 @@ async def test_update_correspondence(sqlite, cn, entities, graph):
     assert given == expected, "Data attributes from database differ"
 
 
-async def test_update_correspondence_missing(sqlite, cn, entities, graph):
+async def test_update_correspondence_missing(sqlite, cn, graph):
     expected = Correspondence.from_json_ld(cn.correspondence)
     expected.id_ = "http://pyst-tests.ninja/correspondence/missing"
     with pytest.raises(CorrespondenceNotFoundError):
         await graph.correspondence_update(correspondence=expected)
 
 
-# async def test_delete_correspondence(sqlite, cn, entities, graph):
-#     response = await graph.correspondence_delete(iri=cn.correspondence_mid["@id"])
-#     assert response == 1, "Wrong number of deleted correspondences"
+async def test_delete_correspondence(sqlite, cn, graph):
+    response = await graph.correspondence_delete(iri=cn.correspondence["@id"])
+    assert response == 1, "Wrong number of deleted correspondences"
 
-#     response = await graph.correspondence_delete(iri=cn.correspondence_mid["@id"])
-#     assert response == 0, "Wrong number of deleted correspondences"
+    response = await graph.correspondence_delete(iri=cn.correspondence["@id"])
+    assert response == 0, "Wrong number of deleted correspondences"

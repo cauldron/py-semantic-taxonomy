@@ -127,3 +127,17 @@ async def test_correspondence_update_error_missing(cn, client, monkeypatch):
         "detail": {"@id": id_},
     }
     assert response.status_code == 404
+
+
+async def test_correspondence_delete(cn, client, monkeypatch):
+    monkeypatch.setattr(GraphService, "correspondence_delete", AsyncMock(return_value=1))
+
+    response = await client.delete(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "Correspondence (possibly) deleted",
+        "count": 1,
+    }
+
+    GraphService.correspondence_delete.assert_called_once()
+    assert isinstance(GraphService.correspondence_delete.call_args[1]["iri"], str)

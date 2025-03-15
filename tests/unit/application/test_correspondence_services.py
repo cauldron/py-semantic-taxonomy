@@ -25,10 +25,10 @@ async def test_correspondence_update(graph_service, cn, entities):
     mock_kos_graph.correspondence_update.assert_called_with(correspondence=entities[3])
 
 
-# async def test_correspondence_delete(graph_service, entities):
-#     mock_kos_graph = graph_service.graph
-#     mock_kos_graph.correspondence_delete.return_value = 1
+async def test_correspondence_delete(graph_service, entities):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.correspondence_delete.return_value = 1
 
-#     result = await graph_service.correspondence_delete(entities[0].id_)
-#     assert result == 1
-#     mock_kos_graph.correspondence_delete.assert_called_with(iri=entities[0].id_)
+    result = await graph_service.correspondence_delete(entities[3].id_)
+    assert result == 1
+    mock_kos_graph.correspondence_delete.assert_called_with(iri=entities[3].id_)

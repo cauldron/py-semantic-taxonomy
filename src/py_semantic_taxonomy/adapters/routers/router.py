@@ -427,6 +427,25 @@ async def correspondence_update(
         )
 
 
+@router.delete(
+    Paths.correspondence,
+    summary="Delete a Correspondence object",
+)
+async def correspondence_delete(
+    iri: str,
+    service=Depends(GraphService),
+) -> JSONResponse:
+    count = await service.correspondence_delete(iri=iri)
+    # TBD: 404 if not found?
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "Correspondence (possibly) deleted",
+            "count": count,
+        },
+    )
+
+
 # TBD: Add in static route before generic catch-all function
 
 

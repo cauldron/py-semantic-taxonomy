@@ -141,3 +141,6 @@ class GraphService:
 
     async def correspondence_update(self, correspondence: Correspondence) -> Correspondence:
         return await self.graph.correspondence_update(correspondence=correspondence)
+
+    async def correspondence_delete(self, iri: str) -> int:
+        return await self.graph.correspondence_delete(iri=iri)
