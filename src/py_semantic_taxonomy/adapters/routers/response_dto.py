@@ -30,6 +30,7 @@ class Concept(KOSCommon):
     schemes: list[dict] = Field(alias=RDF["schemes"])
     alt_labels: list[dict[str, str]] = Field(alias=RDF["alt_labels"], default=[])
     hidden_labels: list[dict[str, str]] = Field(alias=RDF["hidden_labels"], default=[])
+    top_concept_of: list[dict] = Field(alias=RDF["top_concept_of"], default=[])
 
 
 class ConceptScheme(KOSCommon):

@@ -1,7 +1,10 @@
 from fastapi.params import Depends
 
 from py_semantic_taxonomy.adapters.routers.dependencies import get_kos_graph
-from py_semantic_taxonomy.domain.constants import SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES
+from py_semantic_taxonomy.domain.constants import (
+    SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES,
+    RelationshipVerbs,
+)
 from py_semantic_taxonomy.domain.entities import (
     Association,
     AssociationNotFoundError,
@@ -15,6 +18,7 @@ from py_semantic_taxonomy.domain.entities import (
     DuplicateRelationship,
     GraphObject,
     HierarchicRelationshipAcrossConceptScheme,
+    HierarchyConflict,
     MadeOf,
     Relationship,
     RelationshipsInCurrentConceptScheme,
@@ -43,10 +47,25 @@ class GraphService:
                 f"At least one of the specified concept schemes must be in the database: {given_cs}"
             )
 
+    async def _check_top_concept(self, concept: Concept) -> None:
+        if rels := (await self.relationships_get(concept.id_, verb=RelationshipVerbs.broader)):
+            raise HierarchyConflict(
+                f"Concept is marked as `topConceptOf` but also has broader relationship to `{rels[0].target}`"
+            )
+
     async def concept_create(
         self, concept: Concept, relationships: list[Relationship] = []
     ) -> Concept:
         await self._concept_refers_to_concept_scheme_in_database(concept)
+
+        if concept.top_concept_of:
+            await self._check_top_concept(concept)
+
+            for rel in relationships:
+                if rel.source == concept.id_ and rel.predicate == RelationshipVerbs.broader:
+                    raise HierarchyConflict(
+                        f"Concept is marked as `topConceptOf` but also has broader relationship to `{rel.target}`"
+                    )
 
         await self.graph.concept_create(concept=concept)
         if relationships:
@@ -59,6 +78,9 @@ class GraphService:
 
     async def concept_update(self, concept: Concept) -> Concept:
         await self._concept_refers_to_concept_scheme_in_database(concept)
+
+        if concept.top_concept_of:
+            await self._check_top_concept(concept)
 
         current = await self.graph.concept_get(concept.id_)
         current_schemes = {cs["@id"] for cs in current.schemes}
@@ -106,9 +128,13 @@ class GraphService:
     # Relationships
 
     async def relationships_get(
-        self, iri: str, source: bool = True, target: bool = False
+        self,
+        iri: str,
+        source: bool = True,
+        target: bool = False,
+        verb: RelationshipVerbs | None = None,
     ) -> list[Relationship]:
-        return await self.graph.relationships_get(iri=iri, source=source, target=target)
+        return await self.graph.relationships_get(iri=iri, source=source, target=target, verb=verb)
 
     async def _relationships_check_source_target_share_known_concept_scheme(
         self, relationships: list[Relationship]

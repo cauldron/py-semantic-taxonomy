@@ -64,6 +64,7 @@ class Concept(SKOS):
     schemes: list[dict]
     alt_labels: list[dict[str, str]] = field(default_factory=list)
     hidden_labels: list[dict[str, str]] = field(default_factory=list)
+    top_concept_of: list[dict] = field(default_factory=list)
 
 
 @dataclass(kw_only=True)
@@ -213,4 +214,8 @@ class RelationshipsReferencesConceptScheme(Exception):
 
 
 class ConceptSchemesNotInDatabase(Exception):
+    pass
+
+
+class HierarchyConflict(Exception):
     pass

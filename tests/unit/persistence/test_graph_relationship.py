@@ -13,12 +13,22 @@ from py_semantic_taxonomy.domain.entities import (
 
 async def test_get_relationships_source(sqlite, graph, relationships):
     given = await graph.relationships_get(iri="http://data.europa.eu/xsp/cn2024/010021000090")
-    assert given == [relationships[1]]
+    assert given == [relationships[3]]
 
 
 async def test_get_relationships_target(sqlite, graph, relationships):
     given = await graph.relationships_get(
         iri="http://data.europa.eu/xsp/cn2024/010021000090", source=False, target=True
+    )
+    assert given == [relationships[2], relationships[4]]
+
+
+async def test_get_relationships_verb(sqlite, graph, relationships):
+    given = await graph.relationships_get(
+        iri="http://data.europa.eu/xsp/cn2023/010100000080",
+        source=True,
+        target=False,
+        verb=RelationshipVerbs.broad_match,
     )
     assert given == [relationships[2]]
 
@@ -27,7 +37,7 @@ async def test_get_relationships_both(sqlite, graph, relationships):
     given = await graph.relationships_get(
         iri="http://data.europa.eu/xsp/cn2024/010021000090", target=True
     )
-    assert given == relationships[1:]
+    assert given == [relationships[2], relationships[3], relationships[4]]
 
 
 async def test_create_relationships(sqlite, graph):
@@ -41,15 +51,15 @@ async def test_create_relationships(sqlite, graph):
 
 async def test_create_relationships_duplicate(sqlite, graph, relationships):
     with pytest.raises(DuplicateRelationship) as excinfo:
-        await graph.relationships_create([relationships[1]])
+        await graph.relationships_create([relationships[3]])
     assert excinfo.match(
-        f"Relationship between source `{relationships[1].source}` and target `{relationships[1].target}` already exists"
+        f"Relationship between source `{relationships[3].source}` and target `{relationships[3].target}` already exists"
     )
 
 
 async def test_delete_concept(sqlite, graph, relationships):
     response = await graph.relationships_delete(relationships)
-    assert response == 3, "Wrong number of deleted relationships"
+    assert response == 5, "Wrong number of deleted relationships"
 
     response = await graph.relationships_delete(relationships)
     assert response == 0, "Wrong number of deleted concepts"
@@ -58,14 +68,14 @@ async def test_delete_concept(sqlite, graph, relationships):
 async def test_relationship_source_target_share_known_concept_scheme_internal(
     sqlite, graph, cn, relationships
 ):
-    assert await graph.relationship_source_target_share_known_concept_scheme(relationships[1])
+    assert await graph.relationship_source_target_share_known_concept_scheme(relationships[3])
 
 
 async def test_relationship_source_target_share_known_concept_scheme_external(
     sqlite, graph, cn, relationships
 ):
     external = Relationship(
-        source=relationships[1].source,
+        source=relationships[3].source,
         target="http://example.com/bar",
         predicate=RelationshipVerbs.exact_match,
     )
@@ -85,7 +95,7 @@ async def test_relationship_source_target_share_known_concept_scheme_cross_cs_hi
     await graph.concept_create(Concept.from_json_ld(new_concept))
 
     cross_cs = Relationship(
-        source=relationships[1].source,
+        source=relationships[3].source,
         target=new_concept["@id"],
         predicate=RelationshipVerbs.broader,
     )
@@ -93,7 +103,7 @@ async def test_relationship_source_target_share_known_concept_scheme_cross_cs_hi
 
     # Method doesn't care about predicate type (associate versus hierarchical)
     cross_cs = Relationship(
-        source=relationships[1].source,
+        source=relationships[3].source,
         target=new_concept["@id"],
         predicate=RelationshipVerbs.broad_match,
     )

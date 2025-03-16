@@ -41,6 +41,11 @@ def test_concept_to_db_dict(cn):
             },
         ],
         schemes=[{"@id": "http://data.europa.eu/xsp/cn2024/cn2024"}],
+        top_concept_of=[
+            {
+                "@id": "http://data.europa.eu/xsp/cn2024/cn2024",
+            },
+        ],
         notations=[
             {"@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral", "@value": "I"}
         ],
@@ -87,6 +92,11 @@ def test_concept_from_json_ld(cn):
             },
         ],
         schemes=[{"@id": "http://data.europa.eu/xsp/cn2024/cn2024"}],
+        top_concept_of=[
+            {
+                "@id": "http://data.europa.eu/xsp/cn2024/cn2024",
+            },
+        ],
         status=[
             {
                 "@id": "http://purl.org/ontology/bibo/status/accepted",

@@ -15,6 +15,7 @@ concept_table = Table(
     Column("types", BetterJSON, default=[]),
     Column("pref_labels", BetterJSON, default=[]),
     Column("schemes", BetterJSON, default=[]),
+    Column("top_concept_of", BetterJSON, default=[]),
     Column("definitions", BetterJSON, default=[]),
     Column("notations", BetterJSON, default=[]),
     Column("alt_labels", BetterJSON, default=[]),

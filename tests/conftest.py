@@ -66,13 +66,14 @@ def change_note(fixtures_dir: Path) -> dict:
 @pytest.fixture
 def relationships(fixtures_dir: Path) -> list[Relationship]:
     graph = Graph().parse(fixtures_dir / "cn.ttl")
+    mapping = {elem.value: elem for elem in RelationshipVerbs}
     return sorted(
         [
-            Relationship(source=str(s), target=str(o), predicate=RelationshipVerbs.broader)
+            Relationship(source=str(s), target=str(o), predicate=mapping[str(p)])
             for s, p, o in graph
-            if str(p) == RelationshipVerbs.broader
+            if str(p) in mapping
         ],
-        key=lambda x: x.source,
+        key=lambda x: (x.source, x.target),
     )
 
 

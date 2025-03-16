@@ -191,7 +191,11 @@ class PostgresKOSGraphDatabase:
     # Relationship
 
     async def relationships_get(
-        self, iri: str, source: bool = True, target: bool = False
+        self,
+        iri: str,
+        source: bool = True,
+        target: bool = False,
+        verb: RelationshipVerbs | None = None,
     ) -> list[Relationship]:
         if not source and not target:
             raise ValueError("Must choose at least one of source or target")
@@ -204,6 +208,8 @@ class PostgresKOSGraphDatabase:
                     relationship_table.c.target,
                     relationship_table.c.predicate,
                 ).where(relationship_table.c.source == iri)
+                if verb is not None:
+                    stmt = stmt.where(relationship_table.c.predicate == verb)
                 result = await conn.execute(stmt)
                 rels.extend([Relationship(**line._mapping) for line in result])
             if target:
@@ -212,10 +218,12 @@ class PostgresKOSGraphDatabase:
                     relationship_table.c.target,
                     relationship_table.c.predicate,
                 ).where(relationship_table.c.target == iri)
+                if verb is not None:
+                    stmt = stmt.where(relationship_table.c.predicate == verb)
                 result = await conn.execute(stmt)
                 rels.extend([Relationship(**line._mapping) for line in result])
             await conn.rollback()
-        return rels
+        return sorted(rels, key=lambda x: (x.source, x.target))
 
     async def relationships_create(self, relationships: list[Relationship]) -> list[Relationship]:
         async with self.engine.connect() as conn:

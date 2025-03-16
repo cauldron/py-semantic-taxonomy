@@ -14,17 +14,17 @@ from py_semantic_taxonomy.domain.entities import (
 
 async def test_relationships_get(cn, anonymous_client, monkeypatch, relationships):
     monkeypatch.setattr(
-        GraphService, "relationships_get", AsyncMock(return_value=[relationships[1]])
+        GraphService, "relationships_get", AsyncMock(return_value=[relationships[3]])
     )
 
     response = await anonymous_client.get(
-        Paths.relationship, params={"iri": relationships[1].source}
+        Paths.relationship, params={"iri": relationships[3].source}
     )
     assert response.status_code == 200
     assert response.json() == [
         {
-            "@id": relationships[1].source,
-            relationships[1].predicate.value: [{"@id": relationships[1].target}],
+            "@id": relationships[3].source,
+            relationships[3].predicate.value: [{"@id": relationships[3].target}],
         }
     ], "API return value incorrect"
 
@@ -36,31 +36,31 @@ async def test_relationships_get(cn, anonymous_client, monkeypatch, relationship
 
 async def test_relationships_get_args(cn, anonymous_client, monkeypatch, relationships):
     monkeypatch.setattr(
-        GraphService, "relationships_get", AsyncMock(return_value=[relationships[1]])
+        GraphService, "relationships_get", AsyncMock(return_value=[relationships[3]])
     )
 
     response = await anonymous_client.get(
-        Paths.relationship, params={"iri": relationships[1].source}
+        Paths.relationship, params={"iri": relationships[3].source}
     )
     assert response.status_code == 200
     GraphService.relationships_get.assert_called_with(
-        iri=relationships[1].source, source=True, target=False
+        iri=relationships[3].source, source=True, target=False
     )
 
     response = await anonymous_client.get(
-        Paths.relationship, params={"iri": relationships[1].source, "target": 1}
+        Paths.relationship, params={"iri": relationships[3].source, "target": 1}
     )
     assert response.status_code == 200
     GraphService.relationships_get.assert_called_with(
-        iri=relationships[1].source, source=True, target=True
+        iri=relationships[3].source, source=True, target=True
     )
 
     response = await anonymous_client.get(
-        Paths.relationship, params={"iri": relationships[1].source, "source": 0, "target": 1}
+        Paths.relationship, params={"iri": relationships[3].source, "source": 0, "target": 1}
     )
     assert response.status_code == 200
     GraphService.relationships_get.assert_called_with(
-        iri=relationships[1].source, source=False, target=True
+        iri=relationships[3].source, source=False, target=True
     )
 
 
@@ -132,7 +132,7 @@ async def test_relationships_create_error_validation_errors_zero_relatioships(
 
     given = [
         {
-            "@id": relationships[1].source,
+            "@id": relationships[3].source,
         }
     ]
 
@@ -149,10 +149,10 @@ async def test_relationships_create_error_validation_errors_multiple_same_kind(
 
     given = [
         {
-            "@id": relationships[1].source,
+            "@id": relationships[3].source,
             RelationshipVerbs.broader.value: [
-                {"@id": relationships[2].source},
-                {"@id": relationships[1].target},
+                {"@id": relationships[4].source},
+                {"@id": relationships[3].target},
             ],
         }
     ]
@@ -173,9 +173,9 @@ async def test_relationships_create_error_validation_errors_multiple_different_k
 
     given = [
         {
-            "@id": relationships[1].source,
-            RelationshipVerbs.broader.value: [{"@id": relationships[1].target}],
-            RelationshipVerbs.exact_match.value: [{"@id": relationships[2].source}],
+            "@id": relationships[3].source,
+            RelationshipVerbs.broader.value: [{"@id": relationships[3].target}],
+            RelationshipVerbs.exact_match.value: [{"@id": relationships[4].source}],
         }
     ]
 
@@ -195,9 +195,9 @@ async def test_relationships_create_error_validation_errors_self_reference(
 
     given = [
         {
-            "@id": relationships[1].source,
+            "@id": relationships[3].source,
             RelationshipVerbs.broader.value: [
-                {"@id": relationships[1].source},
+                {"@id": relationships[3].source},
             ],
         }
     ]
@@ -218,7 +218,7 @@ async def test_relationship_delete(relationships, client, monkeypatch):
     response = await client.request(
         method="DELETE",
         url=Paths.relationship,
-        content=orjson.dumps([relationships[1].to_json_ld()]),
+        content=orjson.dumps([relationships[3].to_json_ld()]),
     )
     assert response.status_code == 200
     assert response.json() == {

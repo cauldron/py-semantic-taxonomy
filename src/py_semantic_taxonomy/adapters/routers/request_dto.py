@@ -57,6 +57,7 @@ class Concept(KOSCommon):
     hidden_labels: list[MultilingualString] = Field(alias=RDF["hidden_labels"], default=[])
     # One definition per language, at least one definition
     definitions: list[MultilingualString] = Field(alias=RDF["definitions"], default=[])
+    top_concept_of: conlist(Node, max_length=1) = Field(alias=RDF["top_concept_of"], default=[])
 
     @field_validator("types", mode="after")
     @classmethod
@@ -154,7 +155,7 @@ class ConceptScheme(ConceptSchemeCommon):
         """skos:hasTopConcept has range skos:Concept, which we don't want. Create links later."""
         if f"{SKOS}hasTopConcept" in data:
             raise ValueError(
-                f"Found `hasTopConcept` in concept scheme; Use specific API calls to create or update this relationship."
+                f"Found `hasTopConcept` in concept scheme; Specify `topConceptOf` of constituent concepts instead."
             )
         return data
 

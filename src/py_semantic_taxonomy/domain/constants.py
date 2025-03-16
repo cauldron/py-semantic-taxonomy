@@ -18,8 +18,6 @@ SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES = {
     f"{SKOS}narrower",
     f"{SKOS}broaderTransitive",
     f"{SKOS}broader",
-    f"{SKOS}topConceptOf",
-    f"{SKOS}hasTopConcept",
 }
 SKOS_RELATIONSHIP_PREDICATES = SKOS_ASSOCIATE_RELATIONSHIP_PREDICATES.union(
     SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES
@@ -45,6 +43,7 @@ RDF_MAPPING: dict[str, str] = {
     "source_concepts": f"{XKOS}sourceConcept",
     "status": f"{BIBO}status",
     "target_concepts": f"{XKOS}targetConcept",
+    "top_concept_of": f"{SKOS}topConceptOf",
     "version": f"{OWL}versionInfo",
 }
 
