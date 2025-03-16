@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from py_semantic_taxonomy.domain.constants import BIBO, SKOS, XKOS
+from py_semantic_taxonomy.domain.constants import BIBO, SKOS, XKOS, RDF_MAPPING as RDF, RelationshipVerbs as RV
 
 
 class ErrorMessage(BaseModel):
@@ -9,15 +9,15 @@ class ErrorMessage(BaseModel):
 
 
 class KOSCommon(BaseModel):
-    id_: str = Field(alias="@id")
-    types: list[str] = Field(alias="@type")
-    pref_labels: list[dict[str, str]] = Field(alias=f"{SKOS}prefLabel")
-    status: list[dict[str, str]] = Field(alias=f"{BIBO}status")
-    definitions: list[dict[str, str]] = Field(alias=f"{SKOS}definition", default=[])
-    notations: list[dict[str, str]] = Field(alias=f"{SKOS}notation", default=[])
-    change_notes: list[dict] = Field(alias=f"{SKOS}changeNote", default=[])
-    history_notes: list[dict] = Field(alias=f"{SKOS}historyNote", default=[])
-    editorial_notes: list[dict] = Field(alias=f"{SKOS}editorialNote", default=[])
+    id_: str = Field(alias=RDF["id_"])
+    types: list[str] = Field(alias=RDF["types"])
+    pref_labels: list[dict[str, str]] = Field(alias=RDF["pref_labels"])
+    status: list[dict[str, str]] = Field(alias=RDF["status"])
+    definitions: list[dict[str, str]] = Field(alias=RDF["definitions"], default=[])
+    notations: list[dict[str, str]] = Field(alias=RDF["notations"], default=[])
+    change_notes: list[dict] = Field(alias=RDF["change_notes"], default=[])
+    history_notes: list[dict] = Field(alias=RDF["history_notes"], default=[])
+    editorial_notes: list[dict] = Field(alias=RDF["editorial_notes"], default=[])
 
     model_config = ConfigDict(extra="allow")
 
@@ -26,9 +26,9 @@ class KOSCommon(BaseModel):
 
 
 class Concept(KOSCommon):
-    schemes: list[dict] = Field(alias=f"{SKOS}inScheme")
-    alt_labels: list[dict[str, str]] = Field(alias=f"{SKOS}altLabel", default=[])
-    hidden_labels: list[dict[str, str]] = Field(alias=f"{SKOS}hiddenLabel", default=[])
+    schemes: list[dict] = Field(alias=RDF["schemes"])
+    alt_labels: list[dict[str, str]] = Field(alias=RDF["alt_labels"], default=[])
+    hidden_labels: list[dict[str, str]] = Field(alias=RDF["hidden_labels"], default=[])
 
 
 class ConceptScheme(KOSCommon):
@@ -38,14 +38,14 @@ class ConceptScheme(KOSCommon):
 
 
 class Relationship(BaseModel):
-    id_: str = Field(alias="@id")
-    broader: list[dict] = Field(alias=f"{SKOS}broader", default=[])
-    narrower: list[dict] = Field(alias=f"{SKOS}narrower", default=[])
-    exact_match: list[dict] = Field(alias=f"{SKOS}exactMatch", default=[])
-    close_match: list[dict] = Field(alias=f"{SKOS}closeMatch", default=[])
-    broad_match: list[dict] = Field(alias=f"{SKOS}broadMatch", default=[])
-    narrow_match: list[dict] = Field(alias=f"{SKOS}narrowMatch", default=[])
-    related_match: list[dict] = Field(alias=f"{SKOS}relatedMatch", default=[])
+    id_: str = Field(alias=RDF["id_"])
+    broader: list[dict] = Field(alias=RV.broader, default=[])
+    narrower: list[dict] = Field(alias=RV.narrower, default=[])
+    exact_match: list[dict] = Field(alias=RV.exact_match, default=[])
+    close_match: list[dict] = Field(alias=RV.close_match, default=[])
+    broad_match: list[dict] = Field(alias=RV.broad_match, default=[])
+    narrow_match: list[dict] = Field(alias=RV.narrow_match, default=[])
+    related_match: list[dict] = Field(alias=RV.related_match, default=[])
 
     model_config = ConfigDict(extra="forbid")
 
@@ -54,5 +54,5 @@ class Relationship(BaseModel):
 
 
 class Correspondence(ConceptScheme):
-    compares: list[dict] = Field(alias=f"{XKOS}compares")
-    made_of: list[dict] = Field(alias=f"{XKOS}madeOf", default=[])
+    compares: list[dict] = Field(alias=RDF["compares"])
+    made_of: list[dict] = Field(alias=RDF["made_of"], default=[])

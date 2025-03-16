@@ -17,13 +17,14 @@ from py_semantic_taxonomy.domain.constants import (
     SKOS,
     SKOS_RELATIONSHIP_PREDICATES,
     XKOS,
-    RDF_MAPPING as RDF
+    RDF_MAPPING as RDF,
+    RelationshipVerbs as RV,
 )
 
 
 class KOSCommon(BaseModel):
-    id_: IRI = Field(alias="@id")
-    types: conlist(item_type=IRI) = Field(alias="@type")
+    id_: IRI = Field(alias=RDF["id_"])
+    types: conlist(item_type=IRI) = Field(alias=RDF["types"])
     pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=RDF["pref_labels"])
     status: conlist(Status, min_length=1) = Field(alias=RDF["status"])
     notations: list[Notation] = Field(alias=RDF["notations"], default=[])
@@ -82,8 +83,8 @@ class Concept(KOSCommon):
 
 
 class ConceptCreate(Concept):
-    broader: list[Node] = Field(alias=f"{SKOS}broader", default=[])
-    narrower: list[Node] = Field(alias=f"{SKOS}narrower", default=[])
+    broader: list[Node] = Field(alias=RV.broader, default=[])
+    narrower: list[Node] = Field(alias=RV.narrower, default=[])
 
     @model_validator(mode="after")
     def hierarchy_doesnt_reference_self(self) -> Self:
@@ -166,14 +167,14 @@ class ConceptScheme(ConceptSchemeCommon):
 
 
 class Relationship(BaseModel):
-    id_: IRI = Field(alias="@id")
-    broader: list[Node] = Field(alias=f"{SKOS}broader", default=[])
-    narrower: list[Node] = Field(alias=f"{SKOS}narrower", default=[])
-    exact_match: list[Node] = Field(alias=f"{SKOS}exactMatch", default=[])
-    close_match: list[Node] = Field(alias=f"{SKOS}closeMatch", default=[])
-    broad_match: list[Node] = Field(alias=f"{SKOS}broadMatch", default=[])
-    narrow_match: list[Node] = Field(alias=f"{SKOS}narrowMatch", default=[])
-    related_match: list[Node] = Field(alias=f"{SKOS}relatedMatch", default=[])
+    id_: IRI = Field(alias=RDF["id_"])
+    broader: list[Node] = Field(alias=RV.broader, default=[])
+    narrower: list[Node] = Field(alias=RV.narrower, default=[])
+    exact_match: list[Node] = Field(alias=RV.exact_match, default=[])
+    close_match: list[Node] = Field(alias=RV.close_match, default=[])
+    broad_match: list[Node] = Field(alias=RV.broad_match, default=[])
+    narrow_match: list[Node] = Field(alias=RV.narrow_match, default=[])
+    related_match: list[Node] = Field(alias=RV.related_match, default=[])
 
     _RELATIONSHIP_FIELDS = (
         "broader",
