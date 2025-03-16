@@ -26,7 +26,7 @@ SKOS_RELATIONSHIP_PREDICATES = SKOS_ASSOCIATE_RELATIONSHIP_PREDICATES.union(
 )
 
 
-RDF_MAPPING = {
+RDF_MAPPING: dict[str, str] = {
     "id_": "@id",
     "types": "@type",
     "alt_labels": f"{SKOS}altLabel",

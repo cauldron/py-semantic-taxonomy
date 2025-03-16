@@ -232,7 +232,7 @@ async def relationships_create(
     request: Request,
     relationships: list[req.Relationship],
     service=Depends(GraphService),
-) -> response.Relationship:
+) -> list[response.Relationship]:
     try:
         incoming = de.Relationship.from_json_ld_list(await request.json())
         lst = await service.relationships_create(incoming)

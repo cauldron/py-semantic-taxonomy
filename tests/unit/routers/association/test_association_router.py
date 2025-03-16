@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock
 
 from py_semantic_taxonomy.adapters.routers.router import GraphService, Paths
-from py_semantic_taxonomy.domain.constants import RDF_MAPPING, SKOS
+from py_semantic_taxonomy.domain.constants import RDF_MAPPING
 from py_semantic_taxonomy.domain.entities import (
     Association,
     AssociationNotFoundError,

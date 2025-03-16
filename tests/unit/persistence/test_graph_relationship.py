@@ -8,7 +8,6 @@ from py_semantic_taxonomy.domain.entities import (
     ConceptScheme,
     DuplicateRelationship,
     Relationship,
-    RelationshipNotFoundError,
 )
 
 
