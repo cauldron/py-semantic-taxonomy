@@ -77,7 +77,7 @@ async def test_correspondence_create_error_already_exists(cn, client, monkeypatc
     response = await client.post(Paths.correspondence, json=cn.correspondence)
     assert response.json() == {
         "message": "Resource with `@id` already exists",
-        "detail": {"@id": "http://pyst-tests.ninja/correspondence/cn2023_cn2024"},
+        "detail": {"@id": "http://data.europa.eu/xsp/cn2023/CN2023_CN2024"},
     }
     assert response.status_code == 409
 

@@ -1,4 +1,5 @@
-@prefix : <http://data.europa.eu/xsp/cn2024/> .
+@prefix cn2024: <http://data.europa.eu/xsp/cn2024/> .
+@prefix cn2023: <http://data.europa.eu/xsp/cn2023/> .
 @prefix bibo: <http://purl.org/ontology/bibo/> .
 @prefix cv: <http://data.europa.eu/m8g/> .
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
@@ -12,7 +13,7 @@
 @prefix xkos: <http://rdf-vocabulary.ddialliance.org/xkos#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-:cn2024 a skos:ConceptScheme ;
+cn2024:cn2024 a skos:ConceptScheme ;
     eli:based_on <http://data.europa.eu/eli/reg_impl/2023/2364/oj> ;
     eli:version_date "2023-11-20"^^xsd:date ;
     dcterms:created "2023-10-11T13:59:56"^^xsd:dateTime ;
@@ -35,38 +36,72 @@
     bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
     skos:scopeNote "http://publications.europa.eu/resource/oj/JOC_2019_119_R_0001"^^xsd:anyURI .
 
-:010011000090 a skos:Concept ;
+cn2023:cn2023 a skos:ConceptScheme ;
+    eli:based_on <http://data.europa.eu/eli/reg_impl/2022/1998/oj> ;
+    eli:version_date "2022-11-20"^^xsd:date ;
+    dcterms:creator <http://publications.europa.eu/resource/authority/corporate-body/ESTAT>,
+        <http://publications.europa.eu/resource/authority/corporate-body/TAXUD> ;
+    skos:definition "The main classification for the European ITGS (International trade in goods statistics)  is the Combined Nomenclature (CN). This is the primary nomenclature as it is the one used by the EU Member States to collect detailed data on their trading of goods since 1988. Before the introduction of the CN, ITGS were based on a product classification called NIMEXE.  The CN is based on the Harmonised Commodity Description and Coding System (managed by the World Customs Organisation (WCO). The Harmonised System (HS) is an international classification at two, four and six-digit level which classifies goods according to their nature. It was introduced in 1988 and, since then, was revised six times: in 1996, 2002, 2007, 2012, 2017 and 2022. The CN corresponds to the HS plus a further breakdown at eight-digit level defined to meet EU needs. The CN is revised annually and, as a Council Regulation, is binding on the Member States. "@en ;
+    dcterms:identifier "http://data.europa.eu/xsp/cn2023/cn2023" ;
+    dcterms:language <http://publications.europa.eu/resource/authority/language/DEU>,
+        <http://publications.europa.eu/resource/authority/language/SPA> ;
+    dcterms:created "2024-08-22T11:16:17"^^xsd:dateTime ;
+    xkos:belongsTo <http://data.europa.eu/2en/class-series/cn> ;
+    xkos:follows <http://data.europa.eu/xsp/cn2022/cn2022> ;
+    xkos:numberOfLevels "5"^^xsd:positiveInteger ;
+    schema1:endDate "2023-12-31"^^xsd:date ;
+    schema1:startDate "2023-01-01"^^xsd:date ;
+    owl:versionInfo "2023" ;
+    skos:notation "CN 2023" ;
+    bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
+    skos:prefLabel "Kombinierte Nomenklatur, 2023 (KN 2023)"@de,
+        "Nomenclatura combinada, 2023 (NC 2023)"@es ;
+    skos:scopeNote "http://publications.europa.eu/resource/oj/JOC_2019_119_R_0001"^^xsd:anyURI .
+
+cn2024:010011000090 a skos:Concept ;
     dc:identifier "010011000090" ;
     dcterms:modified "2023-10-11T14:43:01"^^xsd:dateTime ;
     xkos:depth "1"^^xsd:positiveInteger ;
-    skos:inScheme :cn2024 ;
+    skos:inScheme cn2024:cn2024 ;
     skos:notation "I"^^rdfns:PlainLiteral ;
     skos:prefLabel "SECTION I - LIVE ANIMALS; ANIMAL PRODUCTS"@en,
         "SECÇÃO I - ANIMAIS VIVOS E PRODUTOS DO REINO ANIMAL"@pt ;
     skos:scopeNote "LIVE ANIMALS; ANIMAL PRODUCTS"@en ;
     bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
-    skos:topConceptOf :cn2024 .
+    skos:topConceptOf cn2024:cn2024 .
 
-:010021000090 a skos:Concept ;
+cn2023:010011000090 a skos:Concept ;
+    dc:identifier "010011000090" ;
+    dcterms:modified "2022-10-26T13:47:02"^^xsd:dateTime ;
+    xkos:depth "1"^^xsd:positiveInteger ;
+    skos:inScheme cn2023:cn2023 ;
+    skos:exactMatch cn2024:010011000090 ;
+    skos:notation "I" ;
+    bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
+    skos:prefLabel "ABSCHNITT I - LEBENDE TIERE UND WAREN TIERISCHEN URSPRUNGS"@de,
+        "SECCIÓN I - ANIMALES VIVOS Y PRODUCTOS DEL REINO ANIMAL"@es ;
+    skos:topConceptOf cn2023:cn2023 .
+
+cn2024:010021000090 a skos:Concept ;
     dc:identifier "010021000090" ;
     xkos:depth "2"^^xsd:positiveInteger ;
     skos:altLabel "CHAPTER 1 - LIVE ANIMALS"@en,
         "CAPÍTULO 1 - ANIMAIS VIVOS"@pt ;
-    skos:broader :010011000090 ;
-    skos:inScheme :cn2024 ;
+    skos:broader cn2024:010011000090 ;
+    skos:inScheme cn2024:cn2024 ;
     skos:notation "01"^^rdfns:PlainLiteral ;
     skos:prefLabel "CHAPTER 1 - LIVE ANIMALS"@en,
         "CAPÍTULO 1 - ANIMAIS VIVOS"@pt ;
     bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
     skos:scopeNote "LIVE ANIMALS"@en .
 
-:010100000080 a skos:Concept ;
+cn2024:010100000080 a skos:Concept ;
     dc:identifier "010100000080" ;
     xkos:depth "3"^^xsd:positiveInteger ;
     skos:altLabel "Pferde, Esel, Maultiere und Maulesel, lebend"@de,
         "Live horses, asses, mules and hinnies"@en ;
-    skos:broader :010021000090 ;
-    skos:inScheme :cn2024 ;
+    skos:broader cn2024:010021000090 ;
+    skos:inScheme cn2024:cn2024 ;
     skos:notation "0101" ;
     bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
     skos:prefLabel "0101 Pferde, Esel, Maultiere und Maulesel, lebend"@de,
@@ -74,11 +109,36 @@
     skos:scopeNote "Pferde, Esel, Maultiere und Maulesel, lebend"@de,
         "Live horses, asses, mules and hinnies"@en .
 
-<http://pyst-tests.ninja/correspondence/cn2023_cn2024> a xkos:Correspondence ;
-    dcterms:created "2025-01-01T12:34:56"^^xsd:dateTime ;
+cn2023:010100000080 a skos:Concept ;
+    dc:identifier "010100000080" ;
+    xkos:depth "3"^^xsd:positiveInteger ;
+    skos:broader cn2023:010011000090 ;
+    skos:broadMatch cn2024:010021000090 ;
+    skos:inScheme cn2023:cn2023 ;
+    skos:notation "0101" ;
+    bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
+    skos:prefLabel "0101 Pferde, Esel, Maultiere und Maulesel, lebend"@de,
+        "0101 Caballos, asnos, mulos y burdéganos, vivos"@es ;
+    skos:scopeNote "Pferde, Esel, Maultiere und Maulesel, lebend"@de,
+        "Caballos, asnos, mulos y burdéganos, vivos"@es .
+
+cn2023:CN2023_CN2024 a xkos:Correspondence ;
     dcterms:creator <http://publications.europa.eu/resource/authority/corporate-body/ESTAT> ;
+    dcterms:description "This table is indicative and has no legal value."@en ;
+    dcterms:created "2024-07-02T08:46:15"^^xsd:dateTime ;
     skos:notation "CN 2023-CN 2024"^^rdfns:PlainLiteral ;
-    skos:prefLabel "Combined Nomenclature 2023 to 2024"@en ;
+    xkos:compares cn2023:cn2023 ,
+        <http://data.europa.eu/xsp/cn2024/cn2024> ;
     owl:versionInfo "1.0" ;
-    xkos:compares :cn2024, <http://data.europa.eu/xsp/cn2023/cn2023> ;
-    bibo:status <http://purl.org/ontology/bibo/status/accepted> .
+    rdfs:seeAlso <http://data.europa.eu/xsp/cn2024/CN2024_CN2023> ;
+    bibo:status <http://purl.org/ontology/bibo/status/accepted> ;
+    skos:prefLabel "Transposition between CN 2023 and CN 2024"@en .
+
+cn2023:top_level_association a xkos:ConceptAssociation ;
+    xkos:sourceConcept cn2023:010011000090 ;
+    xkos:targetConcept cn2024:010011000090 .
+
+cn2023:lower_association a xkos:ConceptAssociation ;
+    xkos:sourceConcept cn2023:010100000080 ;
+    xkos:targetConcept cn2024:010100000080 ,
+        cn2024:010021000090 .

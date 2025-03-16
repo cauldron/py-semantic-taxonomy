@@ -1,7 +1,7 @@
 from enum import StrEnum
 from urllib.parse import quote_plus, urljoin
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 
 import py_semantic_taxonomy.adapters.routers.request_dto as req
@@ -18,6 +18,7 @@ class Paths(StrEnum):
     catchall = "/{_:path}"
     relationship = "/relationships/"
     correspondence = "/correspondence/"
+    association = "/association/"
 
 
 """
@@ -55,7 +56,7 @@ https://github.com/pydantic/pydantic/issues/8379
 async def concept_get(
     iri: str,
     service=Depends(GraphService),
-) -> response.Concept:
+) -> response.Concept | JSONResponse:
     try:
         obj = await service.concept_get(iri=iri)
         return response.Concept(**obj.to_json_ld())
@@ -75,7 +76,7 @@ async def concept_create(
     request: Request,
     concept: req.ConceptCreate,
     service=Depends(GraphService),
-) -> response.Concept:
+) -> response.Concept | JSONResponse:
     try:
         incoming_data = await request.json()
         concept = de.Concept.from_json_ld(incoming_data)
@@ -112,7 +113,7 @@ async def concept_update(
     request: Request,
     concept: req.ConceptUpdate,
     service=Depends(GraphService),
-) -> response.Concept:
+) -> response.Concept | JSONResponse:
     try:
         concept_obj = de.Concept.from_json_ld(await request.json())
         result = await service.concept_update(concept_obj)
@@ -168,7 +169,7 @@ async def concept_delete(
 async def concept_scheme_get(
     iri: str,
     service=Depends(GraphService),
-) -> response.ConceptScheme:
+) -> response.ConceptScheme | JSONResponse:
     try:
         obj = await service.concept_scheme_get(iri=iri)
         return response.ConceptScheme(**obj.to_json_ld())
@@ -191,7 +192,7 @@ async def concept_scheme_create(
     request: Request,
     concept_scheme: req.ConceptScheme,
     service=Depends(GraphService),
-) -> response.ConceptScheme:
+) -> response.ConceptScheme | JSONResponse:
     try:
         cs = de.ConceptScheme.from_json_ld(await request.json())
         result = await service.concept_scheme_create(cs)
@@ -215,7 +216,7 @@ async def concept_scheme_update(
     request: Request,
     concept_scheme: req.ConceptScheme,
     service=Depends(GraphService),
-) -> response.ConceptScheme:
+) -> response.ConceptScheme | JSONResponse:
     try:
         cs = de.ConceptScheme.from_json_ld(await request.json())
         result = await service.concept_scheme_update(cs)
@@ -278,7 +279,7 @@ async def relationships_create(
     request: Request,
     relationships: list[req.Relationship],
     service=Depends(GraphService),
-) -> response.Concept:
+) -> response.Relationship | JSONResponse:
     try:
         incoming = de.Relationship.from_json_ld_list(await request.json())
         lst = await service.relationships_create(incoming)
@@ -312,7 +313,7 @@ async def relationships_update(
     request: Request,
     relationships: list[req.Relationship],
     service=Depends(GraphService),
-) -> response.Concept:
+) -> response.Concept | JSONResponse:
     try:
         incoming = de.Relationship.from_json_ld_list(await request.json())
         lst = await service.relationships_update(incoming)
@@ -365,7 +366,7 @@ async def relationship_delete(
 async def correspondence_get(
     iri: str,
     service=Depends(GraphService),
-) -> response.Correspondence:
+) -> response.Correspondence | JSONResponse:
     try:
         obj = await service.correspondence_get(iri=iri)
         return response.Correspondence(**obj.to_json_ld())
@@ -388,7 +389,7 @@ async def correspondence_create(
     request: Request,
     correspondence: req.Correspondence,
     service=Depends(GraphService),
-) -> response.Correspondence:
+) -> response.Correspondence | JSONResponse:
     try:
         corr = de.Correspondence.from_json_ld(await request.json())
         result = await service.correspondence_create(corr)
@@ -412,7 +413,7 @@ async def correspondence_update(
     request: Request,
     concept_scheme: req.Correspondence,
     service=Depends(GraphService),
-) -> response.Correspondence:
+) -> response.Correspondence | JSONResponse:
     try:
         corr = de.Correspondence.from_json_ld(await request.json())
         result = await service.correspondence_update(corr)
@@ -446,6 +447,65 @@ async def correspondence_delete(
     )
 
 
+# Association
+
+
+@router.get(
+    Paths.association,
+    summary="Get a Association object",
+    response_model=response.Association,
+    responses={404: {"model": response.ErrorMessage}},
+)
+async def association_get(
+    iri: str,
+    service=Depends(GraphService),
+) -> response.Association | JSONResponse:
+    try:
+        obj = await service.association_get(iri=iri)
+        return response.Association(**obj.to_json_ld())
+    except de.AssociationNotFoundError:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "message": f"Association with IRI '{iri}' not found",
+                "detail": {"iri": iri},
+            },
+        )
+
+
+@router.post(
+    Paths.association,
+    summary="Create an Association object",
+    response_model=response.Association,
+)
+async def association_create(
+    request: Request,
+    relationships: req.Association,
+    service=Depends(GraphService),
+) -> response.Association:
+    try:
+        incoming = de.Association.from_json_ld(await request.json())
+        obj = await service.association_create(incoming)
+        return response.Association(**obj.to_json_ld())
+    except de.DuplicateIRI as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+
+@router.delete(
+    Paths.association,
+    summary="Delete an Association object",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def association_delete(
+    iri: str,
+    service=Depends(GraphService),
+):
+    try:
+        await service.association_delete(iri=iri)
+    except de.AssociationNotFoundError as err:
+        raise HTTPException(status_code=404, detail=str(err))
+
+
 # TBD: Add in static route before generic catch-all function
 
 
@@ -453,7 +513,9 @@ async def correspondence_delete(
     Paths.catchall,
     summary="Get a KOS graph object which shares the same base URL as PyST",
 )
-async def generic_get_from_iri(request: Request, _: str, service=Depends(GraphService)):
+async def generic_get_from_iri(
+    request: Request, _: str, service=Depends(GraphService)
+) -> RedirectResponse:
     try:
         iri = urljoin(str(request.base_url), request.url.path)
         object_type = await service.get_object_type(iri=iri)

@@ -1,7 +1,7 @@
 from sqlalchemy import JSON, Column, Enum, Index, Integer, MetaData, String, Table, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 
-from py_semantic_taxonomy.domain.constants import RelationshipVerbs
+from py_semantic_taxonomy.domain.constants import AssociationKind, RelationshipVerbs
 
 BetterJSON = JSON().with_variant(JSONB(), "postgresql")
 
@@ -79,5 +79,16 @@ correspondence_table = Table(
     Column("history_notes", BetterJSON, default=[]),
     Column("editorial_notes", BetterJSON, default=[]),
     Column("status", BetterJSON, default=[]),
+    Column("extra", BetterJSON, default={}),
+)
+
+association_table = Table(
+    "association",
+    metadata_obj,
+    Column("id_", String, primary_key=True),
+    Column("types", BetterJSON, default=[]),
+    Column("source_concepts", BetterJSON, default=[]),
+    Column("target_concepts", BetterJSON, default=[]),
+    Column("kind", Enum(AssociationKind, values_callable=lambda x: [i.value for i in x])),
     Column("extra", BetterJSON, default={}),
 )

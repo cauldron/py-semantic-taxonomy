@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from py_semantic_taxonomy.adapters.persistence.database import create_engine
 from py_semantic_taxonomy.adapters.persistence.tables import (
+    association_table,
     concept_scheme_table,
     concept_table,
     correspondence_table,
@@ -14,6 +15,8 @@ from py_semantic_taxonomy.domain.constants import (
     RelationshipVerbs,
 )
 from py_semantic_taxonomy.domain.entities import (
+    Association,
+    AssociationNotFoundError,
     Concept,
     ConceptNotFoundError,
     ConceptScheme,
@@ -41,6 +44,8 @@ class PostgresKOSGraph:
                 return ConceptScheme
             if await self._get_count_from_iri(conn, iri, correspondence_table):
                 return Correspondence
+            if await self._get_count_from_iri(conn, iri, association_table):
+                return Association
         raise NotFoundError(f"Given IRI `{iri}` is not a known object")
 
     # Concepts
@@ -346,6 +351,38 @@ class PostgresKOSGraph:
         async with self.engine.connect() as conn:
             result = await conn.execute(
                 delete(correspondence_table).where(correspondence_table.c.id_ == iri)
+            )
+            await conn.commit()
+        return result.rowcount
+
+    # Correspondence
+
+    async def association_get(self, iri: str) -> Association:
+        async with self.engine.connect() as conn:
+            stmt = select(association_table).where(association_table.c.id_ == iri)
+            result = (await conn.execute(stmt)).first()
+            if not result:
+                raise AssociationNotFoundError
+            await conn.rollback()
+        return Association(**result._mapping)
+
+    async def association_create(self, association: Association) -> Association:
+        async with self.engine.connect() as conn:
+            count = await self._get_count_from_iri(conn, association.id_, association_table)
+            if count:
+                raise DuplicateIRI
+
+            await conn.execute(
+                insert(association_table),
+                [association.to_db_dict()],
+            )
+            await conn.commit()
+        return association
+
+    async def association_delete(self, iri: str) -> int:
+        async with self.engine.connect() as conn:
+            result = await conn.execute(
+                delete(association_table).where(association_table.c.id_ == iri)
             )
             await conn.commit()
         return result.rowcount

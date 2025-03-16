@@ -7,14 +7,12 @@ from py_semantic_taxonomy.domain.entities import (
 
 
 async def test_get_object_type_correspondence(sqlite, graph):
-    corr = await graph.get_object_type(iri="http://pyst-tests.ninja/correspondence/cn2023_cn2024")
+    corr = await graph.get_object_type(iri="http://data.europa.eu/xsp/cn2023/CN2023_CN2024")
     assert corr is Correspondence, "Wrong result type"
 
 
 async def test_get_correspondence(sqlite, entities, graph):
-    corr = await graph.correspondence_get(
-        iri="http://pyst-tests.ninja/correspondence/cn2023_cn2024"
-    )
+    corr = await graph.correspondence_get(iri="http://data.europa.eu/xsp/cn2023/CN2023_CN2024")
     assert isinstance(corr, Correspondence), "Wrong result type"
     assert corr == entities[3]  # Check all data attributes correct
 
