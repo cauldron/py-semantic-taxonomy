@@ -14,6 +14,7 @@ from testcontainers.postgres import PostgresContainer
 from py_semantic_taxonomy.application.services import GraphService
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
+    Association,
     Concept,
     ConceptScheme,
     Correspondence,
@@ -35,11 +36,16 @@ def cn(fixtures_dir: Path) -> object:
     data = sorted(json.loads(graph.serialize(format="json-ld")), key=lambda x: x["@id"])
 
     class CN:
-        concept_top = data[0]
-        concept_mid = data[1]
-        concept_low = data[2]
-        scheme = data[3]
-        correspondence = data[4]
+        concept_top = data[6]
+        concept_mid = data[7]
+        concept_low = data[8]
+        scheme = data[9]
+        correspondence = data[2]
+        concept_2023_top = data[0]
+        concept_2023_low = data[1]
+        scheme_2023 = data[3]
+        association_low = data[4]
+        association_top = data[5]
 
     return CN()
 
@@ -71,6 +77,11 @@ def entities(cn) -> list[GraphObject]:
         Concept.from_json_ld(cn.concept_mid),
         ConceptScheme.from_json_ld(cn.scheme),
         Correspondence.from_json_ld(cn.correspondence),
+        ConceptScheme.from_json_ld(cn.scheme_2023),
+        Concept.from_json_ld(cn.concept_2023_top),
+        Concept.from_json_ld(cn.concept_2023_low),
+        Association.from_json_ld(cn.association_low),
+        Association.from_json_ld(cn.association_top),
     ]
 
 
@@ -114,6 +125,7 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
         init_db,
     )
     from py_semantic_taxonomy.adapters.persistence.tables import (
+        association_table,
         concept_scheme_table,
         concept_table,
         correspondence_table,
@@ -125,16 +137,19 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
 
     async with engine.connect() as conn:
         await conn.execute(
+            insert(concept_scheme_table),
+            [
+                entities[2].to_db_dict(),
+                entities[4].to_db_dict(),
+            ],
+        )
+        await conn.execute(
             insert(concept_table),
             [
                 entities[0].to_db_dict(),
                 entities[1].to_db_dict(),
-            ],
-        )
-        await conn.execute(
-            insert(concept_scheme_table),
-            [
-                entities[2].to_db_dict(),
+                entities[5].to_db_dict(),
+                entities[6].to_db_dict(),
             ],
         )
         await conn.execute(
@@ -144,6 +159,13 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
             ],
         )
         await conn.execute(insert(relationship_table), [obj.to_db_dict() for obj in relationships])
+        await conn.execute(
+            insert(association_table),
+            [
+                entities[7].to_db_dict(),
+                entities[8].to_db_dict(),
+            ],
+        )
         await conn.commit()
 
     yield engine

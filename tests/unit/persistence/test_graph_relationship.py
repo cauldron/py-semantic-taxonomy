@@ -14,21 +14,21 @@ from py_semantic_taxonomy.domain.entities import (
 
 async def test_get_relationships_source(sqlite, graph, relationships):
     given = await graph.relationships_get(iri="http://data.europa.eu/xsp/cn2024/010021000090")
-    assert given == [relationships[0]]
+    assert given == [relationships[1]]
 
 
 async def test_get_relationships_target(sqlite, graph, relationships):
     given = await graph.relationships_get(
         iri="http://data.europa.eu/xsp/cn2024/010021000090", source=False, target=True
     )
-    assert given == [relationships[1]]
+    assert given == [relationships[2]]
 
 
 async def test_get_relationships_both(sqlite, graph, relationships):
     given = await graph.relationships_get(
         iri="http://data.europa.eu/xsp/cn2024/010021000090", target=True
     )
-    assert given == relationships
+    assert given == relationships[1:]
 
 
 async def test_create_relationships(sqlite, graph):
@@ -42,19 +42,19 @@ async def test_create_relationships(sqlite, graph):
 
 async def test_create_relationships_duplicate(sqlite, graph, relationships):
     with pytest.raises(DuplicateRelationship) as excinfo:
-        await graph.relationships_create([relationships[0]])
+        await graph.relationships_create([relationships[1]])
     assert excinfo.match(
-        f"Relationship between source `{relationships[0].source}` and target `{relationships[0].target}` already exists"
+        f"Relationship between source `{relationships[1].source}` and target `{relationships[1].target}` already exists"
     )
 
 
 async def test_update_relationships(sqlite, graph, relationships):
-    result = await graph.relationships_get(iri=relationships[0].source)
-    assert result == [relationships[0]]
+    result = await graph.relationships_get(iri=relationships[1].source)
+    assert result == [relationships[1]]
 
     rel = Relationship(
-        source=relationships[0].source,
-        target=relationships[0].target,
+        source=relationships[1].source,
+        target=relationships[1].target,
         predicate=RelationshipVerbs.exact_match,
     )
     await graph.relationships_update([rel])
@@ -75,7 +75,7 @@ async def test_update_relationships_not_found_error(sqlite, graph):
 
 async def test_delete_concept(sqlite, graph, relationships):
     response = await graph.relationships_delete(relationships)
-    assert response == 2, "Wrong number of deleted relationships"
+    assert response == 3, "Wrong number of deleted relationships"
 
     response = await graph.relationships_delete(relationships)
     assert response == 0, "Wrong number of deleted concepts"
@@ -84,14 +84,14 @@ async def test_delete_concept(sqlite, graph, relationships):
 async def test_relationship_source_target_share_known_concept_scheme_internal(
     sqlite, graph, cn, relationships
 ):
-    assert await graph.relationship_source_target_share_known_concept_scheme(relationships[0])
+    assert await graph.relationship_source_target_share_known_concept_scheme(relationships[1])
 
 
 async def test_relationship_source_target_share_known_concept_scheme_external(
     sqlite, graph, cn, relationships
 ):
     external = Relationship(
-        source=relationships[0].source,
+        source=relationships[1].source,
         target="http://example.com/bar",
         predicate=RelationshipVerbs.exact_match,
     )
@@ -111,7 +111,7 @@ async def test_relationship_source_target_share_known_concept_scheme_cross_cs_hi
     await graph.concept_create(Concept.from_json_ld(new_concept))
 
     cross_cs = Relationship(
-        source=relationships[0].source,
+        source=relationships[1].source,
         target=new_concept["@id"],
         predicate=RelationshipVerbs.broader,
     )
@@ -119,7 +119,7 @@ async def test_relationship_source_target_share_known_concept_scheme_cross_cs_hi
 
     # Method doesn't care about predicate type (associate versus hierarchical)
     cross_cs = Relationship(
-        source=relationships[0].source,
+        source=relationships[1].source,
         target=new_concept["@id"],
         predicate=RelationshipVerbs.broad_match,
     )

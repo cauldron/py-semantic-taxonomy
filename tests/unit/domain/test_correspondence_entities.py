@@ -31,10 +31,10 @@ def test_correspondence_domain_response_dto_same_fields():
 def test_correspondence_to_db_dict(cn):
     given = Correspondence.from_json_ld(cn.correspondence).to_db_dict()
     expected = dict(
-        id_="http://pyst-tests.ninja/correspondence/cn2023_cn2024",
+        id_="http://data.europa.eu/xsp/cn2023/CN2023_CN2024",
         types=["http://rdf-vocabulary.ddialliance.org/xkos#Correspondence"],
         pref_labels=[
-            {"@language": "en", "@value": "Combined Nomenclature 2023 to 2024"},
+            {"@language": "en", "@value": "Transposition between CN 2023 and CN 2024"},
         ],
         notations=[
             {
@@ -49,13 +49,13 @@ def test_correspondence_to_db_dict(cn):
         ],
         made_of=[],
         compares=[
-            {"@id": "http://data.europa.eu/xsp/cn2024/cn2024"},
             {"@id": "http://data.europa.eu/xsp/cn2023/cn2023"},
+            {"@id": "http://data.europa.eu/xsp/cn2024/cn2024"},
         ],
         created=[
             {
                 "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
-                "@value": "2025-01-01T12:34:56",
+                "@value": "2024-07-02T08:46:15",
             },
         ],
         creators=[
@@ -64,7 +64,19 @@ def test_correspondence_to_db_dict(cn):
             },
         ],
         version=[{"@value": "1.0"}],
-        extra={},
+        extra={
+            "http://purl.org/dc/terms/description": [
+                {
+                    "@language": "en",
+                    "@value": "This table is indicative and has no legal value.",
+                },
+            ],
+            "http://www.w3.org/2000/01/rdf-schema#seeAlso": [
+                {
+                    "@id": "http://data.europa.eu/xsp/cn2024/CN2024_CN2023",
+                },
+            ],
+        },
         history_notes=[],
         change_notes=[],
         definitions=[],
@@ -76,10 +88,10 @@ def test_correspondence_to_db_dict(cn):
 def test_correspondence_from_json_ld(cn):
     given = Correspondence.from_json_ld(cn.correspondence)
     expected = Correspondence(
-        id_="http://pyst-tests.ninja/correspondence/cn2023_cn2024",
+        id_="http://data.europa.eu/xsp/cn2023/CN2023_CN2024",
         types=["http://rdf-vocabulary.ddialliance.org/xkos#Correspondence"],
         pref_labels=[
-            {"@language": "en", "@value": "Combined Nomenclature 2023 to 2024"},
+            {"@language": "en", "@value": "Transposition between CN 2023 and CN 2024"},
         ],
         notations=[
             {
@@ -93,15 +105,28 @@ def test_correspondence_from_json_ld(cn):
             },
         ],
         compares=[
-            {"@id": "http://data.europa.eu/xsp/cn2024/cn2024"},
             {"@id": "http://data.europa.eu/xsp/cn2023/cn2023"},
+            {"@id": "http://data.europa.eu/xsp/cn2024/cn2024"},
         ],
         created=[
             {
                 "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
-                "@value": "2025-01-01T12:34:56",
+                "@value": "2024-07-02T08:46:15",
             },
         ],
+        extra={
+            "http://purl.org/dc/terms/description": [
+                {
+                    "@language": "en",
+                    "@value": "This table is indicative and has no legal value.",
+                },
+            ],
+            "http://www.w3.org/2000/01/rdf-schema#seeAlso": [
+                {
+                    "@id": "http://data.europa.eu/xsp/cn2024/CN2024_CN2023",
+                },
+            ],
+        },
         creators=[
             {
                 "@id": "http://publications.europa.eu/resource/authority/corporate-body/ESTAT",

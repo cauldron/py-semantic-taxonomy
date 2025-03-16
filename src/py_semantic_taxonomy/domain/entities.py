@@ -5,6 +5,7 @@ from datetime import datetime
 from py_semantic_taxonomy.domain.constants import (
     RDF_MAPPING,
     SKOS_RELATIONSHIP_PREDICATES,
+    AssociationKind,
     RelationshipVerbs,
 )
 
@@ -40,8 +41,8 @@ class SKOS:
         return dct
 
     @classmethod
-    def from_json_ld(cls, concept_dict: dict) -> "Concept":
-        source_dict, data = copy(concept_dict), {}
+    def from_json_ld(cls, dict_: dict) -> "SKOS":
+        source_dict, data = copy(dict_), {}
         class_fields = {f.name for f in fields(cls)}.difference({"extra"})
         for dataclass_label, skos_label in RDF_MAPPING.items():
             if dataclass_label in class_fields and skos_label in source_dict:
@@ -120,9 +121,48 @@ class Correspondence(ConceptScheme):
     made_of: list[dict] = field(default_factory=list)
 
 
+@dataclass(kw_only=True)
+class Association:
+    id_: str
+    types: list[str]
+    source_concepts: list[dict]
+    target_concepts: list[dict]
+    kind: AssociationKind = AssociationKind.simple
+    extra: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.kind = (
+            AssociationKind.conditional if len(self.source_concepts) > 1 else AssociationKind.simple
+        )
+
+    def to_db_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json_ld(self) -> dict:
+        """Return this data formatted as (but not serialized to) SKOS expanded JSON LD"""
+        dct = copy(self.extra)
+        class_fields = {"id_", "types", "source_concepts", "target_concepts"}
+        for attr, label in RDF_MAPPING.items():
+            if attr not in class_fields:
+                continue
+            if value := getattr(self, attr):
+                dct[label] = value
+
+        return dct
+
+    @classmethod
+    def from_json_ld(cls, dict_: dict) -> "Association":
+        source_dict, data = copy(dict_), {}
+        class_fields = {"id_", "types", "source_concepts", "target_concepts"}
+        for dataclass_label, skos_label in RDF_MAPPING.items():
+            if dataclass_label in class_fields and skos_label in source_dict:
+                data[dataclass_label] = source_dict.pop(skos_label)
+        data["extra"] = {key: value for key, value in source_dict.items()}
+        return cls(**data)
+
+
 # For type hinting
-# Will be Concept | ConceptScheme | Correspondence | Association
-GraphObject = Concept | ConceptScheme | Correspondence
+GraphObject = Concept | ConceptScheme | Correspondence | Association
 
 
 class NotFoundError(Exception):
@@ -142,6 +182,10 @@ class RelationshipNotFoundError(NotFoundError):
 
 
 class CorrespondenceNotFoundError(NotFoundError):
+    pass
+
+
+class AssociationNotFoundError(NotFoundError):
     pass
 
 

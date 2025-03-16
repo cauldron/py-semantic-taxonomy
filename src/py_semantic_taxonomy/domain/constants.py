@@ -31,18 +31,21 @@ RDF_MAPPING = {
     "types": "@type",
     "alt_labels": f"{SKOS}altLabel",
     "change_notes": f"{SKOS}changeNote",
+    "compares": f"{XKOS}compares",
     "created": f"{DCTERMS}created",
     "creators": f"{DCTERMS}creator",
     "definitions": f"{SKOS}definition",
     "editorial_notes": f"{SKOS}editorialNote",
     "hidden_labels": f"{SKOS}hiddenLabel",
     "history_notes": f"{SKOS}historyNote",
+    "made_of": f"{XKOS}madeOf",
     "notations": f"{SKOS}notation",
     "pref_labels": f"{SKOS}prefLabel",
     "schemes": f"{SKOS}inScheme",
+    "source_concepts": f"{XKOS}sourceConcept",
     "status": f"{BIBO}status",
+    "target_concepts": f"{XKOS}targetConcept",
     "version": f"{OWL}versionInfo",
-    "compares": f"{XKOS}compares",
 }
 
 
@@ -54,3 +57,8 @@ class RelationshipVerbs(enum.StrEnum):
     broad_match = f"{SKOS}broadMatch"
     narrow_match = f"{SKOS}narrowMatch"
     related_match = f"{SKOS}relatedMatch"
+
+
+class AssociationKind(enum.StrEnum):
+    simple = "simple"
+    conditional = "conditional"

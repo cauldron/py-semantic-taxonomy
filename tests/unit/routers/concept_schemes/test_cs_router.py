@@ -28,7 +28,7 @@ async def test_concept_scheme_get(cn, client, monkeypatch):
     assert isinstance(GraphService.concept_scheme_get.call_args[1]["iri"], str)
 
 
-async def test_concept_get_not_found(cn, client, monkeypatch):
+async def test_concept_scheme_get_not_found(cn, client, monkeypatch):
     monkeypatch.setattr(
         GraphService, "concept_scheme_get", AsyncMock(side_effect=ConceptSchemeNotFoundError())
     )

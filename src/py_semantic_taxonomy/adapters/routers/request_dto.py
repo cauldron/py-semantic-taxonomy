@@ -13,23 +13,24 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     VersionString,
     one_per_language,
 )
+from py_semantic_taxonomy.domain.constants import RDF_MAPPING as RDF
 from py_semantic_taxonomy.domain.constants import (
-    BIBO,
     SKOS,
     SKOS_RELATIONSHIP_PREDICATES,
     XKOS,
 )
+from py_semantic_taxonomy.domain.constants import RelationshipVerbs as RV
 
 
 class KOSCommon(BaseModel):
-    id_: IRI = Field(alias="@id")
-    types: conlist(item_type=IRI) = Field(alias="@type")
-    pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}prefLabel")
-    status: conlist(Status, min_length=1) = Field(alias=f"{BIBO}status")
-    notations: list[Notation] = Field(alias=f"{SKOS}notation", default=[])
-    change_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}changeNote", default=[])
-    history_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}historyNote", default=[])
-    editorial_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}editorialNote", default=[])
+    id_: IRI = Field(alias=RDF["id_"])
+    types: conlist(item_type=IRI) = Field(alias=RDF["types"])
+    pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=RDF["pref_labels"])
+    status: conlist(Status, min_length=1) = Field(alias=RDF["status"])
+    notations: list[Notation] = Field(alias=RDF["notations"], default=[])
+    change_notes: list[NonLiteralNote] = Field(alias=RDF["change_notes"], default=[])
+    history_notes: list[NonLiteralNote] = Field(alias=RDF["history_notes"], default=[])
+    editorial_notes: list[NonLiteralNote] = Field(alias=RDF["editorial_notes"], default=[])
 
     model_config = ConfigDict(extra="allow")
 
@@ -49,13 +50,13 @@ class Concept(KOSCommon):
 
     Checks that required fields are included and have correct type."""
 
-    schemes: conlist(Node, min_length=1) = Field(alias=f"{SKOS}inScheme")
+    schemes: conlist(Node, min_length=1) = Field(alias=RDF["schemes"])
     # Can have multiple alternative labels per language, and multiple languages
-    alt_labels: list[MultilingualString] = Field(alias=f"{SKOS}altLabel", default=[])
+    alt_labels: list[MultilingualString] = Field(alias=RDF["alt_labels"], default=[])
     # Can have multiple hidden labels per language, and multiple languages
-    hidden_labels: list[MultilingualString] = Field(alias=f"{SKOS}hiddenLabel", default=[])
+    hidden_labels: list[MultilingualString] = Field(alias=RDF["hidden_labels"], default=[])
     # One definition per language, at least one definition
-    definitions: list[MultilingualString] = Field(alias=f"{SKOS}definition", default=[])
+    definitions: list[MultilingualString] = Field(alias=RDF["definitions"], default=[])
 
     @field_validator("types", mode="after")
     @classmethod
@@ -82,8 +83,8 @@ class Concept(KOSCommon):
 
 
 class ConceptCreate(Concept):
-    broader: list[Node] = Field(alias=f"{SKOS}broader", default=[])
-    narrower: list[Node] = Field(alias=f"{SKOS}narrower", default=[])
+    broader: list[Node] = Field(alias=RV.broader, default=[])
+    narrower: list[Node] = Field(alias=RV.narrower, default=[])
 
     @model_validator(mode="after")
     def hierarchy_doesnt_reference_self(self) -> Self:
@@ -136,12 +137,12 @@ class ConceptScheme(ConceptSchemeCommon):
     Checks that required fields are included and have correct type."""
 
     definitions: conlist(MultilingualString, min_length=1) = Field(
-        alias=f"{SKOS}definition",
+        alias=RDF["definitions"],
     )
 
     @field_validator("types", mode="after")
     @classmethod
-    def type_includes_concept(cls, value: list[str]) -> list[str]:
+    def type_includes_concept_scheme(cls, value: list[str]) -> list[str]:
         SCHEME = f"{SKOS}ConceptScheme"
         if SCHEME not in value:
             raise ValueError(f"`@type` must include `{SCHEME}`")
@@ -166,14 +167,14 @@ class ConceptScheme(ConceptSchemeCommon):
 
 
 class Relationship(BaseModel):
-    id_: IRI = Field(alias="@id")
-    broader: list[Node] = Field(alias=f"{SKOS}broader", default=[])
-    narrower: list[Node] = Field(alias=f"{SKOS}narrower", default=[])
-    exact_match: list[Node] = Field(alias=f"{SKOS}exactMatch", default=[])
-    close_match: list[Node] = Field(alias=f"{SKOS}closeMatch", default=[])
-    broad_match: list[Node] = Field(alias=f"{SKOS}broadMatch", default=[])
-    narrow_match: list[Node] = Field(alias=f"{SKOS}narrowMatch", default=[])
-    related_match: list[Node] = Field(alias=f"{SKOS}relatedMatch", default=[])
+    id_: IRI = Field(alias=RDF["id_"])
+    broader: list[Node] = Field(alias=RV.broader, default=[])
+    narrower: list[Node] = Field(alias=RV.narrower, default=[])
+    exact_match: list[Node] = Field(alias=RV.exact_match, default=[])
+    close_match: list[Node] = Field(alias=RV.close_match, default=[])
+    broad_match: list[Node] = Field(alias=RV.broad_match, default=[])
+    narrow_match: list[Node] = Field(alias=RV.narrow_match, default=[])
+    related_match: list[Node] = Field(alias=RV.related_match, default=[])
 
     _RELATIONSHIP_FIELDS = (
         "broader",
@@ -219,7 +220,7 @@ class Relationship(BaseModel):
 
 
 class Correspondence(ConceptSchemeCommon):
-    definitions: list[MultilingualString] = Field(alias=f"{SKOS}definition", default=[])
+    definitions: list[MultilingualString] = Field(alias=RDF["definitions"], default=[])
     compares: conlist(Node, min_length=1) = Field(alias=f"{XKOS}compares")
 
     @field_validator("types", mode="after")
@@ -241,8 +242,28 @@ class Correspondence(ConceptSchemeCommon):
     @classmethod
     def check_no_made_of(cls, data: dict) -> dict:
         for key in data:
-            if key == f"{XKOS}madeOf":
+            if key == RDF["made_of"]:
                 raise ValueError(
-                    f"Found `{XKOS}madeOf` in new correspondence; use dedicated API calls for this data."
+                    f"Found `{RDF['made_of']}` in new correspondence; use dedicated API calls for this data."
                 )
         return data
+
+
+class Association(BaseModel):
+    id_: IRI = Field(alias=RDF["id_"])
+    types: conlist(item_type=IRI) = Field(alias=RDF["types"])
+    source_concepts: conlist(Node, min_length=1) = Field(alias=RDF["source_concepts"])
+    target_concepts: conlist(Node, min_length=1) = Field(alias=RDF["target_concepts"])
+
+    model_config = ConfigDict(extra="allow")
+
+    def model_dump(self, exclude_unset=True, by_alias=True, *args, **kwargs):
+        return super().model_dump(*args, exclude_unset=exclude_unset, by_alias=by_alias, **kwargs)
+
+    @field_validator("types", mode="after")
+    @classmethod
+    def type_includes_association(cls, value: list[str]) -> list[str]:
+        SCHEME = f"{XKOS}ConceptAssociation"
+        if SCHEME not in value:
+            raise ValueError(f"`@type` must include `{SCHEME}`")
+        return value

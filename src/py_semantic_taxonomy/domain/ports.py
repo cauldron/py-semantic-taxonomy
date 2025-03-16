@@ -1,6 +1,7 @@
 from typing import Protocol, runtime_checkable
 
 from py_semantic_taxonomy.domain.entities import (
+    Association,
     Concept,
     ConceptScheme,
     Correspondence,
@@ -60,3 +61,9 @@ class KOSGraph(Protocol):
     async def correspondence_update(self, correspondence: Correspondence) -> Correspondence: ...
 
     async def correspondence_delete(self, iri: str) -> int: ...
+
+    async def association_get(self, iri: str) -> Association: ...
+
+    async def association_create(self, association: Association) -> Association: ...
+
+    async def association_delete(self, iri: str) -> int: ...
