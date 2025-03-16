@@ -13,13 +13,13 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     VersionString,
     one_per_language,
 )
+from py_semantic_taxonomy.domain.constants import RDF_MAPPING as RDF
 from py_semantic_taxonomy.domain.constants import (
     SKOS,
     SKOS_RELATIONSHIP_PREDICATES,
     XKOS,
-    RDF_MAPPING as RDF,
-    RelationshipVerbs as RV,
 )
+from py_semantic_taxonomy.domain.constants import RelationshipVerbs as RV
 
 
 class KOSCommon(BaseModel):
@@ -247,3 +247,23 @@ class Correspondence(ConceptSchemeCommon):
                     f"Found `{RDF['made_of']}` in new correspondence; use dedicated API calls for this data."
                 )
         return data
+
+
+class Association(BaseModel):
+    id_: IRI = Field(alias=RDF["id_"])
+    types: conlist(item_type=IRI) = Field(alias=RDF["types"])
+    source_concepts: conlist(Node, min_length=1) = Field(alias=RDF["source_concepts"])
+    target_concepts: conlist(Node, min_length=1) = Field(alias=RDF["target_concepts"])
+
+    model_config = ConfigDict(extra="allow")
+
+    def model_dump(self, exclude_unset=True, by_alias=True, *args, **kwargs):
+        return super().model_dump(*args, exclude_unset=exclude_unset, by_alias=by_alias, **kwargs)
+
+    @field_validator("types", mode="after")
+    @classmethod
+    def type_includes_association(cls, value: list[str]) -> list[str]:
+        SCHEME = f"{XKOS}ConceptAssociation"
+        if SCHEME not in value:
+            raise ValueError(f"`@type` must include `{SCHEME}`")
+        return value

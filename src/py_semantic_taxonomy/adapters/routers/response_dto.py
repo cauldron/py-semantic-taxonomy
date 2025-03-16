@@ -1,6 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from py_semantic_taxonomy.domain.constants import BIBO, SKOS, XKOS, RDF_MAPPING as RDF, RelationshipVerbs as RV
+from py_semantic_taxonomy.domain.constants import BIBO
+from py_semantic_taxonomy.domain.constants import RDF_MAPPING as RDF
+from py_semantic_taxonomy.domain.constants import SKOS, XKOS
+from py_semantic_taxonomy.domain.constants import RelationshipVerbs as RV
 
 
 class ErrorMessage(BaseModel):
@@ -56,3 +59,10 @@ class Relationship(BaseModel):
 class Correspondence(ConceptScheme):
     compares: list[dict] = Field(alias=RDF["compares"])
     made_of: list[dict] = Field(alias=RDF["made_of"], default=[])
+
+
+class Association(BaseModel):
+    id_: str = Field(alias=RDF["id_"])
+    types: list[str] = Field(alias=RDF["types"])
+    source_concepts: list[dict] = Field(alias=RDF["source_concepts"])
+    target_concepts: list[dict] = Field(alias=RDF["target_concepts"])
