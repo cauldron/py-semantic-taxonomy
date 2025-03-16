@@ -65,7 +65,7 @@ async def test_create_concept_concept_scheme_not_in_database(postgres, cn_db_eng
     response = await client.post(Paths.concept, json=updated)
     assert response.status_code == 422
     assert response.json() == {
-        "message": "At least one of the specified concept schemes must be in the database: {'http://example.com/foo'}"
+        "detail": "At least one of the specified concept schemes must be in the database: {'http://example.com/foo'}"
     }
 
 
@@ -118,7 +118,7 @@ async def test_create_concept_relationships_across_scheme(
     response = await client.post(Paths.concept, json=new_concept)
 
     assert response.status_code == 422
-    assert response.json()["message"].endswith(
+    assert response.json()["detail"].endswith(
         "`skos:broadMatch` instead."
     ), "API return value incorrect"
 
@@ -135,7 +135,7 @@ async def test_create_concept_relationships_duplicate(
     response = await client.post(Paths.concept, json=new_concept)
 
     assert response.status_code == 422
-    assert response.json()["message"].endswith("already exists"), "API return value incorrect"
+    assert response.json()["detail"].endswith("already exists"), "API return value incorrect"
 
     response = await client.get(Paths.concept, params={"iri": new_concept["@id"]})
     assert response.status_code == 404
@@ -184,7 +184,7 @@ async def test_update_concept_concept_scheme_not_in_database(postgres, cn_db_eng
     response = await client.put(Paths.concept, json=updated)
     assert response.status_code == 422
     assert response.json() == {
-        "message": "At least one of the specified concept schemes must be in the database: {'http://example.com/foo'}"
+        "detail": "At least one of the specified concept schemes must be in the database: {'http://example.com/foo'}"
     }
 
 
@@ -203,7 +203,7 @@ async def test_update_concept_relationship_cross_concept_scheme(postgres, cn_db_
     response = await client.put(Paths.concept, json=updated)
     assert response.status_code == 422
     assert response.json() == {
-        "message": "Update asked to change concept schemes, but existing concept scheme {'http://data.europa.eu/xsp/cn2024/cn2024'} had hierarchical relationships."
+        "detail": "Update asked to change concept schemes, but existing concept scheme {'http://data.europa.eu/xsp/cn2024/cn2024'} had hierarchical relationships."
     }
 
 

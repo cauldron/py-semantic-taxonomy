@@ -64,7 +64,7 @@ async def test_create_relationships_duplicate(postgres, cn_db_engine, client, re
     response = await client.post(Paths.relationship, json=[relationships[1].to_json_ld()])
     assert response.status_code == 409
     assert response.json() == {
-        "message": "Relationship between source `http://data.europa.eu/xsp/cn2024/010021000090` and target `http://data.europa.eu/xsp/cn2024/010011000090` already exists"
+        "detail": "Relationship between source `http://data.europa.eu/xsp/cn2024/010021000090` and target `http://data.europa.eu/xsp/cn2024/010011000090` already exists"
     }, "API return value incorrect"
 
 
@@ -92,7 +92,7 @@ async def test_create_relationships_across_scheme(
 
     assert response.status_code == 422
     assert response.json() == {
-        "message": f"Hierarchical relationship between `{cross_cs.source}` and `{cross_cs.target}` crosses Concept Schemes. Use an associative relationship like `skos:broadMatch` instead."
+        "detail": f"Hierarchical relationship between `{cross_cs.source}` and `{cross_cs.target}` crosses Concept Schemes. Use an associative relationship like `skos:broadMatch` instead."
     }, "API return value incorrect"
 
 
@@ -109,7 +109,7 @@ async def test_create_relationships_reference_concept_scheme(
 
     assert response.status_code == 422
     assert response.json() == {
-        "message": "Relationship `Relationship(source='http://data.europa.eu/xsp/cn2024/010100000080', target='http://data.europa.eu/xsp/cn2024/cn2024', predicate=<RelationshipVerbs.broader: 'http://www.w3.org/2004/02/skos/core#broader'>)` target refers to concept scheme `http://data.europa.eu/xsp/cn2024/cn2024`"
+        "detail": "Relationship `Relationship(source='http://data.europa.eu/xsp/cn2024/010100000080', target='http://data.europa.eu/xsp/cn2024/cn2024', predicate=<RelationshipVerbs.broader: 'http://www.w3.org/2004/02/skos/core#broader'>)` target refers to concept scheme `http://data.europa.eu/xsp/cn2024/cn2024`"
     }, "API return value incorrect"
 
 
@@ -139,7 +139,7 @@ async def test_update_relationships_not_found(postgres, cn_db_engine, client, re
     response = await client.put(Paths.relationship, json=[updated.to_json_ld()])
     assert response.status_code == 404
     assert response.json() == {
-        "message": "Can't update non-existent relationship between source `http://example.com/foo` and target `http://example.com/bar`"
+        "detail": "Can't update non-existent relationship between source `http://example.com/foo` and target `http://example.com/bar`"
     }
 
 
@@ -173,7 +173,7 @@ async def test_update_relationships_cross_cs_change_to_hierarchical(
     response = await client.put(Paths.relationship, json=[updated.to_json_ld()])
     assert response.status_code == 422
     assert response.json() == {
-        "message": "Hierarchical relationship between `http://data.europa.eu/xsp/cn2024/010021000090` and `http://example.com/bar` crosses Concept Schemes. Use an associative relationship like `skos:broadMatch` instead."
+        "detail": "Hierarchical relationship between `http://data.europa.eu/xsp/cn2024/010021000090` and `http://example.com/bar` crosses Concept Schemes. Use an associative relationship like `skos:broadMatch` instead."
     }
 
 
@@ -187,7 +187,7 @@ async def test_relationship_delete(postgres, cn_db_engine, client, relationships
     )
     assert response.status_code == 200
     assert response.json() == {
-        "message": "Relationships (possibly) deleted",
+        "detail": "Relationships (possibly) deleted",
         "count": 1,
     }
 
@@ -198,6 +198,6 @@ async def test_relationship_delete(postgres, cn_db_engine, client, relationships
     )
     assert response.status_code == 200
     assert response.json() == {
-        "message": "Relationships (possibly) deleted",
+        "detail": "Relationships (possibly) deleted",
         "count": 0,
     }

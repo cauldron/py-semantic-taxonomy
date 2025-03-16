@@ -9,7 +9,7 @@ async def test_generic_get_from_iri_concept(postgres, cn_db_engine, cn, client):
     response = await client.get("/foo", follow_redirects=False)
     assert response.status_code == 404
     assert response.json() == {
-        "detail": "KOS graph object with iri `http://test.ninja/foo` not found"
+        "detail": "KOS graph object with IRI `http://test.ninja/foo` not found"
     }
 
     del cn.concept_low[f"{SKOS}broader"]
@@ -33,7 +33,7 @@ async def test_generic_get_from_iri_concept_scheme(postgres, cn_db_engine, cn, c
     response = await client.get("/foo", follow_redirects=False)
     assert response.status_code == 404
     assert response.json() == {
-        "detail": "KOS graph object with iri `http://test.ninja/foo` not found"
+        "detail": "KOS graph object with IRI `http://test.ninja/foo` not found"
     }
 
     cn.scheme["@id"] = "http://test.ninja/foo"
@@ -56,7 +56,7 @@ async def test_generic_get_from_iri_correspondence(postgres, cn_db_engine, cn, c
     response = await client.get("/foo", follow_redirects=False)
     assert response.status_code == 404
     assert response.json() == {
-        "detail": "KOS graph object with iri `http://test.ninja/foo` not found"
+        "detail": "KOS graph object with IRI `http://test.ninja/foo` not found"
     }
 
     cn.correspondence["@id"] = "http://test.ninja/foo"

@@ -36,8 +36,7 @@ async def test_correspondence_get_not_found(cn, client, monkeypatch):
     correspondence = response.json()
     assert response.status_code == 404
     assert correspondence == {
-        "message": "Correspondence with IRI 'foo' not found",
-        "detail": {"iri": "foo"},
+        "detail": "Correspondence with IRI `foo` not found",
     }
 
 
@@ -62,7 +61,6 @@ async def test_correspondence_create_error_validation_errors(cn, client, monkeyp
     obj[f"{XKOS}madeOf"] = []
 
     response = await client.post(Paths.correspondence, json=obj)
-    print(response.json())
     assert response.json()["detail"][0]["type"] == "value_error"
     assert (
         response.json()["detail"][0]["msg"]
@@ -76,8 +74,7 @@ async def test_correspondence_create_error_already_exists(cn, client, monkeypatc
 
     response = await client.post(Paths.correspondence, json=cn.correspondence)
     assert response.json() == {
-        "message": "Resource with `@id` already exists",
-        "detail": {"@id": "http://data.europa.eu/xsp/cn2023/CN2023_CN2024"},
+        "detail": f"Correspondence with IRI `{cn.correspondence['@id']}` already exists",
     }
     assert response.status_code == 409
 
@@ -119,13 +116,9 @@ async def test_correspondence_update_error_missing(cn, client, monkeypatch):
 
     obj = cn.correspondence
     obj["@id"] = "http://pyst-tests.ninja/correspondence/missing"
-    id_ = obj["@id"]
 
     response = await client.put(Paths.correspondence, json=obj)
-    assert response.json() == {
-        "message": f"Correspondence with `@id` {id_} not present",
-        "detail": {"@id": id_},
-    }
+    assert response.json() == {"detail": f"Correspondence with IRI `{obj['@id']}` not found"}
     assert response.status_code == 404
 
 
