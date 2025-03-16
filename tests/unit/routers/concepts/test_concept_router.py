@@ -35,8 +35,7 @@ async def test_concept_get_not_found(cn, client, monkeypatch):
     concept = response.json()
     assert response.status_code == 404
     assert concept == {
-        "message": "Concept with IRI 'foo' not found",
-        "detail": {"iri": "foo"},
+        "detail": "Concept with IRI `foo` not found",
     }
 
 
@@ -82,7 +81,7 @@ async def test_concept_create_error_concept_schemes_not_in_database(cn, client, 
     del cn.concept_top[f"{SKOS}topConceptOf"]
     response = await client.post(Paths.concept, json=cn.concept_top)
     assert response.status_code == 422
-    assert response.json() == {"message": "Problem"}
+    assert response.json() == {"detail": "Problem"}
 
 
 async def test_concept_create_error_already_exists(cn, client, monkeypatch):
@@ -90,8 +89,7 @@ async def test_concept_create_error_already_exists(cn, client, monkeypatch):
 
     response = await client.post(Paths.concept, json=cn.concept_low)
     assert response.json() == {
-        "message": "Resource with `@id` already exists",
-        "detail": {"@id": "http://data.europa.eu/xsp/cn2024/010100000080"},
+        "detail": f"Concept with IRI `{cn.concept_low['@id']}` already exists",
     }
     assert response.status_code == 409
 
@@ -103,7 +101,7 @@ async def test_concept_create_error_relationships(cn, client, monkeypatch):
 
     response = await client.post(Paths.concept, json=cn.concept_low)
     assert response.json() == {
-        "message": "Test",
+        "detail": "Test",
     }
     assert response.status_code == 422
 
@@ -148,7 +146,7 @@ async def test_concept_update_error_concept_schemes_not_in_database(cn, client, 
     del cn.concept_top[f"{SKOS}topConceptOf"]
     response = await client.put(Paths.concept, json=cn.concept_top)
     assert response.status_code == 422
-    assert response.json() == {"message": "Problem"}
+    assert response.json() == {"detail": "Problem"}
 
 
 async def test_concept_update_error_relationships_concept_schemes(cn, client, monkeypatch):
@@ -161,7 +159,7 @@ async def test_concept_update_error_relationships_concept_schemes(cn, client, mo
     del cn.concept_top[f"{SKOS}topConceptOf"]
     response = await client.put(Paths.concept, json=cn.concept_top)
     assert response.status_code == 422
-    assert response.json() == {"message": "Problem"}
+    assert response.json() == {"detail": "Problem"}
 
 
 async def test_concept_update_error_missing(cn, client, monkeypatch):
@@ -173,8 +171,7 @@ async def test_concept_update_error_missing(cn, client, monkeypatch):
 
     response = await client.put(Paths.concept, json=obj)
     assert response.json() == {
-        "message": f"Concept with `@id` {id_} not present",
-        "detail": {"@id": id_},
+        "detail": f"Concept with IRI `{id_}` not found",
     }
     assert response.status_code == 404
 

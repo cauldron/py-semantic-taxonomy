@@ -86,7 +86,7 @@ async def test_relationship_create_already_exists(relationships, client, monkeyp
         Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
     )
     assert response.status_code == 409
-    assert response.json() == {"message": "Already exists"}
+    assert response.json() == {"detail": "Already exists"}
 
 
 async def test_relationship_create_across_schemes(relationships, client, monkeypatch):
@@ -100,7 +100,7 @@ async def test_relationship_create_across_schemes(relationships, client, monkeyp
         Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
     )
     assert response.status_code == 422
-    assert response.json() == {"message": "Nope"}
+    assert response.json() == {"detail": "Nope"}
 
 
 async def test_relationship_create_cs_reference(relationships, client, monkeypatch):
@@ -114,7 +114,7 @@ async def test_relationship_create_cs_reference(relationships, client, monkeypat
         Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
     )
     assert response.status_code == 422
-    assert response.json() == {"message": "Nope"}
+    assert response.json() == {"detail": "Nope"}
 
 
 async def test_relationships_create_error_validation_errors_zero_relatioships(
@@ -231,7 +231,7 @@ async def test_relationship_update_across_schemes(relationships, client, monkeyp
         Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
     )
     assert response.status_code == 422
-    assert response.json() == {"message": "Nope"}
+    assert response.json() == {"detail": "Nope"}
 
 
 async def test_relationship_update_error_missing(relationships, client, monkeypatch):
@@ -244,7 +244,7 @@ async def test_relationship_update_error_missing(relationships, client, monkeypa
     response = await client.put(Paths.relationship, json=[relationships[1].to_json_ld()])
     assert response.status_code == 404
     assert response.json() == {
-        "message": "Test message",
+        "detail": "Test message",
     }
 
 
@@ -259,7 +259,7 @@ async def test_relationship_delete(relationships, client, monkeypatch):
     )
     assert response.status_code == 200
     assert response.json() == {
-        "message": "Relationships (possibly) deleted",
+        "detail": "Relationships (possibly) deleted",
         "count": 1,
     }
     GraphService.relationships_delete.assert_called_once()

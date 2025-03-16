@@ -51,20 +51,16 @@ https://github.com/pydantic/pydantic/issues/8379
     Paths.concept,
     summary="Get a Concept object",
     response_model=response.Concept,
-    responses={404: {"model": response.ErrorMessage}},
 )
 async def concept_get(
     iri: str,
     service=Depends(GraphService),
-) -> response.Concept | JSONResponse:
+) -> response.Concept:
     try:
         obj = await service.concept_get(iri=iri)
         return response.Concept(**obj.to_json_ld())
     except de.ConceptNotFoundError:
-        return JSONResponse(
-            status_code=404,
-            content={"message": f"Concept with IRI '{iri}' not found", "detail": {"iri": iri}},
-        )
+        raise HTTPException(status_code=404, detail=f"Concept with IRI `{iri}` not found")
 
 
 @router.post(
@@ -76,32 +72,23 @@ async def concept_create(
     request: Request,
     concept: req.ConceptCreate,
     service=Depends(GraphService),
-) -> response.Concept | JSONResponse:
+) -> response.Concept:
     try:
         incoming_data = await request.json()
-        concept = de.Concept.from_json_ld(incoming_data)
+        concept_obj = de.Concept.from_json_ld(incoming_data)
         relationships = de.Relationship.from_json_ld(incoming_data)
-        result = await service.concept_create(concept=concept, relationships=relationships)
+        result = await service.concept_create(concept=concept_obj, relationships=relationships)
         return response.Concept(**result.to_json_ld())
     except de.DuplicateIRI:
-        return JSONResponse(
-            status_code=409,
-            content={
-                "message": f"Resource with `@id` already exists",
-                "detail": {"@id": concept.id_},
-            },
+        raise HTTPException(
+            status_code=409, detail=f"Concept with IRI `{concept_obj.id_}` already exists"
         )
     except (
         de.HierarchicRelationshipAcrossConceptScheme,
         de.DuplicateRelationship,
         de.ConceptSchemesNotInDatabase,
-    ) as exc:
-        return JSONResponse(
-            status_code=422,
-            content={
-                "message": str(exc),
-            },
-        )
+    ) as err:
+        raise HTTPException(status_code=422, detail=str(err))
 
 
 @router.put(
@@ -113,29 +100,20 @@ async def concept_update(
     request: Request,
     concept: req.ConceptUpdate,
     service=Depends(GraphService),
-) -> response.Concept | JSONResponse:
+) -> response.Concept:
     try:
         concept_obj = de.Concept.from_json_ld(await request.json())
         result = await service.concept_update(concept_obj)
         return response.Concept(**result.to_json_ld())
     except de.ConceptNotFoundError:
-        return JSONResponse(
-            status_code=404,
-            content={
-                "message": f"Concept with `@id` {concept.id_} not present",
-                "detail": {"@id": concept.id_},
-            },
+        raise HTTPException(
+            status_code=404, detail=f"Concept with IRI `{concept_obj.id_}` not found"
         )
     except (
         de.RelationshipsInCurrentConceptScheme,
         de.ConceptSchemesNotInDatabase,
-    ) as exc:
-        return JSONResponse(
-            status_code=422,
-            content={
-                "message": str(exc),
-            },
-        )
+    ) as err:
+        raise HTTPException(status_code=422, detail=str(err))
 
 
 @router.delete(
@@ -160,23 +138,16 @@ async def concept_delete(
     Paths.concept_scheme,
     summary="Get a ConceptScheme object",
     response_model=response.ConceptScheme,
-    responses={404: {"model": response.ErrorMessage}},
 )
 async def concept_scheme_get(
     iri: str,
     service=Depends(GraphService),
-) -> response.ConceptScheme | JSONResponse:
+) -> response.ConceptScheme:
     try:
         obj = await service.concept_scheme_get(iri=iri)
         return response.ConceptScheme(**obj.to_json_ld())
     except de.ConceptSchemeNotFoundError:
-        return JSONResponse(
-            status_code=404,
-            content={
-                "message": f"Concept Scheme with IRI '{iri}' not found",
-                "detail": {"iri": iri},
-            },
-        )
+        raise HTTPException(status_code=404, detail=f"Concept Scheme with IRI `{iri}` not found")
 
 
 @router.post(
@@ -188,18 +159,14 @@ async def concept_scheme_create(
     request: Request,
     concept_scheme: req.ConceptScheme,
     service=Depends(GraphService),
-) -> response.ConceptScheme | JSONResponse:
+) -> response.ConceptScheme:
     try:
         cs = de.ConceptScheme.from_json_ld(await request.json())
         result = await service.concept_scheme_create(cs)
         return response.ConceptScheme(**result.to_json_ld())
     except de.DuplicateIRI:
-        return JSONResponse(
-            status_code=409,
-            content={
-                "message": f"Resource with `@id` already exists",
-                "detail": {"@id": cs.id_},
-            },
+        raise HTTPException(
+            status_code=409, detail=f"Concept Scheme with IRI `{cs.id_}` already exists"
         )
 
 
@@ -212,19 +179,13 @@ async def concept_scheme_update(
     request: Request,
     concept_scheme: req.ConceptScheme,
     service=Depends(GraphService),
-) -> response.ConceptScheme | JSONResponse:
+) -> response.ConceptScheme:
     try:
         cs = de.ConceptScheme.from_json_ld(await request.json())
         result = await service.concept_scheme_update(cs)
         return response.ConceptScheme(**result.to_json_ld())
     except de.ConceptSchemeNotFoundError:
-        return JSONResponse(
-            status_code=404,
-            content={
-                "message": f"Concept Scheme with `@id` {cs.id_} not present",
-                "detail": {"@id": cs.id_},
-            },
-        )
+        raise HTTPException(status_code=404, detail=f"Concept Scheme with IRI `{cs.id_}` not found")
 
 
 @router.delete(
@@ -271,28 +232,18 @@ async def relationships_create(
     request: Request,
     relationships: list[req.Relationship],
     service=Depends(GraphService),
-) -> response.Relationship | JSONResponse:
+) -> response.Relationship:
     try:
         incoming = de.Relationship.from_json_ld_list(await request.json())
         lst = await service.relationships_create(incoming)
         return [response.Relationship(**obj.to_json_ld()) for obj in lst]
-    except de.DuplicateRelationship as exc:
-        return JSONResponse(
-            status_code=409,
-            content={
-                "message": str(exc),
-            },
-        )
+    except de.DuplicateRelationship as err:
+        raise HTTPException(status_code=409, detail=str(err))
     except (
         de.HierarchicRelationshipAcrossConceptScheme,
         de.RelationshipsReferencesConceptScheme,
-    ) as exc:
-        return JSONResponse(
-            status_code=422,
-            content={
-                "message": str(exc),
-            },
-        )
+    ) as err:
+        raise HTTPException(status_code=422, detail=str(err))
 
 
 @router.put(
@@ -305,25 +256,15 @@ async def relationships_update(
     request: Request,
     relationships: list[req.Relationship],
     service=Depends(GraphService),
-) -> response.Concept | JSONResponse:
+) -> response.Concept:
     try:
         incoming = de.Relationship.from_json_ld_list(await request.json())
         lst = await service.relationships_update(incoming)
         return [response.Relationship(**obj.to_json_ld()) for obj in lst]
-    except de.RelationshipNotFoundError as exc:
-        return JSONResponse(
-            status_code=404,
-            content={
-                "message": str(exc),
-            },
-        )
-    except de.HierarchicRelationshipAcrossConceptScheme as exc:
-        return JSONResponse(
-            status_code=422,
-            content={
-                "message": str(exc),
-            },
-        )
+    except de.RelationshipNotFoundError as err:
+        raise HTTPException(status_code=404, detail=str(err))
+    except de.HierarchicRelationshipAcrossConceptScheme as err:
+        raise HTTPException(status_code=422, detail=str(err))
 
 
 @router.delete(
@@ -340,7 +281,7 @@ async def relationship_delete(
     return JSONResponse(
         status_code=200,
         content={
-            "message": "Relationships (possibly) deleted",
+            "detail": "Relationships (possibly) deleted",
             "count": count,
         },
     )
@@ -353,23 +294,16 @@ async def relationship_delete(
     Paths.correspondence,
     summary="Get a Correspondence object",
     response_model=response.Correspondence,
-    responses={404: {"model": response.ErrorMessage}},
 )
 async def correspondence_get(
     iri: str,
     service=Depends(GraphService),
-) -> response.Correspondence | JSONResponse:
+) -> response.Correspondence:
     try:
         obj = await service.correspondence_get(iri=iri)
         return response.Correspondence(**obj.to_json_ld())
     except de.CorrespondenceNotFoundError:
-        return JSONResponse(
-            status_code=404,
-            content={
-                "message": f"Correspondence with IRI '{iri}' not found",
-                "detail": {"iri": iri},
-            },
-        )
+        raise HTTPException(status_code=404, detail=f"Correspondence with IRI `{iri}` not found")
 
 
 @router.post(
@@ -381,18 +315,14 @@ async def correspondence_create(
     request: Request,
     correspondence: req.Correspondence,
     service=Depends(GraphService),
-) -> response.Correspondence | JSONResponse:
+) -> response.Correspondence:
     try:
         corr = de.Correspondence.from_json_ld(await request.json())
         result = await service.correspondence_create(corr)
         return response.Correspondence(**result.to_json_ld())
     except de.DuplicateIRI:
-        return JSONResponse(
-            status_code=409,
-            content={
-                "message": f"Resource with `@id` already exists",
-                "detail": {"@id": corr.id_},
-            },
+        raise HTTPException(
+            status_code=409, detail=f"Correspondence with IRI `{corr.id_}` already exists"
         )
 
 
@@ -405,18 +335,14 @@ async def correspondence_update(
     request: Request,
     concept_scheme: req.Correspondence,
     service=Depends(GraphService),
-) -> response.Correspondence | JSONResponse:
+) -> response.Correspondence:
     try:
         corr = de.Correspondence.from_json_ld(await request.json())
         result = await service.correspondence_update(corr)
         return response.Correspondence(**result.to_json_ld())
     except de.CorrespondenceNotFoundError:
-        return JSONResponse(
-            status_code=404,
-            content={
-                "message": f"Correspondence with `@id` {corr.id_} not present",
-                "detail": {"@id": corr.id_},
-            },
+        raise HTTPException(
+            status_code=404, detail=f"Correspondence with IRI `{corr.id_}` not found"
         )
 
 
@@ -442,23 +368,16 @@ async def correspondence_delete(
     Paths.association,
     summary="Get a Association object",
     response_model=response.Association,
-    responses={404: {"model": response.ErrorMessage}},
 )
 async def association_get(
     iri: str,
     service=Depends(GraphService),
-) -> response.Association | JSONResponse:
+) -> response.Association:
     try:
         obj = await service.association_get(iri=iri)
         return response.Association(**obj.to_json_ld())
     except de.AssociationNotFoundError:
-        return JSONResponse(
-            status_code=404,
-            content={
-                "message": f"Association with IRI '{iri}' not found",
-                "detail": {"iri": iri},
-            },
-        )
+        raise HTTPException(status_code=404, detail=f"Association with IRI `{iri}` not found")
 
 
 @router.post(
@@ -516,4 +435,4 @@ async def generic_get_from_iri(
             url="{}?iri={}".format(request.url_for(mapping[object_type]), quote_plus(iri))
         )
     except de.NotFoundError:
-        raise HTTPException(status_code=404, detail=f"KOS graph object with iri `{iri}` not found")
+        raise HTTPException(status_code=404, detail=f"KOS graph object with IRI `{iri}` not found")

@@ -1,7 +1,5 @@
 from unittest.mock import AsyncMock
 
-import orjson
-
 from py_semantic_taxonomy.adapters.routers.router import GraphService, Paths
 from py_semantic_taxonomy.domain.constants import SKOS
 from py_semantic_taxonomy.domain.entities import (
@@ -36,8 +34,7 @@ async def test_concept_scheme_get_not_found(cn, client, monkeypatch):
     response = await client.get(Paths.concept_scheme, params={"iri": "foo"})
     assert response.status_code == 404
     assert response.json() == {
-        "message": "Concept Scheme with IRI 'foo' not found",
-        "detail": {"iri": "foo"},
+        "detail": "Concept Scheme with IRI `foo` not found",
     }
 
 
@@ -71,9 +68,8 @@ async def test_concept_scheme_create_error_already_exists(cn, client, monkeypatc
     monkeypatch.setattr(GraphService, "concept_scheme_create", AsyncMock(side_effect=DuplicateIRI))
 
     response = await client.post(Paths.concept_scheme, json=cn.scheme)
-    assert orjson.loads(response.content) == {
-        "message": "Resource with `@id` already exists",
-        "detail": {"@id": "http://data.europa.eu/xsp/cn2024/cn2024"},
+    assert response.json() == {
+        "detail": f"Concept Scheme with IRI `{cn.scheme['@id']}` already exists"
     }
     assert response.status_code == 409
 
@@ -113,12 +109,10 @@ async def test_concept_scheme_update_error_missing(cn, client, monkeypatch):
 
     obj = cn.scheme
     obj["@id"] = "http://data.europa.eu/xsp/cn2024/cn2025"
-    id_ = obj["@id"]
 
     response = await client.put(Paths.concept_scheme, json=obj)
-    assert orjson.loads(response.content) == {
-        "message": f"Concept Scheme with `@id` {id_} not present",
-        "detail": {"@id": id_},
+    assert response.json() == {
+        "detail": f"Concept Scheme with IRI `{obj['@id']}` not found",
     }
     assert response.status_code == 404
 

@@ -34,8 +34,7 @@ async def test_association_get_not_found(cn, client, monkeypatch):
     response = await client.get(Paths.association, params={"iri": "foo"})
     assert response.status_code == 404
     assert response.json() == {
-        "message": "Association with IRI 'foo' not found",
-        "detail": {"iri": "foo"},
+        "detail": "Association with IRI `foo` not found",
     }
 
 
