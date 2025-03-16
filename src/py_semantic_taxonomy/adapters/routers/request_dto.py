@@ -242,11 +242,21 @@ class Correspondence(ConceptSchemeCommon):
     @classmethod
     def check_no_made_of(cls, data: dict) -> dict:
         for key in data:
-            if key == RDF["made_of"]:
+            if key == RDF["made_ofs"]:
                 raise ValueError(
-                    f"Found `{RDF['made_of']}` in new correspondence; use dedicated API calls for this data."
+                    f"Found `{RDF['made_ofs']}` in new correspondence; use dedicated API calls for this data."
                 )
         return data
+
+
+class MadeOf(BaseModel):
+    id_: IRI = Field(alias=RDF["id_"])
+    made_ofs: list[Node] = Field(alias=RDF["made_ofs"])
+
+    model_config = ConfigDict(extra="forbid")
+
+    def model_dump(self, by_alias=True, *args, **kwargs):
+        return super().model_dump(*args, by_alias=by_alias, **kwargs)
 
 
 class Association(BaseModel):

@@ -12,6 +12,7 @@ from starlette.requests import Request
 from testcontainers.postgres import PostgresContainer
 
 from py_semantic_taxonomy.application.services import GraphService
+from py_semantic_taxonomy.domain.constants import RDF_MAPPING as RDF
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     Association,
@@ -19,6 +20,7 @@ from py_semantic_taxonomy.domain.entities import (
     ConceptScheme,
     Correspondence,
     GraphObject,
+    MadeOf,
     Relationship,
 )
 from py_semantic_taxonomy.domain.ports import KOSGraph
@@ -67,6 +69,17 @@ def relationships(fixtures_dir: Path) -> list[Relationship]:
             if str(p) == RelationshipVerbs.broader
         ],
         key=lambda x: x.source,
+    )
+
+
+@pytest.fixture
+def made_of() -> MadeOf:
+    return MadeOf(
+        id_="http://data.europa.eu/xsp/cn2023/CN2023_CN2024",
+        made_ofs=[
+            {"@id": "http://data.europa.eu/xsp/cn2023/top_level_association"},
+            {"@id": "http://data.europa.eu/xsp/cn2023/lower_association"},
+        ],
     )
 
 

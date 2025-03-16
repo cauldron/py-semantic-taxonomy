@@ -1,11 +1,14 @@
 from unittest.mock import AsyncMock
 
+import orjson
+
 from py_semantic_taxonomy.adapters.routers.router import GraphService, Paths
 from py_semantic_taxonomy.domain.constants import XKOS
 from py_semantic_taxonomy.domain.entities import (
     Correspondence,
     CorrespondenceNotFoundError,
     DuplicateIRI,
+    MadeOf,
 )
 
 
@@ -142,3 +145,66 @@ async def test_correspondence_delete_not_found(cn, client, monkeypatch):
     response = await client.delete(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
     assert response.status_code == 404
     assert response.json() == {"detail": "Test"}
+
+
+async def test_made_of_add(cn, made_of, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "made_of_add",
+        AsyncMock(return_value=Correspondence.from_json_ld(cn.correspondence)),
+    )
+
+    response = await client.post(Paths.made_of, json=made_of.to_json_ld())
+    assert response.status_code == 200
+    given = response.json()
+    for key, value in cn.correspondence.items():
+        assert given[key] == value
+
+    GraphService.made_of_add.assert_called_once()
+    assert isinstance(GraphService.made_of_add.call_args[0][0], MadeOf)
+
+
+async def test_made_of_add_missing(cn, made_of, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService, "made_of_add", AsyncMock(side_effect=CorrespondenceNotFoundError)
+    )
+
+    response = await client.post(Paths.made_of, json=made_of.to_json_ld())
+    assert response.json() == {"detail": f"Correspondence with IRI `{made_of.id_}` not found"}
+    assert response.status_code == 404
+
+
+async def test_made_of_remove(cn, made_of, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "made_of_remove",
+        AsyncMock(return_value=Correspondence.from_json_ld(cn.correspondence)),
+    )
+
+    # https://www.python-httpx.org/compatibility/#request-body-on-http-methods
+    response = await client.request(
+        method="DELETE",
+        url=Paths.made_of,
+        content=orjson.dumps(made_of.to_json_ld()),
+    )
+    assert response.status_code == 200
+    given = response.json()
+    for key, value in cn.correspondence.items():
+        assert given[key] == value
+
+    GraphService.made_of_remove.assert_called_once()
+    assert isinstance(GraphService.made_of_remove.call_args[0][0], MadeOf)
+
+
+async def test_made_of_remove_missing(cn, made_of, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService, "made_of_remove", AsyncMock(side_effect=CorrespondenceNotFoundError)
+    )
+
+    response = await client.request(
+        method="DELETE",
+        url=Paths.made_of,
+        content=orjson.dumps(made_of.to_json_ld()),
+    )
+    assert response.json() == {"detail": f"Correspondence with IRI `{made_of.id_}` not found"}
+    assert response.status_code == 404

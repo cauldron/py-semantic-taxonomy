@@ -13,7 +13,40 @@ from py_semantic_taxonomy.domain.constants import (
 # Allow mixing non-default and default values in dataclasses
 # See https://www.trueblade.com/blogs/news/python-3-10-new-dataclass-features
 @dataclass(kw_only=True)
-class SKOS:
+class Serializable:
+    def to_db_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json_ld(self, fields_: list[str] = [], extra: bool = True) -> dict:
+        """Return this data formatted as (but not serialized to) SKOS expanded JSON LD"""
+        class_fields = fields_ or {f.name for f in fields(self)}.difference({"extra"})
+        dct = copy(self.extra) if extra else {}
+        for attr, label in RDF_MAPPING.items():
+            if attr not in class_fields:
+                continue
+            if value := getattr(self, attr):
+                dct[label] = value
+
+        return dct
+
+    @classmethod
+    def from_json_ld(cls, dict_: dict, fields_: list[str] = [], extra: bool = True) -> "SKOS":
+        source_dict, data = copy(dict_), {}
+        class_fields = fields_ or {f.name for f in fields(cls)}.difference({"extra"})
+        for dataclass_label, skos_label in RDF_MAPPING.items():
+            if dataclass_label in class_fields and skos_label in source_dict:
+                data[dataclass_label] = source_dict.pop(skos_label)
+        if extra:
+            data["extra"] = {
+                key: value
+                for key, value in source_dict.items()
+                if key not in SKOS_RELATIONSHIP_PREDICATES
+            }
+        return cls(**data)
+
+
+@dataclass(kw_only=True)
+class SKOS(Serializable):
     id_: str
     types: list[str]
     pref_labels: list[dict[str, str]]
@@ -24,35 +57,6 @@ class SKOS:
     history_notes: list[dict] = field(default_factory=list)
     editorial_notes: list[dict] = field(default_factory=list)
     extra: dict = field(default_factory=dict)
-
-    def to_db_dict(self) -> dict:
-        return asdict(self)
-
-    def to_json_ld(self) -> dict:
-        """Return this data formatted as (but not serialized to) SKOS expanded JSON LD"""
-        dct = copy(self.extra)
-        class_fields = {f.name for f in fields(self)}.difference({"extra"})
-        for attr, label in RDF_MAPPING.items():
-            if attr not in class_fields:
-                continue
-            if value := getattr(self, attr):
-                dct[label] = value
-
-        return dct
-
-    @classmethod
-    def from_json_ld(cls, dict_: dict) -> "SKOS":
-        source_dict, data = copy(dict_), {}
-        class_fields = {f.name for f in fields(cls)}.difference({"extra"})
-        for dataclass_label, skos_label in RDF_MAPPING.items():
-            if dataclass_label in class_fields and skos_label in source_dict:
-                data[dataclass_label] = source_dict.pop(skos_label)
-        data["extra"] = {
-            key: value
-            for key, value in source_dict.items()
-            if key not in SKOS_RELATIONSHIP_PREDICATES
-        }
-        return cls(**data)
 
 
 @dataclass(kw_only=True)
@@ -118,11 +122,24 @@ class Relationship:
 @dataclass(kw_only=True)
 class Correspondence(ConceptScheme):
     compares: list[dict]
-    made_of: list[dict] = field(default_factory=list)
+    made_ofs: list[dict] = field(default_factory=list)
 
 
 @dataclass(kw_only=True)
-class Association:
+class MadeOf(Serializable):
+    id_: str
+    made_ofs: list[dict]
+
+    def to_json_ld(self) -> dict:
+        return super().to_json_ld(extra=False)
+
+    @classmethod
+    def from_json_ld(cls, dict_: dict) -> "Association":
+        return super().from_json_ld(dict_=dict_, extra=False)
+
+
+@dataclass(kw_only=True)
+class Association(Serializable):
     id_: str
     types: list[str]
     source_concepts: list[dict]
@@ -135,30 +152,16 @@ class Association:
             AssociationKind.conditional if len(self.source_concepts) > 1 else AssociationKind.simple
         )
 
-    def to_db_dict(self) -> dict:
-        return asdict(self)
-
     def to_json_ld(self) -> dict:
-        """Return this data formatted as (but not serialized to) SKOS expanded JSON LD"""
-        dct = copy(self.extra)
-        class_fields = {"id_", "types", "source_concepts", "target_concepts"}
-        for attr, label in RDF_MAPPING.items():
-            if attr not in class_fields:
-                continue
-            if value := getattr(self, attr):
-                dct[label] = value
-
-        return dct
+        # Exclude `extra`
+        return super().to_json_ld(fields_={"id_", "types", "source_concepts", "target_concepts"})
 
     @classmethod
     def from_json_ld(cls, dict_: dict) -> "Association":
-        source_dict, data = copy(dict_), {}
-        class_fields = {"id_", "types", "source_concepts", "target_concepts"}
-        for dataclass_label, skos_label in RDF_MAPPING.items():
-            if dataclass_label in class_fields and skos_label in source_dict:
-                data[dataclass_label] = source_dict.pop(skos_label)
-        data["extra"] = {key: value for key, value in source_dict.items()}
-        return cls(**data)
+        # Exclude `extra`
+        return super().from_json_ld(
+            dict_=dict_, fields_={"id_", "types", "source_concepts", "target_concepts"}
+        )
 
 
 # For type hinting
