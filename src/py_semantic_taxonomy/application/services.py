@@ -133,10 +133,6 @@ class GraphService:
         await self._relationships_check_source_target_share_known_concept_scheme(relationships)
         return await self.graph.relationships_create(relationships)
 
-    async def relationships_update(self, relationships: list[Relationship]) -> list[Relationship]:
-        await self._relationships_check_source_target_share_known_concept_scheme(relationships)
-        return await self.graph.relationships_update(relationships)
-
     async def relationships_delete(self, relationships: list[Relationship]) -> int:
         return await self.graph.relationships_delete(relationships)
 

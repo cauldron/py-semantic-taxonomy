@@ -48,31 +48,6 @@ async def test_create_relationships_duplicate(sqlite, graph, relationships):
     )
 
 
-async def test_update_relationships(sqlite, graph, relationships):
-    result = await graph.relationships_get(iri=relationships[1].source)
-    assert result == [relationships[1]]
-
-    rel = Relationship(
-        source=relationships[1].source,
-        target=relationships[1].target,
-        predicate=RelationshipVerbs.exact_match,
-    )
-    await graph.relationships_update([rel])
-
-    result = await graph.relationships_get(iri=rel.source)
-    assert result == [rel]
-
-
-async def test_update_relationships_not_found_error(sqlite, graph):
-    missing = Relationship(
-        source="http://example.com/foo",
-        target="http://example.com/bar",
-        predicate=RelationshipVerbs.exact_match,
-    )
-    with pytest.raises(RelationshipNotFoundError):
-        await graph.relationships_update([missing])
-
-
 async def test_delete_concept(sqlite, graph, relationships):
     response = await graph.relationships_delete(relationships)
     assert response == 3, "Wrong number of deleted relationships"

@@ -40,10 +40,6 @@ class KOSGraph(Protocol):
         self, relationships: list[Relationship]
     ) -> list[Relationship]: ...
 
-    async def relationships_update(
-        self, relationships: list[Relationship]
-    ) -> list[Relationship]: ...
-
     async def relationships_delete(self, relationships: list[Relationship]) -> int: ...
 
     async def relationship_source_target_share_known_concept_scheme(

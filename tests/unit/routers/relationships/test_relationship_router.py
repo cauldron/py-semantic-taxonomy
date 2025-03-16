@@ -203,51 +203,6 @@ async def test_relationships_create_error_validation_errors_self_reference(
     )
 
 
-async def test_relationships_update(relationships, client, monkeypatch):
-    monkeypatch.setattr(GraphService, "relationships_update", AsyncMock(return_value=relationships))
-
-    updated = Relationship(
-        source=relationships[1].source,
-        target=relationships[1].target,
-        predicate=RelationshipVerbs.exact_match,
-    )
-    response = await client.put(Paths.relationship, json=[updated.to_json_ld()])
-    assert response.status_code == 200
-    assert response.json()
-
-    GraphService.relationships_update.assert_called_once()
-    assert isinstance(GraphService.relationships_update.call_args[0][0], list)
-    assert isinstance(GraphService.relationships_update.call_args[0][0][0], Relationship)
-
-
-async def test_relationship_update_across_schemes(relationships, client, monkeypatch):
-    monkeypatch.setattr(
-        GraphService,
-        "relationships_update",
-        AsyncMock(side_effect=HierarchicRelationshipAcrossConceptScheme("Nope")),
-    )
-
-    response = await client.put(
-        Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
-    )
-    assert response.status_code == 422
-    assert response.json() == {"detail": "Nope"}
-
-
-async def test_relationship_update_error_missing(relationships, client, monkeypatch):
-    monkeypatch.setattr(
-        GraphService,
-        "relationships_update",
-        AsyncMock(side_effect=RelationshipNotFoundError("Test message")),
-    )
-
-    response = await client.put(Paths.relationship, json=[relationships[1].to_json_ld()])
-    assert response.status_code == 404
-    assert response.json() == {
-        "detail": "Test message",
-    }
-
-
 async def test_relationship_delete(relationships, client, monkeypatch):
     monkeypatch.setattr(GraphService, "relationships_delete", AsyncMock(return_value=1))
 

@@ -251,32 +251,6 @@ class PostgresKOSGraph:
             await conn.commit()
         return relationships
 
-    async def _get_relationship_count(self, source: str, target: str, conn: Connection) -> int:
-        stmt = select(func.count("*")).where(
-            relationship_table.c.source == source, relationship_table.c.target == target
-        )
-        return (await conn.execute(stmt)).first()[0]
-
-    async def relationships_update(self, relationships: list[Relationship]) -> list[Relationship]:
-        async with self.engine.connect() as conn:
-            for rel in relationships:
-                count = await self._get_relationship_count(rel.source, rel.target, conn)
-                if not count:
-                    await conn.rollback()
-                    raise RelationshipNotFoundError(
-                        f"Can't update non-existent relationship between source `{rel.source}` and target `{rel.target}`"
-                    )
-                await conn.execute(
-                    update(relationship_table)
-                    .where(
-                        relationship_table.c.source == rel.source,
-                        relationship_table.c.target == rel.target,
-                    )
-                    .values(predicate=rel.predicate)
-                )
-            await conn.commit()
-        return relationships
-
     async def relationships_delete(self, relationships: list[Relationship]) -> int:
         async with self.engine.connect() as conn:
             count = 0
