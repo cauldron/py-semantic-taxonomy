@@ -20,11 +20,11 @@ from py_semantic_taxonomy.domain.entities import (
     RelationshipsInCurrentConceptScheme,
     RelationshipsReferencesConceptScheme,
 )
-from py_semantic_taxonomy.domain.ports import KOSGraph
+from py_semantic_taxonomy.domain.ports import KOSGraphDatabase
 
 
 class GraphService:
-    def __init__(self, graph: KOSGraph = Depends(get_kos_graph)):
+    def __init__(self, graph: KOSGraphDatabase = Depends(get_kos_graph)):
         self.graph = graph
 
     async def get_object_type(self, iri: str) -> GraphObject:

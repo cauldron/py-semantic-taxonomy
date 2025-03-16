@@ -12,7 +12,7 @@ from py_semantic_taxonomy.domain.entities import (
 
 
 @runtime_checkable
-class KOSGraph(Protocol):
+class KOSGraphDatabase(Protocol):
     async def get_object_type(self, iri: str) -> GraphObject: ...
 
     async def concept_get(self, iri: str) -> Concept: ...
