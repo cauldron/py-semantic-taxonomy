@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     db_port: int = 5432
     db_name: str = "PyST"
 
+    auth_token: str = "missing"
+
     # allow_origins: Set[str] = {
     #     "https://brightway.cauldron.ch",
     #     "https://brightway-lca.cloud",

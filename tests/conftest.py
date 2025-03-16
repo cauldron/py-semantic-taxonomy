@@ -30,6 +30,11 @@ def fixtures_dir() -> Path:
     return Path(__file__).parent / "fixtures"
 
 
+@pytest.fixture(autouse=True)
+def auth_token(monkeypatch):
+    monkeypatch.setenv("PyST_auth_token", "testrunner")
+
+
 @pytest.fixture
 def cn(fixtures_dir: Path) -> object:
     graph = Graph().parse(fixtures_dir / "cn.ttl")
@@ -193,7 +198,22 @@ async def client() -> TestClient:
     from py_semantic_taxonomy.app import test_app
 
     async with AsyncClient(
-        transport=ASGITransport(app=test_app()), base_url="http://test.ninja"
+        transport=ASGITransport(app=test_app()),
+        base_url="http://test.ninja",
+        headers={"X-PyST-Auth-Token": "testrunner"},
+    ) as ac:
+        yield ac
+
+
+@pytest.fixture
+async def anonymous_client() -> TestClient:
+    from httpx import ASGITransport, AsyncClient
+
+    from py_semantic_taxonomy.app import test_app
+
+    async with AsyncClient(
+        transport=ASGITransport(app=test_app()),
+        base_url="http://test.ninja",
     ) as ac:
         yield ac
 

@@ -9,14 +9,14 @@ from py_semantic_taxonomy.domain.entities import (
 )
 
 
-async def test_concept_scheme_get(cn, client, monkeypatch):
+async def test_concept_scheme_get(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(
         GraphService,
         "concept_scheme_get",
         AsyncMock(return_value=ConceptScheme.from_json_ld(cn.scheme)),
     )
 
-    response = await client.get(Paths.concept_scheme, params={"iri": cn.scheme["@id"]})
+    response = await anonymous_client.get(Paths.concept_scheme, params={"iri": cn.scheme["@id"]})
     assert response.status_code == 200
     for key, value in response.json().items():
         if value:
@@ -26,12 +26,12 @@ async def test_concept_scheme_get(cn, client, monkeypatch):
     assert isinstance(GraphService.concept_scheme_get.call_args[1]["iri"], str)
 
 
-async def test_concept_scheme_get_not_found(cn, client, monkeypatch):
+async def test_concept_scheme_get_not_found(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(
         GraphService, "concept_scheme_get", AsyncMock(side_effect=ConceptSchemeNotFoundError())
     )
 
-    response = await client.get(Paths.concept_scheme, params={"iri": "foo"})
+    response = await anonymous_client.get(Paths.concept_scheme, params={"iri": "foo"})
     assert response.status_code == 404
     assert response.json() == {
         "detail": "Concept Scheme with IRI `foo` not found",
@@ -50,6 +50,11 @@ async def test_concept_scheme_create(cn, client, monkeypatch):
 
     GraphService.concept_scheme_create.assert_called_once()
     assert isinstance(GraphService.concept_scheme_create.call_args[0][0], ConceptScheme)
+
+
+async def test_concept_scheme_create_unauthorized(anonymous_client):
+    response = await anonymous_client.post(Paths.concept_scheme, json={})
+    assert response.status_code == 400
 
 
 async def test_concept_scheme_create_error_validation_errors(cn, client, monkeypatch):
@@ -90,6 +95,11 @@ async def test_concept_scheme_update(cn, client, monkeypatch):
     assert isinstance(GraphService.concept_scheme_update.call_args[0][0], ConceptScheme)
 
 
+async def test_concept_scheme_update_unauthorized(anonymous_client):
+    response = await anonymous_client.put(Paths.concept_scheme, json={})
+    assert response.status_code == 400
+
+
 async def test_concept_scheme_update_error_validation_errors(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "concept_scheme_update", AsyncMock())
 
@@ -125,6 +135,11 @@ async def test_concept_scheme_delete(cn, client, monkeypatch):
 
     GraphService.concept_scheme_delete.assert_called_once()
     assert isinstance(GraphService.concept_scheme_delete.call_args[1]["iri"], str)
+
+
+async def test_concept_scheme_delete_unauthorized(anonymous_client):
+    response = await anonymous_client.delete(Paths.concept_scheme, params={"iri": ""})
+    assert response.status_code == 400
 
 
 async def test_concept_scheme_delete_not_found(cn, client, monkeypatch):

@@ -1,12 +1,15 @@
 from enum import StrEnum
+from typing import Annotated
 from urllib.parse import quote_plus, urljoin
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
+from pydantic_settings import BaseSettings
 
 import py_semantic_taxonomy.adapters.routers.request_dto as req
 import py_semantic_taxonomy.adapters.routers.response_dto as response
 from py_semantic_taxonomy.application.services import GraphService
+from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.domain import entities as de
 
 router = APIRouter()
@@ -45,6 +48,14 @@ It's possible that this will change in the future:
 https://github.com/pydantic/pydantic/issues/8379
 """
 
+
+async def verify_auth_token(
+    x_pyst_auth_token: Annotated[str, Header()] = "", settings: BaseSettings = Depends(get_settings)
+):
+    if x_pyst_auth_token != settings.auth_token:
+        raise HTTPException(status_code=400, detail="X-PyST-Auth-Token header missing or invalid")
+
+
 # Concept
 
 
@@ -68,6 +79,7 @@ async def concept_get(
     Paths.concept,
     summary="Create a Concept object",
     response_model=response.Concept,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def concept_create(
     request: Request,
@@ -96,6 +108,7 @@ async def concept_create(
     Paths.concept,
     summary="Update a Concept object",
     response_model=response.Concept,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def concept_update(
     request: Request,
@@ -121,6 +134,7 @@ async def concept_update(
     Paths.concept,
     summary="Delete a Concept object",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def concept_delete(
     iri: str,
@@ -155,6 +169,7 @@ async def concept_scheme_get(
     Paths.concept_scheme,
     summary="Create a Concept Scheme object",
     response_model=response.ConceptScheme,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def concept_scheme_create(
     request: Request,
@@ -175,6 +190,7 @@ async def concept_scheme_create(
     Paths.concept_scheme,
     summary="Update a Concept Scheme object",
     response_model=response.ConceptScheme,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def concept_scheme_update(
     request: Request,
@@ -193,6 +209,7 @@ async def concept_scheme_update(
     Paths.concept_scheme,
     summary="Delete a Concept Scheme object",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def concept_scheme_delete(
     iri: str,
@@ -228,6 +245,7 @@ async def relationships_get(
     summary="Create a list of Relationship objects",
     response_model=list[response.Relationship],
     response_model_exclude_unset=True,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def relationships_create(
     request: Request,
@@ -250,6 +268,7 @@ async def relationships_create(
 @router.delete(
     Paths.relationship,
     summary="Delete a list of Relationship objects",
+    dependencies=[Depends(verify_auth_token)],
 )
 async def relationship_delete(
     request: Request,
@@ -290,6 +309,7 @@ async def correspondence_get(
     Paths.correspondence,
     summary="Create a Correspondence object",
     response_model=response.Correspondence,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def correspondence_create(
     request: Request,
@@ -310,6 +330,7 @@ async def correspondence_create(
     Paths.correspondence,
     summary="Update a Correspondence object",
     response_model=response.Correspondence,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def correspondence_update(
     request: Request,
@@ -330,6 +351,7 @@ async def correspondence_update(
     Paths.correspondence,
     summary="Delete a Correspondence object",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def correspondence_delete(
     iri: str,
@@ -364,6 +386,7 @@ async def association_get(
     Paths.association,
     summary="Create an Association object",
     response_model=response.Association,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def association_create(
     request: Request,
@@ -382,6 +405,7 @@ async def association_create(
     Paths.association,
     summary="Delete an Association object",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def association_delete(
     iri: str,
@@ -397,6 +421,7 @@ async def association_delete(
     Paths.made_of,
     summary="Add some `madeOf` links",
     response_model=response.Correspondence,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def made_of_add(
     request: Request,
@@ -417,6 +442,7 @@ async def made_of_add(
     Paths.made_of,
     summary="Remove some `madeOf` links",
     response_model=response.Correspondence,
+    dependencies=[Depends(verify_auth_token)],
 )
 async def made_of_remove(
     request: Request,

@@ -9,14 +9,16 @@ from py_semantic_taxonomy.domain.entities import (
 )
 
 
-async def test_association_get(cn, client, monkeypatch):
+async def test_association_get(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(
         GraphService,
         "association_get",
         AsyncMock(return_value=Association.from_json_ld(cn.association_top)),
     )
 
-    response = await client.get(Paths.association, params={"iri": cn.association_top["@id"]})
+    response = await anonymous_client.get(
+        Paths.association, params={"iri": cn.association_top["@id"]}
+    )
     assert response.status_code == 200
     for key, value in response.json().items():
         if value:
@@ -26,12 +28,12 @@ async def test_association_get(cn, client, monkeypatch):
     assert isinstance(GraphService.association_get.call_args[1]["iri"], str)
 
 
-async def test_association_get_not_found(cn, client, monkeypatch):
+async def test_association_get_not_found(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(
         GraphService, "association_get", AsyncMock(side_effect=AssociationNotFoundError())
     )
 
-    response = await client.get(Paths.association, params={"iri": "foo"})
+    response = await anonymous_client.get(Paths.association, params={"iri": "foo"})
     assert response.status_code == 404
     assert response.json() == {
         "detail": "Association with IRI `foo` not found",
@@ -50,6 +52,11 @@ async def test_association_create(cn, client, monkeypatch):
 
     GraphService.association_create.assert_called_once()
     assert isinstance(GraphService.association_create.call_args[0][0], Association)
+
+
+async def test_association_create_unauthorized(anonymous_client):
+    response = await anonymous_client.post(Paths.association, json={})
+    assert response.status_code == 400
 
 
 async def test_association_create_error_validation_errors(cn, client, monkeypatch):
@@ -82,6 +89,11 @@ async def test_association_delete(cn, client, monkeypatch):
 
     GraphService.association_delete.assert_called_once()
     assert isinstance(GraphService.association_delete.call_args[1]["iri"], str)
+
+
+async def test_association_delete_unauthorized(anonymous_client):
+    response = await anonymous_client.delete(Paths.association, params={"iri": ""})
+    assert response.status_code == 400
 
 
 async def test_association_delete_missing(cn, client, monkeypatch):
