@@ -18,6 +18,7 @@ class Paths(StrEnum):
     catchall = "/{_:path}"
     relationship = "/relationships/"
     correspondence = "/correspondence/"
+    association = "/association/"
 
 
 """
@@ -444,6 +445,32 @@ async def correspondence_delete(
             "count": count,
         },
     )
+
+
+# Association
+
+
+@router.get(
+    Paths.association,
+    summary="Get a Association object",
+    response_model=response.Association,
+    responses={404: {"model": response.ErrorMessage}},
+)
+async def association_get(
+    iri: str,
+    service=Depends(GraphService),
+) -> response.Association:
+    try:
+        obj = await service.association_get(iri=iri)
+        return response.Association(**obj.to_json_ld())
+    except de.AssociationNotFoundError:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "message": f"Association with IRI '{iri}' not found",
+                "detail": {"iri": iri},
+            },
+        )
 
 
 # TBD: Add in static route before generic catch-all function

@@ -44,6 +44,8 @@ class PostgresKOSGraph:
                 return ConceptScheme
             if await self._get_count_from_iri(conn, iri, correspondence_table):
                 return Correspondence
+            if await self._get_count_from_iri(conn, iri, association_table):
+                return Association
         raise NotFoundError(f"Given IRI `{iri}` is not a known object")
 
     # Concepts

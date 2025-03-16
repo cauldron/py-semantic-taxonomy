@@ -3,6 +3,7 @@ from fastapi.params import Depends
 from py_semantic_taxonomy.adapters.routers.dependencies import get_kos_graph
 from py_semantic_taxonomy.domain.constants import SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES
 from py_semantic_taxonomy.domain.entities import (
+    Association,
     Concept,
     ConceptScheme,
     ConceptSchemesNotInDatabase,
@@ -144,3 +145,8 @@ class GraphService:
 
     async def correspondence_delete(self, iri: str) -> int:
         return await self.graph.correspondence_delete(iri=iri)
+
+    # Association
+
+    async def association_get(self, iri: str) -> Association:
+        return await self.graph.association_get(iri=iri)

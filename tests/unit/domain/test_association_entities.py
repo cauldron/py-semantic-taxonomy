@@ -6,6 +6,43 @@ from py_semantic_taxonomy.domain.constants import AssociationKind
 from py_semantic_taxonomy.domain.entities import Association
 
 
+def test_association_post_init():
+    assoc = Association(
+        id_="http://example.com/a/one",
+        types=["http://rdf-vocabulary.ddialliance.org/xkos#ConceptAssociation"],
+        source_concepts=[
+            {
+                "@id": "http://example.com/c/one",
+            }
+        ],
+        target_concepts=[
+            {
+                "@id": "http://example.com/c/two",
+            }
+        ],
+    )
+    assert assoc.kind == AssociationKind.simple
+
+    assoc = Association(
+        id_="http://example.com/a/one",
+        types=["http://rdf-vocabulary.ddialliance.org/xkos#ConceptAssociation"],
+        source_concepts=[
+            {
+                "@id": "http://example.com/c/one",
+            },
+            {
+                "@id": "http://example.com/c/three",
+            },
+        ],
+        target_concepts=[
+            {
+                "@id": "http://example.com/c/two",
+            }
+        ],
+    )
+    assert assoc.kind == AssociationKind.conditional
+
+
 def test_association_domain_request_dto_same_fields():
     domain_fields = {f.name for f in fields(Association)}
     request_fields = set(request.Association.model_fields)
