@@ -4,6 +4,7 @@ from py_semantic_taxonomy.adapters.routers.dependencies import get_kos_graph
 from py_semantic_taxonomy.domain.constants import SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES
 from py_semantic_taxonomy.domain.entities import (
     Association,
+    AssociationNotFoundError,
     Concept,
     ConceptScheme,
     ConceptSchemesNotInDatabase,
@@ -153,3 +154,8 @@ class GraphService:
 
     async def association_create(self, association: Association) -> Association:
         return await self.graph.association_create(association=association)
+
+    async def association_delete(self, iri: str) -> None:
+        rowcount = await self.graph.association_delete(iri=iri)
+        if not rowcount:
+            raise AssociationNotFoundError(f"Association with IRI `{iri}` not found")

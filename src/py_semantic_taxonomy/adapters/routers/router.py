@@ -1,7 +1,7 @@
 from enum import StrEnum
 from urllib.parse import quote_plus, urljoin
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 
 import py_semantic_taxonomy.adapters.routers.request_dto as req
@@ -489,6 +489,21 @@ async def association_create(
         return response.Association(**obj.to_json_ld())
     except de.DuplicateIRI as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+
+
+@router.delete(
+    Paths.association,
+    summary="Delete an Association object",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def association_delete(
+    iri: str,
+    service=Depends(GraphService),
+):
+    try:
+        await service.association_delete(iri=iri)
+    except de.AssociationNotFoundError as err:
+        raise HTTPException(status_code=404, detail=str(err))
 
 
 # TBD: Add in static route before generic catch-all function

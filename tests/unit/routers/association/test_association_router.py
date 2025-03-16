@@ -73,3 +73,25 @@ async def test_association_create_error_already_exists(cn, client, monkeypatch):
     response = await client.post(Paths.association, json=cn.association_top)
     assert response.json() == {"detail": "Test message"}
     assert response.status_code == 409
+
+
+async def test_association_delete(cn, client, monkeypatch):
+    monkeypatch.setattr(GraphService, "association_delete", AsyncMock())
+
+    response = await client.delete(Paths.association, params={"iri": cn.association_top["@id"]})
+    assert response.status_code == 204
+
+    GraphService.association_delete.assert_called_once()
+    assert isinstance(GraphService.association_delete.call_args[1]["iri"], str)
+
+
+async def test_association_delete_missing(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "association_delete",
+        AsyncMock(side_effect=AssociationNotFoundError("Problem")),
+    )
+
+    response = await client.delete(Paths.association, params={"iri": cn.association_top["@id"]})
+    assert response.json() == {"detail": "Problem"}
+    assert response.status_code == 404

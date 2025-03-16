@@ -378,3 +378,11 @@ class PostgresKOSGraph:
             )
             await conn.commit()
         return association
+
+    async def association_delete(self, iri: str) -> int:
+        async with self.engine.connect() as conn:
+            result = await conn.execute(
+                delete(association_table).where(association_table.c.id_ == iri)
+            )
+            await conn.commit()
+        return result.rowcount

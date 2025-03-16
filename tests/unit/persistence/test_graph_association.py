@@ -63,30 +63,9 @@ async def test_create_association_duplicate(sqlite, cn, entities, graph):
         await graph.association_create(association=Association.from_json_ld(cn.association_top))
 
 
-# async def test_update_association(sqlite, cn, entities, graph):
-#     expected = Association.from_json_ld(cn.scheme)
-#     expected.pref_labels = [{"@value": "Combine all them nommies", "@language": "en"}]
+async def test_delete_association(sqlite, cn, entities, graph):
+    response = await graph.association_delete(iri=cn.association_top["@id"])
+    assert response == 1, "Wrong number of deleted concepts"
 
-#     response = await graph.association_update(association=expected)
-#     assert isinstance(response, Association), "Wrong result type"
-#     assert response == expected, "Data attributes from database differ"
-
-#     given = await graph.association_get(iri=cn.scheme["@id"])
-#     assert given == expected, "Data attributes from database differ"
-
-
-# async def test_update_association_missing(sqlite, cn, entities, graph):
-#     new = cn.scheme
-#     new["@id"] = "http://data.europa.eu/xsp/cn2024/cn2025"
-
-#     expected = Association.from_json_ld(new)
-#     with pytest.raises(AssociationNotFoundError):
-#         await graph.association_update(association=expected)
-
-
-# async def test_delete_association(sqlite, cn, entities, graph):
-#     response = await graph.association_delete(iri=cn.scheme["@id"])
-#     assert response == 1, "Wrong number of deleted concepts"
-
-#     response = await graph.concept_delete(iri=cn.scheme["@id"])
-#     assert response == 0, "Wrong number of deleted concepts"
+    response = await graph.concept_delete(iri=cn.association_top["@id"])
+    assert response == 0, "Wrong number of deleted concepts"
