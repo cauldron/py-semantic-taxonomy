@@ -32,7 +32,7 @@ from py_semantic_taxonomy.domain.entities import (
 )
 
 
-class PostgresKOSGraph:
+class PostgresKOSGraphDatabase:
     def __init__(self, engine: AsyncEngine | None = None):
         self.engine = create_engine() if engine is None else engine
 

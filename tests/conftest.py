@@ -12,7 +12,6 @@ from starlette.requests import Request
 from testcontainers.postgres import PostgresContainer
 
 from py_semantic_taxonomy.application.services import GraphService
-from py_semantic_taxonomy.domain.constants import RDF_MAPPING as RDF
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     Association,
@@ -23,7 +22,7 @@ from py_semantic_taxonomy.domain.entities import (
     MadeOf,
     Relationship,
 )
-from py_semantic_taxonomy.domain.ports import KOSGraph
+from py_semantic_taxonomy.domain.ports import KOSGraphDatabase
 
 
 @pytest.fixture
@@ -100,7 +99,7 @@ def entities(cn) -> list[GraphObject]:
 
 @pytest.fixture
 def mock_kos_graph() -> AsyncMock:
-    return AsyncMock(spec=KOSGraph)
+    return AsyncMock(spec=KOSGraphDatabase)
 
 
 @pytest.fixture
@@ -239,6 +238,6 @@ def mock_request() -> Callable:
 @pytest.fixture
 def graph(cn_db_engine):
     # Defer import until environment is patched
-    from py_semantic_taxonomy.adapters.persistence.graph import PostgresKOSGraph
+    from py_semantic_taxonomy.adapters.persistence.graph import PostgresKOSGraphDatabase
 
-    return PostgresKOSGraph(engine=cn_db_engine)
+    return PostgresKOSGraphDatabase(engine=cn_db_engine)
