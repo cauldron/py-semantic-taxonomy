@@ -13,12 +13,12 @@ from py_semantic_taxonomy.domain.entities import (
 )
 
 
-async def test_concept_get(cn, client, monkeypatch):
+async def test_concept_get(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(
         GraphService, "concept_get", AsyncMock(return_value=Concept.from_json_ld(cn.concept_top))
     )
 
-    response = await client.get(Paths.concept, params={"iri": cn.concept_top["@id"]})
+    response = await anonymous_client.get(Paths.concept, params={"iri": cn.concept_top["@id"]})
     assert response.status_code == 200
     for key, value in response.json().items():
         if value:
@@ -28,15 +28,20 @@ async def test_concept_get(cn, client, monkeypatch):
     assert isinstance(GraphService.concept_get.call_args[1]["iri"], str)
 
 
-async def test_concept_get_not_found(cn, client, monkeypatch):
+async def test_concept_get_not_found(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(GraphService, "concept_get", AsyncMock(side_effect=ConceptNotFoundError()))
 
-    response = await client.get(Paths.concept, params={"iri": "foo"})
+    response = await anonymous_client.get(Paths.concept, params={"iri": "foo"})
     concept = response.json()
     assert response.status_code == 404
     assert concept == {
         "detail": "Concept with IRI `foo` not found",
     }
+
+
+async def test_concept_create_unauthorized(anonymous_client):
+    response = await anonymous_client.post(Paths.concept, json={})
+    assert response.status_code == 400
 
 
 async def test_concept_create(cn, client, monkeypatch):
@@ -123,6 +128,11 @@ async def test_concept_update(cn, client, monkeypatch):
     assert isinstance(GraphService.concept_update.call_args[0][0], Concept)
 
 
+async def test_concept_update_unauthorized(anonymous_client):
+    response = await anonymous_client.put(Paths.concept, json={})
+    assert response.status_code == 400
+
+
 async def test_concept_update_error_validation_errors(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "concept_update", AsyncMock())
 
@@ -184,6 +194,11 @@ async def test_concept_delete(cn, client, monkeypatch):
 
     GraphService.concept_delete.assert_called_once()
     assert isinstance(GraphService.concept_delete.call_args[1]["iri"], str)
+
+
+async def test_concept_delete_unauthorized(anonymous_client):
+    response = await anonymous_client.delete(Paths.concept, params={"iri": ""})
+    assert response.status_code == 400
 
 
 async def test_concept_delete_not_found(cn, client, monkeypatch):

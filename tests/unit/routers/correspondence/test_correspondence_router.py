@@ -12,14 +12,16 @@ from py_semantic_taxonomy.domain.entities import (
 )
 
 
-async def test_correspondence(cn, client, monkeypatch):
+async def test_correspondence(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(
         GraphService,
         "correspondence_get",
         AsyncMock(return_value=Correspondence.from_json_ld(cn.correspondence)),
     )
 
-    response = await client.get(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
+    response = await anonymous_client.get(
+        Paths.correspondence, params={"iri": cn.correspondence["@id"]}
+    )
     assert response.status_code == 200
     correspondence = response.json()
     for key, value in correspondence.items():
@@ -30,12 +32,12 @@ async def test_correspondence(cn, client, monkeypatch):
     assert isinstance(GraphService.correspondence_get.call_args[1]["iri"], str)
 
 
-async def test_correspondence_get_not_found(cn, client, monkeypatch):
+async def test_correspondence_get_not_found(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(
         GraphService, "correspondence_get", AsyncMock(side_effect=CorrespondenceNotFoundError())
     )
 
-    response = await client.get(Paths.correspondence, params={"iri": "foo"})
+    response = await anonymous_client.get(Paths.correspondence, params={"iri": "foo"})
     correspondence = response.json()
     assert response.status_code == 404
     assert correspondence == {
@@ -55,6 +57,11 @@ async def test_correspondence_create(cn, client, monkeypatch):
 
     GraphService.correspondence_create.assert_called_once()
     assert isinstance(GraphService.correspondence_create.call_args[0][0], Correspondence)
+
+
+async def test_correspondence_create_unauthorized(anonymous_client):
+    response = await anonymous_client.post(Paths.correspondence, json={})
+    assert response.status_code == 400
 
 
 async def test_correspondence_create_error_validation_errors(cn, client, monkeypatch):
@@ -97,6 +104,11 @@ async def test_correspondence_update(cn, client, monkeypatch):
     assert isinstance(GraphService.correspondence_update.call_args[0][0], Correspondence)
 
 
+async def test_correspondence_update_unauthorized(anonymous_client):
+    response = await anonymous_client.put(Paths.correspondence, json={})
+    assert response.status_code == 400
+
+
 async def test_correspondence_update_error_validation_errors(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "correspondence_update", AsyncMock())
 
@@ -135,6 +147,11 @@ async def test_correspondence_delete(cn, client, monkeypatch):
     assert isinstance(GraphService.correspondence_delete.call_args[1]["iri"], str)
 
 
+async def test_correspondence_delete_unauthorized(anonymous_client):
+    response = await anonymous_client.delete(Paths.correspondence, params={"iri": ""})
+    assert response.status_code == 400
+
+
 async def test_correspondence_delete_not_found(cn, client, monkeypatch):
     monkeypatch.setattr(
         GraphService,
@@ -162,6 +179,11 @@ async def test_made_of_add(cn, made_of, client, monkeypatch):
 
     GraphService.made_of_add.assert_called_once()
     assert isinstance(GraphService.made_of_add.call_args[0][0], MadeOf)
+
+
+async def test_made_of_add_unauthorized(anonymous_client):
+    response = await anonymous_client.post(Paths.made_of, json={})
+    assert response.status_code == 400
 
 
 async def test_made_of_add_missing(cn, made_of, client, monkeypatch):
@@ -194,6 +216,15 @@ async def test_made_of_remove(cn, made_of, client, monkeypatch):
 
     GraphService.made_of_remove.assert_called_once()
     assert isinstance(GraphService.made_of_remove.call_args[0][0], MadeOf)
+
+
+async def test_made_of_remove_unauthorized(anonymous_client):
+    response = await anonymous_client.request(
+        method="DELETE",
+        url=Paths.made_of,
+        content=orjson.dumps([]),
+    )
+    assert response.status_code == 400
 
 
 async def test_made_of_remove_missing(cn, made_of, client, monkeypatch):

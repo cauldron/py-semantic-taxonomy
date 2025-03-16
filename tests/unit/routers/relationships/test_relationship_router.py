@@ -12,12 +12,14 @@ from py_semantic_taxonomy.domain.entities import (
 )
 
 
-async def test_relationships_get(cn, client, monkeypatch, relationships):
+async def test_relationships_get(cn, anonymous_client, monkeypatch, relationships):
     monkeypatch.setattr(
         GraphService, "relationships_get", AsyncMock(return_value=[relationships[1]])
     )
 
-    response = await client.get(Paths.relationship, params={"iri": relationships[1].source})
+    response = await anonymous_client.get(
+        Paths.relationship, params={"iri": relationships[1].source}
+    )
     assert response.status_code == 200
     assert response.json() == [
         {
@@ -32,18 +34,20 @@ async def test_relationships_get(cn, client, monkeypatch, relationships):
     assert isinstance(GraphService.relationships_get.call_args[1]["target"], bool)
 
 
-async def test_relationships_get_args(cn, client, monkeypatch, relationships):
+async def test_relationships_get_args(cn, anonymous_client, monkeypatch, relationships):
     monkeypatch.setattr(
         GraphService, "relationships_get", AsyncMock(return_value=[relationships[1]])
     )
 
-    response = await client.get(Paths.relationship, params={"iri": relationships[1].source})
+    response = await anonymous_client.get(
+        Paths.relationship, params={"iri": relationships[1].source}
+    )
     assert response.status_code == 200
     GraphService.relationships_get.assert_called_with(
         iri=relationships[1].source, source=True, target=False
     )
 
-    response = await client.get(
+    response = await anonymous_client.get(
         Paths.relationship, params={"iri": relationships[1].source, "target": 1}
     )
     assert response.status_code == 200
@@ -51,7 +55,7 @@ async def test_relationships_get_args(cn, client, monkeypatch, relationships):
         iri=relationships[1].source, source=True, target=True
     )
 
-    response = await client.get(
+    response = await anonymous_client.get(
         Paths.relationship, params={"iri": relationships[1].source, "source": 0, "target": 1}
     )
     assert response.status_code == 200
@@ -72,6 +76,11 @@ async def test_relationship_create(relationships, client, monkeypatch):
     GraphService.relationships_create.assert_called_once()
     assert isinstance(GraphService.relationships_create.call_args[0][0], list)
     assert isinstance(GraphService.relationships_create.call_args[0][0][0], Relationship)
+
+
+async def test_relationship_create_unauthorized(anonymous_client):
+    response = await anonymous_client.post(Paths.relationship, json={})
+    assert response.status_code == 400
 
 
 async def test_relationship_create_already_exists(relationships, client, monkeypatch):
@@ -219,3 +228,13 @@ async def test_relationship_delete(relationships, client, monkeypatch):
     GraphService.relationships_delete.assert_called_once()
     assert isinstance(GraphService.relationships_delete.call_args[0][0], list)
     assert isinstance(GraphService.relationships_delete.call_args[0][0][0], Relationship)
+
+
+async def test_relationship_delete_unauthorized(anonymous_client):
+    # https://www.python-httpx.org/compatibility/#request-body-on-http-methods
+    response = await anonymous_client.request(
+        method="DELETE",
+        url=Paths.relationship,
+        content=orjson.dumps([]),
+    )
+    assert response.status_code == 400
