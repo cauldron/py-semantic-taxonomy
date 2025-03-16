@@ -15,6 +15,7 @@ from py_semantic_taxonomy.domain.entities import (
     DuplicateRelationship,
     GraphObject,
     HierarchicRelationshipAcrossConceptScheme,
+    MadeOf,
     Relationship,
     RelationshipsInCurrentConceptScheme,
     RelationshipsReferencesConceptScheme,
@@ -154,6 +155,12 @@ class GraphService:
         if not rowcount:
             raise CorrespondenceNotFoundError(f"Correspondence with IRI `{iri}` not found")
         return
+
+    async def made_of_add(self, made_of: MadeOf) -> Correspondence:
+        return await self.graph.made_of_add(made_of)
+
+    async def made_of_remove(self, made_of: MadeOf) -> Correspondence:
+        return await self.graph.made_of_remove(made_of)
 
     # Association
 

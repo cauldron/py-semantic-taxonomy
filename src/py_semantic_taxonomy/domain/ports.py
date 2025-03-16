@@ -6,6 +6,7 @@ from py_semantic_taxonomy.domain.entities import (
     ConceptScheme,
     Correspondence,
     GraphObject,
+    MadeOf,
     Relationship,
 )
 
@@ -63,3 +64,7 @@ class KOSGraph(Protocol):
     async def association_create(self, association: Association) -> Association: ...
 
     async def association_delete(self, iri: str) -> int: ...
+
+    async def made_of_add(self, made_of: MadeOf) -> Correspondence: ...
+
+    async def made_of_remove(self, made_of: MadeOf) -> Correspondence: ...

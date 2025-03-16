@@ -10,7 +10,7 @@ def test_correspondence_domain_request_dto_same_fields():
     request_fields = set(request.Correspondence.model_fields)
     assert domain_fields.difference(request_fields) == {
         "extra",
-        "made_of",
+        "made_ofs",
     }, "Request validation and domain `Correspondence` model fields differ"
     assert not request_fields.difference(
         domain_fields
@@ -47,7 +47,7 @@ def test_correspondence_to_db_dict(cn):
                 "@id": "http://purl.org/ontology/bibo/status/accepted",
             },
         ],
-        made_of=[],
+        made_ofs=[],
         compares=[
             {"@id": "http://data.europa.eu/xsp/cn2023/cn2023"},
             {"@id": "http://data.europa.eu/xsp/cn2024/cn2024"},
@@ -137,6 +137,6 @@ def test_correspondence_from_json_ld(cn):
     assert given == expected, "Conversion from JSON-LD failed"
 
 
-def test_Correspondence_to_json_ld(cn):
+def test_correspondence_to_json_ld(cn):
     given = Correspondence.from_json_ld(cn.correspondence).to_json_ld()
     assert given == cn.correspondence, "Conversion to JSON-LD failed"

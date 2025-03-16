@@ -19,6 +19,7 @@ class Paths(StrEnum):
     relationship = "/relationships/"
     correspondence = "/correspondence/"
     association = "/association/"
+    made_of = "/made_of/"
 
 
 """
@@ -390,6 +391,46 @@ async def association_delete(
         await service.association_delete(iri=iri)
     except de.AssociationNotFoundError as err:
         raise HTTPException(status_code=404, detail=str(err))
+
+
+@router.post(
+    Paths.made_of,
+    summary="Add some `madeOf` links",
+    response_model=response.Correspondence,
+)
+async def made_of_add(
+    request: Request,
+    made_of: req.MadeOf,
+    service=Depends(GraphService),
+) -> response.Correspondence:
+    try:
+        made_of = de.MadeOf.from_json_ld(await request.json())
+        corr = await service.made_of_add(made_of)
+        return response.Correspondence(**corr.to_json_ld())
+    except de.CorrespondenceNotFoundError:
+        raise HTTPException(
+            status_code=404, detail=f"Correspondence with IRI `{made_of.id_}` not found"
+        )
+
+
+@router.delete(
+    Paths.made_of,
+    summary="Remove some `madeOf` links",
+    response_model=response.Correspondence,
+)
+async def made_of_remove(
+    request: Request,
+    made_of: req.MadeOf,
+    service=Depends(GraphService),
+) -> response.Correspondence:
+    try:
+        made_of = de.MadeOf.from_json_ld(await request.json())
+        corr = await service.made_of_remove(made_of)
+        return response.Correspondence(**corr.to_json_ld())
+    except de.CorrespondenceNotFoundError:
+        raise HTTPException(
+            status_code=404, detail=f"Correspondence with IRI `{made_of.id_}` not found"
+        )
 
 
 # TBD: Add in static route before generic catch-all function

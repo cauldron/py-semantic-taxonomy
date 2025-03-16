@@ -45,3 +45,21 @@ async def correspondence_delete_not_found(graph_service, entities):
 
     with pytest.raises(CorrespondenceNotFoundError):
         await graph_service.association_delete(entities[8].id_)
+
+
+async def test_made_of_add(graph_service, cn, made_of, entities):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.made_of_add.return_value = entities[3]
+
+    result = await graph_service.made_of_add(made_of)
+    assert result == entities[3]
+    mock_kos_graph.made_of_add.assert_called_with(made_of)
+
+
+async def test_made_of_remove(graph_service, cn, made_of, entities):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.made_of_remove.return_value = entities[3]
+
+    result = await graph_service.made_of_remove(made_of)
+    assert result == entities[3]
+    mock_kos_graph.made_of_remove.assert_called_with(made_of)

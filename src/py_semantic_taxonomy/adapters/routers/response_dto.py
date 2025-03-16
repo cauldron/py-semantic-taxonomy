@@ -56,7 +56,7 @@ class Relationship(BaseModel):
 
 class Correspondence(ConceptScheme):
     compares: list[dict] = Field(alias=RDF["compares"])
-    made_of: list[dict] = Field(alias=RDF["made_of"], default=[])
+    made_ofs: list[dict] = Field(alias=RDF["made_ofs"], default=[])
 
 
 class Association(BaseModel):

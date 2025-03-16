@@ -38,7 +38,7 @@ RDF_MAPPING: dict[str, str] = {
     "editorial_notes": f"{SKOS}editorialNote",
     "hidden_labels": f"{SKOS}hiddenLabel",
     "history_notes": f"{SKOS}historyNote",
-    "made_of": f"{XKOS}madeOf",
+    "made_ofs": f"{XKOS}madeOf",
     "notations": f"{SKOS}notation",
     "pref_labels": f"{SKOS}prefLabel",
     "schemes": f"{SKOS}inScheme",

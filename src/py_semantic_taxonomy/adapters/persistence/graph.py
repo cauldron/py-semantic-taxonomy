@@ -26,6 +26,7 @@ from py_semantic_taxonomy.domain.entities import (
     DuplicateIRI,
     DuplicateRelationship,
     GraphObject,
+    MadeOf,
     NotFoundError,
     Relationship,
 )
@@ -309,8 +310,8 @@ class PostgresKOSGraph:
 
             # Updates to `made_of` can only come via dedicated API calls
             values = correspondence.to_db_dict()
-            if "made_of" in values:
-                del values["made_of"]
+            if "made_ofs" in values:
+                del values["made_ofs"]
 
             await conn.execute(
                 update(correspondence_table)
@@ -328,7 +329,36 @@ class PostgresKOSGraph:
             await conn.commit()
         return result.rowcount
 
-    # Correspondence
+    async def made_of_add(self, made_of: MadeOf) -> Correspondence:
+        corr = await self.correspondence_get(iri=made_of.id_)
+        existing = {assoc["@id"] for assoc in corr.made_ofs}
+        new = [assoc for assoc in made_of.made_ofs if assoc["@id"] not in existing]
+        async with self.engine.connect() as conn:
+            await conn.execute(
+                update(correspondence_table)
+                .where(correspondence_table.c.id_ == made_of.id_)
+                .values(made_ofs=sorted(corr.made_ofs + new, key=lambda x: x["@id"]))
+            )
+            await conn.commit()
+        return await self.correspondence_get(iri=made_of.id_)
+
+    async def made_of_remove(self, made_of: MadeOf) -> Correspondence:
+        corr = await self.correspondence_get(iri=made_of.id_)
+        to_remove = {assoc["@id"] for assoc in made_of.made_ofs}
+        remaining = sorted(
+            [assoc for assoc in corr.made_ofs if assoc["@id"] not in to_remove],
+            key=lambda x: x["@id"],
+        )
+        async with self.engine.connect() as conn:
+            await conn.execute(
+                update(correspondence_table)
+                .where(correspondence_table.c.id_ == made_of.id_)
+                .values(made_ofs=remaining)
+            )
+            await conn.commit()
+        return await self.correspondence_get(iri=made_of.id_)
+
+    # Association
 
     async def association_get(self, iri: str) -> Association:
         async with self.engine.connect() as conn:
