@@ -14,22 +14,22 @@ from py_semantic_taxonomy.adapters.routers.validation import (
     one_per_language,
 )
 from py_semantic_taxonomy.domain.constants import (
-    BIBO,
     SKOS,
     SKOS_RELATIONSHIP_PREDICATES,
     XKOS,
+    RDF_MAPPING as RDF
 )
 
 
 class KOSCommon(BaseModel):
     id_: IRI = Field(alias="@id")
     types: conlist(item_type=IRI) = Field(alias="@type")
-    pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=f"{SKOS}prefLabel")
-    status: conlist(Status, min_length=1) = Field(alias=f"{BIBO}status")
-    notations: list[Notation] = Field(alias=f"{SKOS}notation", default=[])
-    change_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}changeNote", default=[])
-    history_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}historyNote", default=[])
-    editorial_notes: list[NonLiteralNote] = Field(alias=f"{SKOS}editorialNote", default=[])
+    pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=RDF["pref_labels"])
+    status: conlist(Status, min_length=1) = Field(alias=RDF["status"])
+    notations: list[Notation] = Field(alias=RDF["notations"], default=[])
+    change_notes: list[NonLiteralNote] = Field(alias=RDF["change_notes"], default=[])
+    history_notes: list[NonLiteralNote] = Field(alias=RDF["history_notes"], default=[])
+    editorial_notes: list[NonLiteralNote] = Field(alias=RDF["editorial_notes"], default=[])
 
     model_config = ConfigDict(extra="allow")
 
@@ -49,13 +49,13 @@ class Concept(KOSCommon):
 
     Checks that required fields are included and have correct type."""
 
-    schemes: conlist(Node, min_length=1) = Field(alias=f"{SKOS}inScheme")
+    schemes: conlist(Node, min_length=1) = Field(alias=RDF["schemes"])
     # Can have multiple alternative labels per language, and multiple languages
-    alt_labels: list[MultilingualString] = Field(alias=f"{SKOS}altLabel", default=[])
+    alt_labels: list[MultilingualString] = Field(alias=RDF["alt_labels"], default=[])
     # Can have multiple hidden labels per language, and multiple languages
-    hidden_labels: list[MultilingualString] = Field(alias=f"{SKOS}hiddenLabel", default=[])
+    hidden_labels: list[MultilingualString] = Field(alias=RDF["hidden_labels"], default=[])
     # One definition per language, at least one definition
-    definitions: list[MultilingualString] = Field(alias=f"{SKOS}definition", default=[])
+    definitions: list[MultilingualString] = Field(alias=RDF["definitions"], default=[])
 
     @field_validator("types", mode="after")
     @classmethod
@@ -136,12 +136,12 @@ class ConceptScheme(ConceptSchemeCommon):
     Checks that required fields are included and have correct type."""
 
     definitions: conlist(MultilingualString, min_length=1) = Field(
-        alias=f"{SKOS}definition",
+        alias=RDF["definitions"],
     )
 
     @field_validator("types", mode="after")
     @classmethod
-    def type_includes_concept(cls, value: list[str]) -> list[str]:
+    def type_includes_concept_scheme(cls, value: list[str]) -> list[str]:
         SCHEME = f"{SKOS}ConceptScheme"
         if SCHEME not in value:
             raise ValueError(f"`@type` must include `{SCHEME}`")
@@ -219,7 +219,7 @@ class Relationship(BaseModel):
 
 
 class Correspondence(ConceptSchemeCommon):
-    definitions: list[MultilingualString] = Field(alias=f"{SKOS}definition", default=[])
+    definitions: list[MultilingualString] = Field(alias=RDF["definitions"], default=[])
     compares: conlist(Node, min_length=1) = Field(alias=f"{XKOS}compares")
 
     @field_validator("types", mode="after")
@@ -241,8 +241,8 @@ class Correspondence(ConceptSchemeCommon):
     @classmethod
     def check_no_made_of(cls, data: dict) -> dict:
         for key in data:
-            if key == f"{XKOS}madeOf":
+            if key == RDF["made_of"]:
                 raise ValueError(
-                    f"Found `{XKOS}madeOf` in new correspondence; use dedicated API calls for this data."
+                    f"Found `{RDF['made_of']}` in new correspondence; use dedicated API calls for this data."
                 )
         return data
