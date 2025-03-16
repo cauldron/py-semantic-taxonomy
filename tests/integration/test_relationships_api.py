@@ -8,12 +8,12 @@ from py_semantic_taxonomy.domain.entities import Relationship
 
 @pytest.mark.postgres
 async def test_get_relationships(postgres, cn_db_engine, relationships, client):
-    response = await client.get(Paths.relationship, params={"iri": relationships[1].source})
+    response = await client.get(Paths.relationship, params={"iri": relationships[3].source})
     assert response.status_code == 200
     assert response.json() == [
         {
-            "@id": relationships[1].source,
-            relationships[1].predicate.value: [{"@id": relationships[1].target}],
+            "@id": relationships[3].source,
+            relationships[3].predicate.value: [{"@id": relationships[3].target}],
         }
     ], "API return value incorrect"
 
@@ -21,14 +21,18 @@ async def test_get_relationships(postgres, cn_db_engine, relationships, client):
 @pytest.mark.postgres
 async def test_get_relationships_args(postgres, cn_db_engine, relationships, client):
     response = await client.get(
-        Paths.relationship, params={"iri": relationships[1].source, "source": 0, "target": 1}
+        Paths.relationship, params={"iri": relationships[3].source, "source": 0, "target": 1}
     )
     assert response.status_code == 200
     assert response.json() == [
         {
             "@id": relationships[2].source,
             relationships[2].predicate.value: [{"@id": relationships[2].target}],
-        }
+        },
+        {
+            "@id": relationships[4].source,
+            relationships[4].predicate.value: [{"@id": relationships[4].target}],
+        },
     ], "API return value incorrect"
 
 
@@ -61,7 +65,7 @@ async def test_create_relationships(postgres, cn_db_engine, client):
 
 @pytest.mark.postgres
 async def test_create_relationships_duplicate(postgres, cn_db_engine, client, relationships):
-    response = await client.post(Paths.relationship, json=[relationships[1].to_json_ld()])
+    response = await client.post(Paths.relationship, json=[relationships[3].to_json_ld()])
     assert response.status_code == 409
     assert response.json() == {
         "detail": "Relationship between source `http://data.europa.eu/xsp/cn2024/010021000090` and target `http://data.europa.eu/xsp/cn2024/010011000090` already exists"
@@ -84,7 +88,7 @@ async def test_create_relationships_across_scheme(
     await client.post(Paths.concept, json=new_concept)
 
     cross_cs = Relationship(
-        source=relationships[1].source,
+        source=relationships[3].source,
         target=new_concept["@id"],
         predicate=RelationshipVerbs.broader,
     )
@@ -119,7 +123,7 @@ async def test_relationship_delete(postgres, cn_db_engine, client, relationships
     response = await client.request(
         method="DELETE",
         url=Paths.relationship,
-        content=orjson.dumps([relationships[1].to_json_ld()]),
+        content=orjson.dumps([relationships[3].to_json_ld()]),
     )
     assert response.status_code == 200
     assert response.json() == {
@@ -130,7 +134,7 @@ async def test_relationship_delete(postgres, cn_db_engine, client, relationships
     response = await client.request(
         method="DELETE",
         url=Paths.relationship,
-        content=orjson.dumps([relationships[1].to_json_ld()]),
+        content=orjson.dumps([relationships[3].to_json_ld()]),
     )
     assert response.status_code == 200
     assert response.json() == {

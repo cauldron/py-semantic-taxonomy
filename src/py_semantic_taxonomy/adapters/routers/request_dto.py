@@ -57,6 +57,7 @@ class Concept(KOSCommon):
     hidden_labels: list[MultilingualString] = Field(alias=RDF["hidden_labels"], default=[])
     # One definition per language, at least one definition
     definitions: list[MultilingualString] = Field(alias=RDF["definitions"], default=[])
+    top_concept_of: conlist(Node, max_length=1) = Field(alias=RDF["top_concept_of"], default=[])
 
     @field_validator("types", mode="after")
     @classmethod

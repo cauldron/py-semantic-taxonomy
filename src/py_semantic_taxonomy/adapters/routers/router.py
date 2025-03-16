@@ -100,6 +100,7 @@ async def concept_create(
         de.HierarchicRelationshipAcrossConceptScheme,
         de.DuplicateRelationship,
         de.ConceptSchemesNotInDatabase,
+        de.HierarchyConflict,
     ) as err:
         raise HTTPException(status_code=422, detail=str(err))
 
@@ -126,6 +127,7 @@ async def concept_update(
     except (
         de.RelationshipsInCurrentConceptScheme,
         de.ConceptSchemesNotInDatabase,
+        de.HierarchyConflict,
     ) as err:
         raise HTTPException(status_code=422, detail=str(err))
 

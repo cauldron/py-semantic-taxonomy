@@ -1,6 +1,7 @@
 import pytest
 
 from py_semantic_taxonomy.adapters.routers.router import Paths
+from py_semantic_taxonomy.domain.constants import RDF_MAPPING as RDF
 from py_semantic_taxonomy.domain.constants import SKOS, SKOS_RELATIONSHIP_PREDICATES
 
 
@@ -59,13 +60,25 @@ async def test_create_concept_concept_scheme_not_in_database(postgres, cn_db_eng
     updated = cn.concept_top
     if f"{SKOS}narrower" in updated:
         del updated[f"{SKOS}narrower"]
-    del updated[f"{SKOS}topConceptOf"]
+
     updated[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
 
     response = await client.post(Paths.concept, json=updated)
     assert response.status_code == 422
     assert response.json() == {
         "detail": "At least one of the specified concept schemes must be in the database: {'http://example.com/foo'}"
+    }
+
+
+@pytest.mark.postgres
+async def test_create_concept_hierarchy_conflict(postgres, cn_db_engine, cn, client):
+    new = cn.concept_low
+    new[RDF["top_concept_of"]] = [{"@id": cn.scheme["@id"]}]
+
+    response = await client.post(Paths.concept, json=new)
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": f"Concept is marked as `topConceptOf` but also has broader relationship to `{cn.concept_mid['@id']}`"
     }
 
 
@@ -150,10 +163,9 @@ async def test_create_concept_duplicate(postgres, cn_db_engine, cn, client):
 @pytest.mark.postgres
 async def test_update_concept(postgres, cn_db_engine, cn, client):
     updated = cn.concept_top
-    updated[f"{SKOS}altLabel"] = [{"@value": "Dream a little dream", "@language": "en"}]
+    updated[RDF["alt_labels"]] = [{"@value": "Dream a little dream", "@language": "en"}]
     if f"{SKOS}narrower" in updated:
         del updated[f"{SKOS}narrower"]
-    del updated[f"{SKOS}topConceptOf"]
 
     response = await client.put(Paths.concept, json=updated)
     assert response.status_code == 200
@@ -174,12 +186,26 @@ async def test_update_concept(postgres, cn_db_engine, cn, client):
 
 
 @pytest.mark.postgres
+async def test_update_concept_hierarchy_conflict(postgres, cn_db_engine, cn, client):
+    new = cn.concept_mid
+    new[RDF["top_concept_of"]] = [{"@id": cn.scheme["@id"]}]
+    if f"{SKOS}broader" in new:
+        del new[f"{SKOS}broader"]
+
+    response = await client.put(Paths.concept, json=new)
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": f"Concept is marked as `topConceptOf` but also has broader relationship to `{cn.concept_top['@id']}`"
+    }
+
+
+@pytest.mark.postgres
 async def test_update_concept_concept_scheme_not_in_database(postgres, cn_db_engine, cn, client):
     updated = cn.concept_top
     if f"{SKOS}narrower" in updated:
         del updated[f"{SKOS}narrower"]
-    del updated[f"{SKOS}topConceptOf"]
-    updated[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
+
+    updated[RDF["schemes"]] = [{"@id": "http://example.com/foo"}]
 
     response = await client.put(Paths.concept, json=updated)
     assert response.status_code == 422
@@ -197,8 +223,8 @@ async def test_update_concept_relationship_cross_concept_scheme(postgres, cn_db_
     updated = cn.concept_top
     if f"{SKOS}narrower" in updated:
         del updated[f"{SKOS}narrower"]
-    del updated[f"{SKOS}topConceptOf"]
-    updated[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
+
+    updated[RDF["schemes"]] = [{"@id": "http://example.com/foo"}]
 
     response = await client.put(Paths.concept, json=updated)
     assert response.status_code == 422

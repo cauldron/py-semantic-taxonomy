@@ -8,6 +8,7 @@ from py_semantic_taxonomy.domain.entities import (
     ConceptSchemesNotInDatabase,
     DuplicateIRI,
     DuplicateRelationship,
+    HierarchyConflict,
     Relationship,
     RelationshipsInCurrentConceptScheme,
 )
@@ -83,7 +84,18 @@ async def test_concept_create_error_concept_schemes_not_in_database(cn, client, 
         AsyncMock(side_effect=ConceptSchemesNotInDatabase("Problem")),
     )
 
-    del cn.concept_top[f"{SKOS}topConceptOf"]
+    response = await client.post(Paths.concept, json=cn.concept_top)
+    assert response.status_code == 422
+    assert response.json() == {"detail": "Problem"}
+
+
+async def test_concept_create_error_hierarchy_conflict(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "concept_create",
+        AsyncMock(side_effect=HierarchyConflict("Problem")),
+    )
+
     response = await client.post(Paths.concept, json=cn.concept_top)
     assert response.status_code == 422
     assert response.json() == {"detail": "Problem"}
@@ -120,7 +132,7 @@ async def test_concept_update(cn, client, monkeypatch):
     updated[f"{SKOS}altLabel"] = [{"@value": "Dream a little dream", "@language": "en"}]
     if f"{SKOS}narrower" in updated:
         del updated[f"{SKOS}narrower"]
-    del updated[f"{SKOS}topConceptOf"]
+
     response = await client.put(Paths.concept, json=updated)
     assert response.status_code == 200
 
@@ -146,6 +158,18 @@ async def test_concept_update_error_validation_errors(cn, client, monkeypatch):
     assert response.status_code == 422
 
 
+async def test_concept_update_error_hierarchy_conflict(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "concept_update",
+        AsyncMock(side_effect=HierarchyConflict("Problem")),
+    )
+
+    response = await client.put(Paths.concept, json=cn.concept_top)
+    assert response.status_code == 422
+    assert response.json() == {"detail": "Problem"}
+
+
 async def test_concept_update_error_concept_schemes_not_in_database(cn, client, monkeypatch):
     monkeypatch.setattr(
         GraphService,
@@ -153,7 +177,6 @@ async def test_concept_update_error_concept_schemes_not_in_database(cn, client, 
         AsyncMock(side_effect=ConceptSchemesNotInDatabase("Problem")),
     )
 
-    del cn.concept_top[f"{SKOS}topConceptOf"]
     response = await client.put(Paths.concept, json=cn.concept_top)
     assert response.status_code == 422
     assert response.json() == {"detail": "Problem"}
@@ -166,7 +189,6 @@ async def test_concept_update_error_relationships_concept_schemes(cn, client, mo
         AsyncMock(side_effect=RelationshipsInCurrentConceptScheme("Problem")),
     )
 
-    del cn.concept_top[f"{SKOS}topConceptOf"]
     response = await client.put(Paths.concept, json=cn.concept_top)
     assert response.status_code == 422
     assert response.json() == {"detail": "Problem"}
