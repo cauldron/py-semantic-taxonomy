@@ -20,3 +20,25 @@ async def test_get_association_404(postgres, cn_db_engine, client):
         Paths.association, params={"iri": "http://pyst-tests.ninja/association/missing"}
     )
     assert response.status_code == 404
+
+
+@pytest.mark.postgres
+async def test_create_association(postgres, cn_db_engine, cn, client):
+    new = cn.association_top
+    new["@id"] = "http://pyst-tests.ninja/association/new"
+
+    response = await client.post(Paths.association, json=new)
+    assert response.status_code == 200
+    given = response.json()
+    for key, value in new.items():
+        assert given[key] == value
+
+    given = (await client.get(Paths.association, params={"iri": new["@id"]})).json()
+    for key, value in new.items():
+        assert given[key] == value
+
+
+@pytest.mark.postgres
+async def test_create_association_duplicate(postgres, cn_db_engine, cn, client):
+    response = await client.post(Paths.association, json=cn.association_top)
+    assert response.status_code == 409

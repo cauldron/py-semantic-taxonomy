@@ -1,5 +1,6 @@
 import pytest
 
+from py_semantic_taxonomy.domain.constants import AssociationKind
 from py_semantic_taxonomy.domain.entities import (
     Association,
     AssociationNotFoundError,
@@ -23,22 +24,43 @@ async def test_get_association_not_found(sqlite, graph):
         await graph.association_get(iri="http://data.europa.eu/xsp/cn2024/woof")
 
 
-# async def test_create_association(sqlite, cn, entities, graph):
-#     new = cn.scheme
-#     new["@id"] = "http://data.europa.eu/xsp/cn2024/cn2025"
-#     expected = Association.from_json_ld(new)
+async def test_create_association_simple(sqlite, cn, entities, graph):
+    new = Association(
+        id_="http://example.com/foo",
+        types=cn.association_top["@type"],
+        source_concepts=[{"@id": cn.concept_mid["@id"]}],
+        target_concepts=[{"@id": cn.concept_2023_top["@id"]}],
+    )
+    assert new.kind == AssociationKind.simple
 
-#     response = await graph.association_create(association=expected)
-#     assert isinstance(response, Association), "Wrong result type"
-#     assert response == expected, "Data attributes from database differ"
+    response = await graph.association_create(association=new)
+    assert isinstance(response, Association), "Wrong result type"
+    assert response == new, "Data attributes from database differ"
 
-#     given = await graph.association_get(iri=new["@id"])
-#     assert given == expected, "Data attributes from database differ"
+    given = await graph.association_get(iri=new.id_)
+    assert given == new, "Data attributes from database differ"
 
 
-# async def test_create_association_duplicate(sqlite, cn, entities, graph):
-#     with pytest.raises(DuplicateIRI):
-#         await graph.association_create(association=Association.from_json_ld(cn.scheme))
+async def test_create_association_conditional(sqlite, cn, entities, graph):
+    new = Association(
+        id_="http://example.com/foo",
+        types=cn.association_top["@type"],
+        source_concepts=[{"@id": cn.concept_mid["@id"]}, {"@id": cn.concept_top["@id"]}],
+        target_concepts=[{"@id": cn.concept_2023_top["@id"]}],
+    )
+    assert new.kind == AssociationKind.conditional
+
+    response = await graph.association_create(association=new)
+    assert isinstance(response, Association), "Wrong result type"
+    assert response == new, "Data attributes from database differ"
+
+    given = await graph.association_get(iri=new.id_)
+    assert given == new, "Data attributes from database differ"
+
+
+async def test_create_association_duplicate(sqlite, cn, entities, graph):
+    with pytest.raises(DuplicateIRI):
+        await graph.association_create(association=Association.from_json_ld(cn.association_top))
 
 
 # async def test_update_association(sqlite, cn, entities, graph):

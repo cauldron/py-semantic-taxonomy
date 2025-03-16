@@ -365,3 +365,16 @@ class PostgresKOSGraph:
                 raise AssociationNotFoundError
             await conn.rollback()
         return Association(**result._mapping)
+
+    async def association_create(self, association: Association) -> Association:
+        async with self.engine.connect() as conn:
+            count = await self._get_count_from_iri(conn, association.id_, association_table)
+            if count:
+                raise DuplicateIRI
+
+            await conn.execute(
+                insert(association_table),
+                [association.to_db_dict()],
+            )
+            await conn.commit()
+        return association

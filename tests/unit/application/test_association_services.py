@@ -12,49 +12,13 @@ async def test_association_get(graph_service, entities):
     mock_kos_graph.association_get.assert_called_with(iri=entities[8].id_)
 
 
-# async def test_association_create(graph_service, cn, entities, relationships):
-#     mock_kos_graph = graph_service.graph
-#     mock_kos_graph.association_create.return_value = entities[0]
-#     mock_kos_graph.association_scheme_get_all_iris.return_value = [cn.scheme["@id"]]
+async def test_association_create(graph_service, cn, entities, relationships):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.association_create.return_value = entities[8]
 
-#     result = await graph_service.association_create(entities[0])
-#     assert result == entities[0]
-#     mock_kos_graph.association_create.assert_called_with(association=entities[0])
-
-#     result = await graph_service.association_create(entities[0], relationships)
-#     assert result == entities[0]
-#     mock_kos_graph.association_create.assert_called_with(association=entities[0])
-
-
-# async def test_association_create_missing_association_scheme(graph_service, cn, entities, relationships):
-#     mock_kos_graph = graph_service.graph
-#     mock_kos_graph.association_scheme_get_all_iris.return_value = ["http://example.com/foo"]
-
-#     with pytest.raises(associationSchemesNotInDatabase) as excinfo:
-#         await graph_service.association_create(entities[0])
-
-#     id_ = cn.scheme["@id"]
-#     assert excinfo.match(
-#         f"At least one of the specified association schemes must be in the database: {{'{id_}'}}"
-#     )
-
-
-# async def test_association_create_error(graph_service, cn, entities, relationships):
-#     mock_kos_graph = graph_service.graph
-#     mock_kos_graph.association_create.return_value = entities[0]
-#     mock_kos_graph.association_scheme_get_all_iris.return_value = [cn.scheme["@id"]]
-
-#     graph_service.relationships_create = AsyncMock(side_effect=DuplicateRelationship())
-#     graph_service.association_delete = AsyncMock()
-
-#     try:
-#         await graph_service.association_create(association=entities[0], relationships=relationships)
-#     except DuplicateRelationship:
-#         pass
-
-#     mock_kos_graph.association_create.assert_called_with(association=entities[0])
-#     graph_service.relationships_create.assert_called_with(relationships)
-#     graph_service.association_delete.assert_called_with(entities[0].id_)
+    result = await graph_service.association_create(entities[8])
+    assert result == entities[8]
+    mock_kos_graph.association_create.assert_called_with(association=entities[8])
 
 
 # async def test_association_update(graph_service, cn, entities):

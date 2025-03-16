@@ -150,3 +150,6 @@ class GraphService:
 
     async def association_get(self, iri: str) -> Association:
         return await self.graph.association_get(iri=iri)
+
+    async def association_create(self, association: Association) -> Association:
+        return await self.graph.association_create(association=association)
