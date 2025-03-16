@@ -246,27 +246,6 @@ async def relationships_create(
         raise HTTPException(status_code=422, detail=str(err))
 
 
-@router.put(
-    Paths.relationship,
-    summary="Update a list of Relationship objects",
-    response_model=list[response.Relationship],
-    response_model_exclude_unset=True,
-)
-async def relationships_update(
-    request: Request,
-    relationships: list[req.Relationship],
-    service=Depends(GraphService),
-) -> response.Concept:
-    try:
-        incoming = de.Relationship.from_json_ld_list(await request.json())
-        lst = await service.relationships_update(incoming)
-        return [response.Relationship(**obj.to_json_ld()) for obj in lst]
-    except de.RelationshipNotFoundError as err:
-        raise HTTPException(status_code=404, detail=str(err))
-    except de.HierarchicRelationshipAcrossConceptScheme as err:
-        raise HTTPException(status_code=422, detail=str(err))
-
-
 @router.delete(
     Paths.relationship,
     summary="Delete a list of Relationship objects",
