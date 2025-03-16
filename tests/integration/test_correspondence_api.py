@@ -76,12 +76,10 @@ async def test_delete_correspondence(postgres, cn_db_engine, cn, client):
     assert response.json()
 
     response = await client.delete(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
-    assert response.status_code == 200
-    assert response.json()["count"] == 1
+    assert response.status_code == 204
 
     response = await client.delete(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
-    assert response.status_code == 200
-    assert response.json()["count"] == 0
+    assert response.status_code == 404
 
     response = await client.get(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
     assert response.status_code == 404

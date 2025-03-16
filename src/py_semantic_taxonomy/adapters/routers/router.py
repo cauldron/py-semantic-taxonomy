@@ -141,20 +141,16 @@ async def concept_update(
 @router.delete(
     Paths.concept,
     summary="Delete a Concept object",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def concept_delete(
     iri: str,
     service=Depends(GraphService),
-) -> JSONResponse:
-    count = await service.concept_delete(iri=iri)
-    # TBD: 404 if not found?
-    return JSONResponse(
-        status_code=200,
-        content={
-            "message": "Concept (possibly) deleted",
-            "count": count,
-        },
-    )
+):
+    try:
+        await service.concept_delete(iri=iri)
+    except de.ConceptNotFoundError as err:
+        raise HTTPException(status_code=404, detail=str(err))
 
 
 # Concept Scheme
@@ -234,20 +230,16 @@ async def concept_scheme_update(
 @router.delete(
     Paths.concept_scheme,
     summary="Delete a Concept Scheme object",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def concept_scheme_delete(
     iri: str,
     service=Depends(GraphService),
-) -> JSONResponse:
-    count = await service.concept_scheme_delete(iri=iri)
-    # TBD: 404 if not found?
-    return JSONResponse(
-        status_code=200,
-        content={
-            "message": "Concept Scheme (possibly) deleted",
-            "count": count,
-        },
-    )
+):
+    try:
+        await service.concept_scheme_delete(iri=iri)
+    except de.ConceptSchemeNotFoundError as err:
+        raise HTTPException(status_code=404, detail=str(err))
 
 
 # Relationship
@@ -431,20 +423,16 @@ async def correspondence_update(
 @router.delete(
     Paths.correspondence,
     summary="Delete a Correspondence object",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def correspondence_delete(
     iri: str,
     service=Depends(GraphService),
-) -> JSONResponse:
-    count = await service.correspondence_delete(iri=iri)
-    # TBD: 404 if not found?
-    return JSONResponse(
-        status_code=200,
-        content={
-            "message": "Correspondence (possibly) deleted",
-            "count": count,
-        },
-    )
+):
+    try:
+        await service.correspondence_delete(iri=iri)
+    except de.CorrespondenceNotFoundError as err:
+        raise HTTPException(status_code=404, detail=str(err))
 
 
 # Association
