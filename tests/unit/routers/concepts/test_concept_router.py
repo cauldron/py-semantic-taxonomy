@@ -183,11 +183,19 @@ async def test_concept_delete(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "concept_delete", AsyncMock(return_value=1))
 
     response = await client.delete(Paths.concept, params={"iri": cn.concept_top["@id"]})
-    assert response.status_code == 200
-    assert response.json() == {
-        "message": "Concept (possibly) deleted",
-        "count": 1,
-    }
+    assert response.status_code == 204
 
     GraphService.concept_delete.assert_called_once()
     assert isinstance(GraphService.concept_delete.call_args[1]["iri"], str)
+
+
+async def test_concept_delete_not_found(cn, client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "concept_delete",
+        AsyncMock(side_effect=ConceptNotFoundError("Test")),
+    )
+
+    response = await client.delete(Paths.concept, params={"iri": cn.concept_top["@id"]})
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Test"}

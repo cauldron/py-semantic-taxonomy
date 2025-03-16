@@ -1,3 +1,8 @@
+import pytest
+
+from py_semantic_taxonomy.domain.entities import ConceptSchemeNotFoundError
+
+
 async def test_concept_scheme_get(graph_service, entities):
     mock_kos_graph = graph_service.graph
     mock_kos_graph.concept_scheme_get.return_value = entities[2]
@@ -39,5 +44,13 @@ async def test_concept_scheme_delete(graph_service, entities):
     mock_kos_graph.concept_scheme_delete.return_value = 1
 
     result = await graph_service.concept_scheme_delete(entities[2].id_)
-    assert result == 1
+    assert result is None
     mock_kos_graph.concept_scheme_delete.assert_called_with(iri=entities[2].id_)
+
+
+async def concept_scheme_delete_not_found(graph_service, entities):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.concept_scheme_delete.return_value = 0
+
+    with pytest.raises(ConceptSchemeNotFoundError):
+        await graph_service.association_delete(entities[8].id_)

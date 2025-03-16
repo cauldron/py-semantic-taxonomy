@@ -6,9 +6,12 @@ from py_semantic_taxonomy.domain.entities import (
     Association,
     AssociationNotFoundError,
     Concept,
+    ConceptNotFoundError,
     ConceptScheme,
+    ConceptSchemeNotFoundError,
     ConceptSchemesNotInDatabase,
     Correspondence,
+    CorrespondenceNotFoundError,
     DuplicateRelationship,
     GraphObject,
     HierarchicRelationshipAcrossConceptScheme,
@@ -74,7 +77,9 @@ class GraphService:
         return await self.graph.concept_update(concept=concept)
 
     async def concept_delete(self, iri: str) -> int:
-        return await self.graph.concept_delete(iri=iri)
+        rowcount = await self.graph.concept_delete(iri=iri)
+        if not rowcount:
+            raise ConceptNotFoundError(f"Concept with IRI `{iri}` not found")
 
     # Concept Scheme
 
@@ -91,7 +96,9 @@ class GraphService:
         return await self.graph.concept_scheme_update(concept_scheme=concept_scheme)
 
     async def concept_scheme_delete(self, iri: str) -> int:
-        return await self.graph.concept_scheme_delete(iri=iri)
+        rowcount = await self.graph.concept_scheme_delete(iri=iri)
+        if not rowcount:
+            raise ConceptSchemeNotFoundError(f"Concept Scheme with IRI `{iri}` not found")
 
     # Relationships
 
@@ -145,7 +152,9 @@ class GraphService:
         return await self.graph.correspondence_update(correspondence=correspondence)
 
     async def correspondence_delete(self, iri: str) -> int:
-        return await self.graph.correspondence_delete(iri=iri)
+        rowcount = await self.graph.correspondence_delete(iri=iri)
+        if not rowcount:
+            raise CorrespondenceNotFoundError(f"Correspondence with IRI `{iri}` not found")
 
     # Association
 

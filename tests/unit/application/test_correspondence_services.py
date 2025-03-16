@@ -1,3 +1,8 @@
+import pytest
+
+from py_semantic_taxonomy.domain.entities import CorrespondenceNotFoundError
+
+
 async def test_correspondence_get(graph_service, entities):
     mock_kos_graph = graph_service.graph
     mock_kos_graph.correspondence_get.return_value = entities[3]
@@ -30,5 +35,13 @@ async def test_correspondence_delete(graph_service, entities):
     mock_kos_graph.correspondence_delete.return_value = 1
 
     result = await graph_service.correspondence_delete(entities[3].id_)
-    assert result == 1
+    assert result is None
     mock_kos_graph.correspondence_delete.assert_called_with(iri=entities[3].id_)
+
+
+async def correspondence_delete_not_found(graph_service, entities):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.association_delete.return_value = 0
+
+    with pytest.raises(CorrespondenceNotFoundError):
+        await graph_service.association_delete(entities[8].id_)
