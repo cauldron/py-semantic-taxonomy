@@ -76,10 +76,11 @@ class GraphService:
                 )
         return await self.graph.concept_update(concept=concept)
 
-    async def concept_delete(self, iri: str) -> int:
+    async def concept_delete(self, iri: str) -> None:
         rowcount = await self.graph.concept_delete(iri=iri)
         if not rowcount:
             raise ConceptNotFoundError(f"Concept with IRI `{iri}` not found")
+        return
 
     # Concept Scheme
 
@@ -95,10 +96,11 @@ class GraphService:
     async def concept_scheme_update(self, concept_scheme: ConceptScheme) -> ConceptScheme:
         return await self.graph.concept_scheme_update(concept_scheme=concept_scheme)
 
-    async def concept_scheme_delete(self, iri: str) -> int:
+    async def concept_scheme_delete(self, iri: str) -> None:
         rowcount = await self.graph.concept_scheme_delete(iri=iri)
         if not rowcount:
             raise ConceptSchemeNotFoundError(f"Concept Scheme with IRI `{iri}` not found")
+        return
 
     # Relationships
 
@@ -147,10 +149,11 @@ class GraphService:
     async def correspondence_update(self, correspondence: Correspondence) -> Correspondence:
         return await self.graph.correspondence_update(correspondence=correspondence)
 
-    async def correspondence_delete(self, iri: str) -> int:
+    async def correspondence_delete(self, iri: str) -> None:
         rowcount = await self.graph.correspondence_delete(iri=iri)
         if not rowcount:
             raise CorrespondenceNotFoundError(f"Correspondence with IRI `{iri}` not found")
+        return
 
     # Association
 
@@ -164,3 +167,4 @@ class GraphService:
         rowcount = await self.graph.association_delete(iri=iri)
         if not rowcount:
             raise AssociationNotFoundError(f"Association with IRI `{iri}` not found")
+        return

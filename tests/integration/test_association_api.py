@@ -1,7 +1,6 @@
 import pytest
 
 from py_semantic_taxonomy.adapters.routers.router import Paths
-from py_semantic_taxonomy.domain.constants import SKOS
 
 
 @pytest.mark.postgres

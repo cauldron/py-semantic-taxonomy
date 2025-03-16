@@ -1,6 +1,6 @@
-from sqlalchemy import Connection, Table, delete, func, insert, join, select, update
+from sqlalchemy import Table, delete, func, insert, join, select, update
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from py_semantic_taxonomy.adapters.persistence.database import create_engine
 from py_semantic_taxonomy.adapters.persistence.tables import (
@@ -28,7 +28,6 @@ from py_semantic_taxonomy.domain.entities import (
     GraphObject,
     NotFoundError,
     Relationship,
-    RelationshipNotFoundError,
 )
 
 
@@ -50,7 +49,7 @@ class PostgresKOSGraph:
 
     # Concepts
 
-    async def _get_count_from_iri(self, connection: Connection, iri: str, table: Table) -> int:
+    async def _get_count_from_iri(self, connection: AsyncConnection, iri: str, table: Table) -> int:
         stmt = select(func.count("*")).where(table.c.id_ == iri)
         # TBD: This is ugly
         return (await connection.execute(stmt)).first()[0]

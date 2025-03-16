@@ -1,8 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from py_semantic_taxonomy.domain.constants import BIBO
 from py_semantic_taxonomy.domain.constants import RDF_MAPPING as RDF
-from py_semantic_taxonomy.domain.constants import SKOS, XKOS
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs as RV
 
 

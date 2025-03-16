@@ -83,8 +83,8 @@ class Concept(KOSCommon):
 
 
 class ConceptCreate(Concept):
-    broader: list[Node] = Field(alias=RV.broader, default=[])
-    narrower: list[Node] = Field(alias=RV.narrower, default=[])
+    broader: list[Node] = Field(alias=str(RV.broader), default=[])
+    narrower: list[Node] = Field(alias=str(RV.narrower), default=[])
 
     @model_validator(mode="after")
     def hierarchy_doesnt_reference_self(self) -> Self:
@@ -168,13 +168,13 @@ class ConceptScheme(ConceptSchemeCommon):
 
 class Relationship(BaseModel):
     id_: IRI = Field(alias=RDF["id_"])
-    broader: list[Node] = Field(alias=RV.broader, default=[])
-    narrower: list[Node] = Field(alias=RV.narrower, default=[])
-    exact_match: list[Node] = Field(alias=RV.exact_match, default=[])
-    close_match: list[Node] = Field(alias=RV.close_match, default=[])
-    broad_match: list[Node] = Field(alias=RV.broad_match, default=[])
-    narrow_match: list[Node] = Field(alias=RV.narrow_match, default=[])
-    related_match: list[Node] = Field(alias=RV.related_match, default=[])
+    broader: list[Node] = Field(alias=str(RV.broader), default=[])
+    narrower: list[Node] = Field(alias=str(RV.narrower), default=[])
+    exact_match: list[Node] = Field(alias=str(RV.exact_match), default=[])
+    close_match: list[Node] = Field(alias=str(RV.close_match), default=[])
+    broad_match: list[Node] = Field(alias=str(RV.broad_match), default=[])
+    narrow_match: list[Node] = Field(alias=str(RV.narrow_match), default=[])
+    related_match: list[Node] = Field(alias=str(RV.related_match), default=[])
 
     _RELATIONSHIP_FIELDS = (
         "broader",
