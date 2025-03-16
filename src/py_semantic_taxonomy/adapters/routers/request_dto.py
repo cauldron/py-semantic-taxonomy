@@ -155,7 +155,7 @@ class ConceptScheme(ConceptSchemeCommon):
         """skos:hasTopConcept has range skos:Concept, which we don't want. Create links later."""
         if f"{SKOS}hasTopConcept" in data:
             raise ValueError(
-                f"Found `hasTopConcept` in concept scheme; Use specific API calls to create or update this relationship."
+                f"Found `hasTopConcept` in concept scheme; Specify `topConceptOf` of constituent concepts instead."
             )
         return data
 
