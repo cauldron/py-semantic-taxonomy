@@ -6,9 +6,9 @@ from testcontainers.core.waiting_utils import wait_for_logs
 if __name__ == "__main__":
     container = DockerContainer("typesense/typesense:28.0")
     container.with_exposed_ports(8108)
-    container.with_command("--data-dir /etc --api-key=123abc --enable-cors")
+    container.with_command("--data-dir /home --api-key=123abc --enable-cors")
     container.start()
-    wait_for_logs(container, "Starting Typesense")
+    wait_for_logs(container, "Peer refresh succeeded")
 
     ip = container.get_container_host_ip()
     port = container.get_exposed_port(8108)
