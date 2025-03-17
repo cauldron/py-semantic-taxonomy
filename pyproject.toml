@@ -61,18 +61,23 @@ testing = [
     "pytest-asyncio",
     "pytest-cov",
     "pytest-randomly",
+    "pytest-antilru",
     "python-coveralls",
     "testcontainers[postgres]",
 ]
 dev = [
     "build",
     "pre-commit",
+    "aiosqlite",
+    "httpx",
     "pylint",
     "pytest",
+    "pytest-antilru",
+    "pytest-asyncio",
     "pytest-cov",
     "pytest-randomly",
-    "pytest-antilru",
     "setuptools",
+    "testcontainers[postgres]",
 ]
 
 [tool.setuptools]
