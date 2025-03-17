@@ -40,7 +40,8 @@ dependencies = [
     "rfc3987",
     "sqlalchemy>=2.0",
     "structlog",
-    "typesense>=0.20",
+    # Fork of typesense client with async support
+    "https://github.com/Quilt-AI/typesense-python/archive/refs/heads/master.zip",
     "uvicorn",
 ]
 
@@ -83,7 +84,7 @@ package-dir = {"" = "src"}
 version = {attr = "py_semantic_taxonomy.__version__"}
 
 [tool.pytest.ini_options]
-addopts = "--cov py_semantic_taxonomy --cov-report term-missing --verbose -m \"not postgres\""
+addopts = "--cov py_semantic_taxonomy --cov-report term-missing --verbose -m \"not postgres and not typesense\""
 norecursedirs = [
     "dist",
     "build",
@@ -94,10 +95,12 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
     # Mark tests with `@pytest.mark.postgres` (deselect with `pytest -m "postgres or not postgres"`)
-    "postgres"
+    "postgres",
+    "typesense"
 ]
 lru_cache_disabled = '''
     py_semantic_taxonomy.adapters.routers.dependencies
+    py_semantic_taxonomy.cfg
     '''
 
 [tool.flake8]

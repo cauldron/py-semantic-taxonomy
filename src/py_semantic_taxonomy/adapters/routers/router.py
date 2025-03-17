@@ -8,7 +8,8 @@ from pydantic_settings import BaseSettings
 
 import py_semantic_taxonomy.adapters.routers.request_dto as req
 import py_semantic_taxonomy.adapters.routers.response_dto as response
-from py_semantic_taxonomy.application.services import GraphService
+from py_semantic_taxonomy.adapters.routers.dependencies import get_search
+from py_semantic_taxonomy.application.graph_service import GraphService
 from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.domain import entities as de
 
@@ -23,6 +24,8 @@ class Paths(StrEnum):
     correspondence = "/correspondence/"
     association = "/association/"
     made_of = "/made_of/"
+    search = "/concept/search/"
+    suggest = "/concept/suggest/"
 
 
 """
@@ -458,6 +461,49 @@ async def made_of_remove(
     except de.CorrespondenceNotFoundError:
         raise HTTPException(
             status_code=404, detail=f"Correspondence with IRI `{made_of.id_}` not found"
+        )
+
+
+@router.get(
+    Paths.search,
+    summary="Search for Concept objects",
+    response_model=list[de.SearchResult],
+)
+async def concept_search(
+    query: str,
+    language: str,
+    semantic: bool = True,
+    service=Depends(get_search),
+) -> list[de.SearchResult]:
+    try:
+        results = await service.search(query=query, language=language, semantic=semantic)
+        return results
+    except de.SearchNotConfigured:
+        raise HTTPException(status_code=503, detail="Search engine not available")
+    except de.UnknownLanguage:
+        raise HTTPException(
+            status_code=422, detail="Search engine not configured for given language"
+        )
+
+
+@router.get(
+    Paths.suggest,
+    summary="Suggest Concept objects for given prefix",
+    response_model=list[de.SearchResult],
+)
+async def concept_suggest(
+    query: str,
+    language: str,
+    service=Depends(get_search),
+) -> list[de.SearchResult]:
+    try:
+        results = await service.suggest(query=query, language=language)
+        return results
+    except de.SearchNotConfigured:
+        raise HTTPException(status_code=503, detail="Search engine not available")
+    except de.UnknownLanguage:
+        raise HTTPException(
+            status_code=422, detail="Search engine not configured for given language"
         )
 
 

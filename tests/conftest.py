@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock
 
 import httpx
 import pytest
-import typesense
 from fastapi.testclient import TestClient
 from rdflib import Graph
 from sqlalchemy import insert
@@ -15,7 +14,7 @@ from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
 from testcontainers.postgres import PostgresContainer
 
-from py_semantic_taxonomy.application.services import GraphService
+from py_semantic_taxonomy.application.graph_service import GraphService
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     Association,
@@ -26,7 +25,7 @@ from py_semantic_taxonomy.domain.entities import (
     MadeOf,
     Relationship,
 )
-from py_semantic_taxonomy.domain.ports import KOSGraphDatabase
+from py_semantic_taxonomy.domain.ports import KOSGraphDatabase, SearchService
 
 
 @pytest.fixture
@@ -113,8 +112,13 @@ def mock_kos_graph() -> AsyncMock:
 
 
 @pytest.fixture
-def graph_service(mock_kos_graph) -> GraphService:
-    return GraphService(graph=mock_kos_graph)
+def mock_search_service() -> AsyncMock:
+    return AsyncMock(spec=SearchService)
+
+
+@pytest.fixture
+def graph_service(mock_kos_graph, mock_search_service) -> GraphService:
+    return GraphService(graph=mock_kos_graph, search=mock_search_service)
 
 
 @pytest.fixture
@@ -197,10 +201,12 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
 
 
 @pytest.fixture
-def typesense(monkeypatch, test_password: str = "abc123") -> typesense.Client:
+def typesense_container(monkeypatch, test_password: str = "123abc"):
     container = DockerContainer("typesense/typesense:28.0")
     container.with_exposed_ports(8108)
-    container.with_command("--data-dir /home --api-key={test_password} --enable-cors")
+    # Giving the API key in `with_command` in a pytest fixture doesn't work...
+    container.with_env("TYPESENSE_API_KEY", test_password)
+    container.with_command("--data-dir /home --enable-cors")
     container.start()
     wait_for_logs(container, "Peer refresh succeeded")
 
@@ -217,6 +223,17 @@ def typesense(monkeypatch, test_password: str = "abc123") -> typesense.Client:
     yield
 
     container.stop()
+
+
+@pytest.fixture
+async def typesense(typesense_container, entities):
+    from py_semantic_taxonomy.adapters.routers.dependencies import get_search
+
+    ts = get_search()
+    await ts.initialize()
+
+    for i in [0, 1, 5, 6]:
+        await ts.create_concept(entities[i])
 
 
 @pytest.fixture

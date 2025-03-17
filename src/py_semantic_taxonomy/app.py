@@ -4,10 +4,10 @@ from py_semantic_taxonomy.adapters.persistence.database import (
     create_engine,
     init_db,
 )
+from py_semantic_taxonomy.adapters.routers.dependencies import get_search
 from py_semantic_taxonomy.adapters.routers.router import router
 
 # from fastapi.middleware.cors import CORSMiddleware
-# from fastapi_pagination import add_pagination
 
 
 def create_app() -> FastAPI:
@@ -16,6 +16,12 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def database():
         await init_db(create_engine())
+
+    @app.on_event("startup")
+    async def search():
+        ts = get_search()
+        if ts.configured:
+            ts.initialize()
 
     # app.add_middleware(
     #     CORSMiddleware,
@@ -26,7 +32,6 @@ def create_app() -> FastAPI:
     # )
 
     app.include_router(router)
-    # add_pagination(app)
     return app
 
 
