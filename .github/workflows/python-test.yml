@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        py-version: ["3.12"]
+        py-version: ["3.13"]
 
     steps:
       - uses: actions/checkout@v4
