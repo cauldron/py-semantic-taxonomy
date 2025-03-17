@@ -41,7 +41,7 @@ dependencies = [
     "sqlalchemy>=2.0",
     "structlog",
     # Fork of typesense client with async support
-    "https://github.com/Quilt-AI/typesense-python/archive/refs/heads/master.zip",
+    "typesense@git+https://github.com/Quilt-AI/typesense-python",
     "uvicorn",
 ]
 
