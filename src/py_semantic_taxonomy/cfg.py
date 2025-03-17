@@ -11,6 +11,9 @@ class Settings(BaseSettings):
 
     auth_token: str = "missing"
 
+    typesense_url: str = ""
+    typesense_api_key: str = ""
+
     # allow_origins: Set[str] = {
     #     "https://brightway.cauldron.ch",
     #     "https://brightway-lca.cloud",

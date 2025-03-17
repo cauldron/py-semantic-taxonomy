@@ -3,12 +3,16 @@ from pathlib import Path
 from typing import Callable
 from unittest.mock import AsyncMock
 
+import httpx
 import pytest
+import typesense
 from fastapi.testclient import TestClient
 from rdflib import Graph
 from sqlalchemy import insert
 from starlette.datastructures import Headers
 from starlette.requests import Request
+from testcontainers.core.container import DockerContainer
+from testcontainers.core.waiting_utils import wait_for_logs
 from testcontainers.postgres import PostgresContainer
 
 from py_semantic_taxonomy.application.services import GraphService
@@ -190,6 +194,29 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
 
     # Not sure why this is necessary, the in-memory SQLite should be recreated on each test, but...
     await drop_db(engine)
+
+
+@pytest.fixture
+def typesense(monkeypatch, test_password: str = "abc123") -> typesense.Client:
+    container = DockerContainer("typesense/typesense:28.0")
+    container.with_exposed_ports(8108)
+    container.with_command("--data-dir /home --api-key={test_password} --enable-cors")
+    container.start()
+    wait_for_logs(container, "Peer refresh succeeded")
+
+    ip = container.get_container_host_ip()
+    port = container.get_exposed_port(8108)
+
+    check_response = httpx.get(f"http://{ip}:{port}/health")
+    if not check_response.status_code == 200:
+        raise OSError("Typesense container can't start")
+
+    monkeypatch.setenv("PyST_typesense_url", f"http://{ip}:{port}")
+    monkeypatch.setenv("PyST_typesense_api_key", test_password)
+
+    yield
+
+    container.stop()
 
 
 @pytest.fixture
