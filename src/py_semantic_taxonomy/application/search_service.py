@@ -53,7 +53,8 @@ class TypesenseSearch:
         if not self.is_configured():
             raise SearchNotConfigured
 
-        collection_labels = await self.client.collections.retrieve()
+        collections = await self.client.collections.retrieve()
+        collection_labels = [obj['name'] for obj in collections]
         logger.info("Existing typesense collections: %s", collection_labels)
 
         for language in self.languages:
