@@ -21,7 +21,7 @@ def create_app() -> FastAPI:
     async def search():
         ts = get_search()
         if ts.configured:
-            ts.initialize()
+            await ts.initialize()
 
     # app.add_middleware(
     #     CORSMiddleware,
