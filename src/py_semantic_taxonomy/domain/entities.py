@@ -1,6 +1,7 @@
 from copy import copy
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
+from urllib.parse import quote_plus, unquote
 
 from py_semantic_taxonomy.domain.constants import (
     RDF_MAPPING,
@@ -8,6 +9,16 @@ from py_semantic_taxonomy.domain.constants import (
     AssociationKind,
     RelationshipVerbs,
 )
+from py_semantic_taxonomy.domain.hash_utils import hash_fnv64
+
+
+def select_language(objs: list[dict], language: str, concatenate: bool = False) -> str:
+    strings = [
+        obj["@value"] for obj in objs if obj["@language"].lower().startswith(language.lower())
+    ]
+    if concatenate:
+        return " ".join(strings)
+    return strings
 
 
 # Allow mixing non-default and default values in dataclasses
@@ -65,6 +76,22 @@ class Concept(SKOS):
     alt_labels: list[dict[str, str]] = field(default_factory=list)
     hidden_labels: list[dict[str, str]] = field(default_factory=list)
     top_concept_of: list[dict] = field(default_factory=list)
+
+    def to_search_dict(self, language: str) -> dict:
+        return {
+            # Can't use URL as id, even if escaped:
+            # https://github.com/typesense/typesense/issues/192
+            "id": hash_fnv64(self.id_),
+            "url": quote_plus(self.id_),
+            "alt_labels": select_language(self.alt_labels, language),
+            "hidden_labels": select_language(self.hidden_labels, language),
+            # One per language but can have language variants
+            "pref_label": select_language(self.pref_labels, language, concatenate=True),
+            "definition": select_language(self.definitions, language, concatenate=True),
+            # Not language-specific
+            "notation": " ".join([obj["@value"] for obj in self.notations]),
+            "all_languages_pref_labels": [obj["@value"] for obj in self.pref_labels],
+        }
 
 
 @dataclass(kw_only=True)
@@ -169,6 +196,31 @@ class Association(Serializable):
 GraphObject = Concept | ConceptScheme | Correspondence | Association
 
 
+@dataclass
+class SearchResult:
+    id_: str
+    label: str
+    highlight: str | None = None
+
+    @staticmethod
+    def from_typesense_results(results: dict) -> list["SearchResult"]:
+        return [
+            SearchResult(
+                id_=unquote(res["document"]["url"]),
+                label=res["document"]["pref_label"],
+                highlight=(
+                    res["highlight"]["pref_label"]["snippet"]
+                    if "pref_label" in res["highlight"]
+                    else None
+                ),
+            )
+            for res in results["hits"]
+        ]
+
+    def to_json(self) -> dict:
+        return asdict(self)
+
+
 class NotFoundError(Exception):
     pass
 
@@ -218,4 +270,12 @@ class ConceptSchemesNotInDatabase(Exception):
 
 
 class HierarchyConflict(Exception):
+    pass
+
+
+class UnknownLanguage(Exception):
+    pass
+
+
+class SearchNotConfigured(Exception):
     pass

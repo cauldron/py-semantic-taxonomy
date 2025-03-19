@@ -2,6 +2,7 @@ from dataclasses import fields
 
 from py_semantic_taxonomy.adapters.routers import request_dto as request
 from py_semantic_taxonomy.adapters.routers import response_dto as response
+from py_semantic_taxonomy.domain.constants import RDF_MAPPING as RDF
 from py_semantic_taxonomy.domain.constants import SKOS_RELATIONSHIP_PREDICATES, RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import Concept
 
@@ -77,6 +78,38 @@ def test_concept_to_db_dict(cn):
         editorial_notes=[],
     )
     assert given == expected, "Conversion to database dict failed"
+
+
+def test_concept_to_search_dict(cn):
+    cn.concept_top[RDF["alt_labels"]] = [
+        {"@language": "pt", "@value": "foo"},
+        {"@language": "pt", "@value": "bar"},
+    ]
+    cn.concept_top[RDF["pref_labels"]] = [
+        {
+            "@language": "pt",
+            "@value": "SECÇÃO I - ANIMAIS VIVOS",
+        },
+        {"@language": "en", "@value": "SECTION I - LIVE ANIMALS; ANIMAL PRODUCTS"},
+        {"@language": "PT-FOO", "@value": "E PRODUTOS DO REINO ANIMAL"},
+    ]
+    cn.concept_top[RDF["hidden_labels"]] = [{"@language": "jp", "@value": "ふー"}]
+    given = Concept.from_json_ld(cn.concept_top).to_search_dict("pt")
+    expected = {
+        "id": "iMEtIMBiU8E",
+        "url": "http%3A%2F%2Fdata.europa.eu%2Fxsp%2Fcn2024%2F010011000090",
+        "alt_labels": ["foo", "bar"],
+        "hidden_labels": [],
+        "pref_label": "SECÇÃO I - ANIMAIS VIVOS E PRODUTOS DO REINO ANIMAL",
+        "definition": "",
+        "notation": "I",
+        "all_languages_pref_labels": [
+            "SECÇÃO I - ANIMAIS VIVOS",
+            "SECTION I - LIVE ANIMALS; ANIMAL PRODUCTS",
+            "E PRODUTOS DO REINO ANIMAL",
+        ],
+    }
+    assert given == expected, "Conversion to search dict failed"
 
 
 def test_concept_from_json_ld(cn):

@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,6 +13,13 @@ class Settings(BaseSettings):
 
     auth_token: str = "missing"
 
+    typesense_url: str = "missing"
+    typesense_api_key: str = "missing"
+    typesense_embedding_model: str = "ts/all-MiniLM-L12-v2"
+    typesense_exclude_if_missing_for_language: bool = True
+
+    languages: list[str] = ["en", "de", "es", "da", "fr", "pt", "it"]
+
     # allow_origins: Set[str] = {
     #     "https://brightway.cauldron.ch",
     #     "https://brightway-lca.cloud",
@@ -19,5 +28,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PyST_", env_file=".env")
 
 
+@lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings()

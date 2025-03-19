@@ -8,8 +8,8 @@ from pydantic_settings import BaseSettings
 
 import py_semantic_taxonomy.adapters.routers.request_dto as req
 import py_semantic_taxonomy.adapters.routers.response_dto as response
-from py_semantic_taxonomy.application.services import GraphService
 from py_semantic_taxonomy.cfg import get_settings
+from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
 
 router = APIRouter()
@@ -23,6 +23,8 @@ class Paths(StrEnum):
     correspondence = "/correspondence/"
     association = "/association/"
     made_of = "/made_of/"
+    search = "/concept/search/"
+    suggest = "/concept/suggest/"
 
 
 """
@@ -66,7 +68,7 @@ async def verify_auth_token(
 )
 async def concept_get(
     iri: str,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.Concept:
     try:
         obj = await service.concept_get(iri=iri)
@@ -84,7 +86,7 @@ async def concept_get(
 async def concept_create(
     request: Request,
     concept: req.ConceptCreate,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.Concept:
     try:
         incoming_data = await request.json()
@@ -114,7 +116,7 @@ async def concept_create(
 async def concept_update(
     request: Request,
     concept: req.ConceptUpdate,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.Concept:
     try:
         concept_obj = de.Concept.from_json_ld(await request.json())
@@ -140,7 +142,7 @@ async def concept_update(
 )
 async def concept_delete(
     iri: str,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ):
     try:
         await service.concept_delete(iri=iri)
@@ -158,7 +160,7 @@ async def concept_delete(
 )
 async def concept_scheme_get(
     iri: str,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.ConceptScheme:
     try:
         obj = await service.concept_scheme_get(iri=iri)
@@ -176,7 +178,7 @@ async def concept_scheme_get(
 async def concept_scheme_create(
     request: Request,
     concept_scheme: req.ConceptScheme,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.ConceptScheme:
     try:
         cs = de.ConceptScheme.from_json_ld(await request.json())
@@ -197,7 +199,7 @@ async def concept_scheme_create(
 async def concept_scheme_update(
     request: Request,
     concept_scheme: req.ConceptScheme,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.ConceptScheme:
     try:
         cs = de.ConceptScheme.from_json_ld(await request.json())
@@ -215,7 +217,7 @@ async def concept_scheme_update(
 )
 async def concept_scheme_delete(
     iri: str,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ):
     try:
         await service.concept_scheme_delete(iri=iri)
@@ -236,7 +238,7 @@ async def relationships_get(
     iri: str,
     source: bool = True,
     target: bool = False,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> list[response.Relationship]:
     lst = await service.relationships_get(iri=iri, source=source, target=target)
     return [response.Relationship(**obj.to_json_ld()) for obj in lst]
@@ -252,7 +254,7 @@ async def relationships_get(
 async def relationships_create(
     request: Request,
     relationships: list[req.Relationship],
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> list[response.Relationship]:
     try:
         incoming = de.Relationship.from_json_ld_list(await request.json())
@@ -275,7 +277,7 @@ async def relationships_create(
 async def relationship_delete(
     request: Request,
     relationships: list[req.Relationship],
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> JSONResponse:
     incoming = de.Relationship.from_json_ld_list(await request.json())
     count = await service.relationships_delete(incoming)
@@ -298,7 +300,7 @@ async def relationship_delete(
 )
 async def correspondence_get(
     iri: str,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.Correspondence:
     try:
         obj = await service.correspondence_get(iri=iri)
@@ -316,7 +318,7 @@ async def correspondence_get(
 async def correspondence_create(
     request: Request,
     correspondence: req.Correspondence,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.Correspondence:
     try:
         corr = de.Correspondence.from_json_ld(await request.json())
@@ -337,7 +339,7 @@ async def correspondence_create(
 async def correspondence_update(
     request: Request,
     concept_scheme: req.Correspondence,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.Correspondence:
     try:
         corr = de.Correspondence.from_json_ld(await request.json())
@@ -357,7 +359,7 @@ async def correspondence_update(
 )
 async def correspondence_delete(
     iri: str,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ):
     try:
         await service.correspondence_delete(iri=iri)
@@ -375,7 +377,7 @@ async def correspondence_delete(
 )
 async def association_get(
     iri: str,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.Association:
     try:
         obj = await service.association_get(iri=iri)
@@ -393,7 +395,7 @@ async def association_get(
 async def association_create(
     request: Request,
     relationships: req.Association,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.Association:
     try:
         incoming = de.Association.from_json_ld(await request.json())
@@ -411,7 +413,7 @@ async def association_create(
 )
 async def association_delete(
     iri: str,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ):
     try:
         await service.association_delete(iri=iri)
@@ -428,7 +430,7 @@ async def association_delete(
 async def made_of_add(
     request: Request,
     made_of: req.MadeOf,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.Correspondence:
     try:
         made_of = de.MadeOf.from_json_ld(await request.json())
@@ -449,7 +451,7 @@ async def made_of_add(
 async def made_of_remove(
     request: Request,
     made_of: req.MadeOf,
-    service=Depends(GraphService),
+    service=Depends(get_graph_service),
 ) -> response.Correspondence:
     try:
         made_of = de.MadeOf.from_json_ld(await request.json())
@@ -461,6 +463,49 @@ async def made_of_remove(
         )
 
 
+@router.get(
+    Paths.search,
+    summary="Search for Concept objects",
+    response_model=list[de.SearchResult],
+)
+async def concept_search(
+    query: str,
+    language: str,
+    semantic: bool = True,
+    service=Depends(get_search_service),
+) -> list[de.SearchResult]:
+    try:
+        results = await service.search(query=query, language=language, semantic=semantic)
+        return results
+    except de.SearchNotConfigured:
+        raise HTTPException(status_code=503, detail="Search engine not available")
+    except de.UnknownLanguage:
+        raise HTTPException(
+            status_code=422, detail="Search engine not configured for given language"
+        )
+
+
+@router.get(
+    Paths.suggest,
+    summary="Suggest Concept objects for given prefix",
+    response_model=list[de.SearchResult],
+)
+async def concept_suggest(
+    query: str,
+    language: str,
+    service=Depends(get_search_service),
+) -> list[de.SearchResult]:
+    try:
+        results = await service.suggest(query=query, language=language)
+        return results
+    except de.SearchNotConfigured:
+        raise HTTPException(status_code=503, detail="Search engine not available")
+    except de.UnknownLanguage:
+        raise HTTPException(
+            status_code=422, detail="Search engine not configured for given language"
+        )
+
+
 # TBD: Add in static route before generic catch-all function
 
 
@@ -469,7 +514,7 @@ async def made_of_remove(
     summary="Get a KOS graph object which shares the same base URL as PyST",
 )
 async def generic_get_from_iri(
-    request: Request, _: str, service=Depends(GraphService)
+    request: Request, _: str, service=Depends(get_graph_service)
 ) -> RedirectResponse:
     try:
         iri = urljoin(str(request.base_url), request.url.path)
