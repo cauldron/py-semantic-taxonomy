@@ -34,10 +34,12 @@ async def test_concept_create(graph_service, cn, entities, relationships):
     result = await graph_service.concept_create(entities[0])
     assert result == entities[0]
     mock_kos_graph.concept_create.assert_called_with(concept=entities[0])
+    graph_service.search.create_concept.assert_called_once_with(entities[0])
 
     result = await graph_service.concept_create(entities[0], relationships)
     assert result == entities[0]
     mock_kos_graph.concept_create.assert_called_with(concept=entities[0])
+    graph_service.search.create_concept.assert_called_with(entities[0])
 
 
 async def test_concept_create_hierarchy_conflict_existing_relationship(
@@ -133,6 +135,7 @@ async def test_concept_update(graph_service, cn, entities):
     result = await graph_service.concept_update(entities[0])
     assert result == entities[0]
     mock_kos_graph.concept_update.assert_called_with(concept=entities[0])
+    graph_service.search.update_concept.assert_called_once_with(entities[0])
 
 
 async def test_concept_update_hierarchy_conflict_existing_relationship(
@@ -235,6 +238,7 @@ async def test_concept_delete(graph_service, entities):
     result = await graph_service.concept_delete(entities[0].id_)
     assert result is None
     mock_kos_graph.concept_delete.assert_called_with(iri=entities[0].id_)
+    graph_service.search.delete_concept.assert_called_once_with(entities[0].id_)
 
 
 async def concept_delete_not_found(graph_service, entities):

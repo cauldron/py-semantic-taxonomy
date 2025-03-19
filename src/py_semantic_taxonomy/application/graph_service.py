@@ -1,6 +1,4 @@
-from fastapi.params import Depends
-
-from py_semantic_taxonomy.adapters.routers.dependencies import get_kos_graph
+from py_semantic_taxonomy.dependencies import get_kos_graph, get_search_service
 from py_semantic_taxonomy.domain.constants import (
     SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES,
     RelationshipVerbs,
@@ -24,12 +22,17 @@ from py_semantic_taxonomy.domain.entities import (
     RelationshipsInCurrentConceptScheme,
     RelationshipsReferencesConceptScheme,
 )
-from py_semantic_taxonomy.domain.ports import KOSGraphDatabase
+from py_semantic_taxonomy.domain.ports import KOSGraphDatabase, SearchService
 
 
 class GraphService:
-    def __init__(self, graph: KOSGraphDatabase = Depends(get_kos_graph)):
-        self.graph = graph
+    def __init__(
+        self,
+        graph: KOSGraphDatabase | None = None,
+        search: SearchService | None = None,
+    ):
+        self.graph = graph or get_kos_graph()
+        self.search = search or get_search_service()
 
     async def get_object_type(self, iri: str) -> GraphObject:
         return await self.graph.get_object_type(iri=iri)
@@ -74,6 +77,10 @@ class GraphService:
             except (HierarchicRelationshipAcrossConceptScheme, DuplicateRelationship) as err:
                 await self.concept_delete(concept.id_)
                 raise err
+
+        if self.search.is_configured():
+            await self.search.create_concept(concept)
+
         return concept
 
     async def concept_update(self, concept: Concept) -> Concept:
@@ -97,12 +104,21 @@ class GraphService:
                 raise RelationshipsInCurrentConceptScheme(
                     f"Update asked to change concept schemes, but existing concept scheme {missing} had hierarchical relationships."
                 )
-        return await self.graph.concept_update(concept=concept)
+        concept = await self.graph.concept_update(concept=concept)
+
+        if self.search.is_configured():
+            await self.search.update_concept(concept)
+
+        return concept
 
     async def concept_delete(self, iri: str) -> None:
         rowcount = await self.graph.concept_delete(iri=iri)
         if not rowcount:
             raise ConceptNotFoundError(f"Concept with IRI `{iri}` not found")
+
+        if self.search.is_configured():
+            await self.search.delete_concept(iri)
+
         return
 
     # Concept Scheme

@@ -1,17 +1,21 @@
 import json
 from pathlib import Path
 from typing import Callable
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 from rdflib import Graph
 from sqlalchemy import insert
 from starlette.datastructures import Headers
 from starlette.requests import Request
+from testcontainers.core.container import DockerContainer
+from testcontainers.core.waiting_utils import wait_for_logs
 from testcontainers.postgres import PostgresContainer
 
-from py_semantic_taxonomy.application.services import GraphService
+from py_semantic_taxonomy.application.graph_service import GraphService
+from py_semantic_taxonomy.application.search_service import SearchService
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     Association,
@@ -22,7 +26,8 @@ from py_semantic_taxonomy.domain.entities import (
     MadeOf,
     Relationship,
 )
-from py_semantic_taxonomy.domain.ports import KOSGraphDatabase
+from py_semantic_taxonomy.domain.ports import KOSGraphDatabase, SearchEngine
+from py_semantic_taxonomy.domain.ports import SearchService as SearchServicePort
 
 
 @pytest.fixture
@@ -109,8 +114,22 @@ def mock_kos_graph() -> AsyncMock:
 
 
 @pytest.fixture
-def graph_service(mock_kos_graph) -> GraphService:
-    return GraphService(graph=mock_kos_graph)
+def mock_search_engine() -> Mock:
+    return AsyncMock(spec=SearchEngine)
+
+
+@pytest.fixture()
+def search_service(mock_search_engine, monkeypatch) -> SearchService:
+    monkeypatch.setenv("PyST_typesense_url", "ts_url_test")
+    monkeypatch.setenv("PyST_typesense_api_key", "ts_api_key_test")
+    monkeypatch.setenv("PyST_typesense_embedding_model", "ts_embedding_test")
+    monkeypatch.setenv("PyST_languages", '["en", "de"]')
+    return SearchService(engine=mock_search_engine)
+
+
+@pytest.fixture
+def graph_service(mock_kos_graph, search_service) -> GraphService:
+    return GraphService(graph=mock_kos_graph, search=AsyncMock(spec=SearchServicePort))
 
 
 @pytest.fixture
@@ -190,6 +209,43 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
 
     # Not sure why this is necessary, the in-memory SQLite should be recreated on each test, but...
     await drop_db(engine)
+
+
+@pytest.fixture
+def typesense_container(monkeypatch, test_password: str = "123abc"):
+    container = DockerContainer("typesense/typesense:28.0")
+    container.with_exposed_ports(8108)
+    # Giving the API key in `with_command` in a pytest fixture doesn't work...
+    container.with_env("TYPESENSE_API_KEY", test_password)
+    container.with_command("--data-dir /home --enable-cors")
+    container.start()
+    wait_for_logs(container, "Peer refresh succeeded")
+
+    ip = container.get_container_host_ip()
+    port = container.get_exposed_port(8108)
+
+    check_response = httpx.get(f"http://{ip}:{port}/health")
+    if not check_response.status_code == 200:
+        raise OSError("Typesense container can't start")
+
+    monkeypatch.setenv("PyST_typesense_url", f"http://{ip}:{port}")
+    monkeypatch.setenv("PyST_typesense_api_key", test_password)
+    monkeypatch.setenv("PyST_languages", '["en", "de"]')
+
+    yield
+
+    container.stop()
+
+
+@pytest.fixture
+async def typesense(typesense_container, entities):
+    from py_semantic_taxonomy.dependencies import get_search_service
+
+    ts = get_search_service()
+    await ts.initialize()
+
+    for i in [0, 1, 5, 6]:
+        await ts.create_concept(entities[i])
 
 
 @pytest.fixture
