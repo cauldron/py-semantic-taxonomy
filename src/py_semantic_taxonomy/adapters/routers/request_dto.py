@@ -2,6 +2,12 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, conlist, field_validator, model_validator
 
+from py_semantic_taxonomy.adapters.routers.doc_examples import (
+    CHANGE_NOTE,
+    DEFINITION,
+    EDITORIAL_NOTE,
+    HISTORY_NOTE,
+)
 from py_semantic_taxonomy.adapters.routers.validation import (
     IRI,
     DateTime,
@@ -23,14 +29,63 @@ from py_semantic_taxonomy.domain.constants import RelationshipVerbs as RV
 
 
 class KOSCommon(BaseModel):
-    id_: IRI = Field(alias=RDF["id_"])
-    types: conlist(item_type=IRI) = Field(alias=RDF["types"])
-    pref_labels: conlist(MultilingualString, min_length=1) = Field(alias=RDF["pref_labels"])
-    status: conlist(Status, min_length=1) = Field(alias=RDF["status"])
-    notations: list[Notation] = Field(alias=RDF["notations"], default=[])
-    change_notes: list[NonLiteralNote] = Field(alias=RDF["change_notes"], default=[])
-    history_notes: list[NonLiteralNote] = Field(alias=RDF["history_notes"], default=[])
-    editorial_notes: list[NonLiteralNote] = Field(alias=RDF["editorial_notes"], default=[])
+    id_: IRI = Field(
+        alias=RDF["id_"],
+        title="Object IRI (`@id`)",
+        description="https://www.w3.org/TR/json-ld/#node-identifiers",
+        example="http://data.europa.eu/xsp/cn2024/010021000090",
+    )
+    types: conlist(item_type=IRI) = Field(
+        alias=RDF["types"],
+        title="Object `@type`",
+        description="https://www.w3.org/TR/json-ld/#specifying-the-type",
+        example=["http://www.w3.org/2004/02/skos/core#Concept"],
+    )
+    pref_labels: conlist(MultilingualString, min_length=1) = Field(
+        alias=RDF["pref_labels"],
+        title="SKOS preferred labels (one per language)",
+        description="https://www.w3.org/TR/skos-primer/#secpref",
+        example=[
+            {"@value": "CHAPTER 1 - LIVE ANIMALS", "@language": "en"},
+            {"@value": "CAP\u00cdTULO 1 - ANIMAIS VIVOS", "@language": "pt"},
+        ],
+    )
+    status: conlist(Status, min_length=1) = Field(
+        alias=RDF["status"],
+        title="BIBO status (accepted/draft/rejected)",
+        description="https://github.com/dcmi/bibo/blob/main/rdf/bibo.ttl#L391",
+        example=[{"@id": "http://purl.org/ontology/bibo/status/accepted"}],
+    )
+    notations: list[Notation] = Field(
+        alias=RDF["notations"],
+        default=[],
+        description="https://www.w3.org/TR/skos-primer/#secnotations",
+        title="SKOS notation (typed literal)",
+        example=[
+            {"@value": "01", "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"}
+        ],
+    )
+    change_notes: list[NonLiteralNote] = Field(
+        alias=RDF["change_notes"],
+        default=[],
+        definition="https://www.w3.org/TR/skos-primer/#secdocumentation",
+        title="SKOS change note with additional required fields",
+        example=CHANGE_NOTE,
+    )
+    history_notes: list[NonLiteralNote] = Field(
+        alias=RDF["history_notes"],
+        default=[],
+        definition="https://www.w3.org/TR/skos-primer/#secdocumentation",
+        title="SKOS history note with additional required fields",
+        example=HISTORY_NOTE,
+    )
+    editorial_notes: list[NonLiteralNote] = Field(
+        alias=RDF["editorial_notes"],
+        default=[],
+        definition="https://www.w3.org/TR/skos-primer/#secdocumentation",
+        title="SKOS editorial note with additional required fields",
+        example=EDITORIAL_NOTE,
+    )
 
     model_config = ConfigDict(extra="allow")
 
@@ -50,14 +105,45 @@ class Concept(KOSCommon):
 
     Checks that required fields are included and have correct type."""
 
-    schemes: conlist(Node, min_length=1) = Field(alias=RDF["schemes"])
+    schemes: conlist(Node, min_length=1) = Field(
+        alias=RDF["schemes"],
+        title="SKOS concept scheme (normally only one)",
+        description="https://www.w3.org/TR/skos-primer/#secscheme",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2024/cn2024"}],
+    )
     # Can have multiple alternative labels per language, and multiple languages
-    alt_labels: list[MultilingualString] = Field(alias=RDF["alt_labels"], default=[])
+    alt_labels: list[MultilingualString] = Field(
+        alias=RDF["alt_labels"],
+        default=[],
+        title="SKOS alternative labels. Can be more than one per language.",
+        description="https://www.w3.org/TR/skos-primer/#secalt",
+        example=[
+            {"@value": "Horsies, moo-moos, etc.", "@language": "en"},
+        ],
+    )
     # Can have multiple hidden labels per language, and multiple languages
-    hidden_labels: list[MultilingualString] = Field(alias=RDF["hidden_labels"], default=[])
+    hidden_labels: list[MultilingualString] = Field(
+        alias=RDF["hidden_labels"],
+        default=[],
+        title="SKOS hidden labels",
+        description="https://www.w3.org/TR/skos-primer/#sechidden",
+        example=[{"@language": "ine-pro", "@value": "ékwos"}],
+    )
     # One definition per language, at least one definition
-    definitions: list[MultilingualString] = Field(alias=RDF["definitions"], default=[])
-    top_concept_of: conlist(Node, max_length=1) = Field(alias=RDF["top_concept_of"], default=[])
+    definitions: list[MultilingualString] = Field(
+        alias=RDF["definitions"],
+        default=[],
+        title="SKOS definition (one per language)",
+        description="https://www.w3.org/TR/skos-primer/#secdocumentation",
+        example=DEFINITION,
+    )
+    top_concept_of: conlist(Node, max_length=1) = Field(
+        alias=RDF["top_concept_of"],
+        default=[],
+        title="SKOS concept scheme if this concept is at top of hierarchy (maximum 1)",
+        description="https://www.w3.org/TR/skos-primer/#secscheme",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2024/cn2024"}],
+    )
 
     @field_validator("types", mode="after")
     @classmethod
@@ -84,8 +170,20 @@ class Concept(KOSCommon):
 
 
 class ConceptCreate(Concept):
-    broader: list[Node] = Field(alias=str(RV.broader), default=[])
-    narrower: list[Node] = Field(alias=str(RV.narrower), default=[])
+    broader: list[Node] = Field(
+        alias=str(RV.broader),
+        default=[],
+        title="SKOS broader",
+        description="https://www.w3.org/TR/skos-primer/#sechierarchy",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2024/010021000090"}],
+    )
+    narrower: list[Node] = Field(
+        alias=str(RV.narrower),
+        default=[],
+        title="SKOS narrower (use of `broader` is preferred; see docs)",
+        description="https://www.w3.org/TR/skos-primer/#sechierarchy",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2024/010100000080"}],
+    )
 
     @model_validator(mode="after")
     def hierarchy_doesnt_reference_self(self) -> Self:
@@ -124,11 +222,24 @@ class ConceptUpdate(Concept):
 
 class ConceptSchemeCommon(KOSCommon):
     created: conlist(DateTime, min_length=1, max_length=1) = Field(
-        alias="http://purl.org/dc/terms/created"
+        alias="http://purl.org/dc/terms/created",
+        title="DCTerms created timestamp",
+        description="https://www.dublincore.org/specifications/dublin-core/dcmi-terms/#http://purl.org/dc/terms/created",
+        example=[
+            {"@type": "http://www.w3.org/2001/XMLSchema#dateTime", "@value": "2023-10-11T13:59:56"}
+        ],
     )
-    creators: list[Node] = Field(alias="http://purl.org/dc/terms/creator")
+    creators: list[Node] = Field(
+        alias="http://purl.org/dc/terms/creator",
+        title="DCTerms creators list",
+        description="https://www.dublincore.org/specifications/dublin-core/dcmi-terms/#http://purl.org/dc/elements/1.1/creator",
+        example=[{"@id": "http://publications.europa.eu/resource/authority/corporate-body/ESTAT"}],
+    )
     version: conlist(VersionString, min_length=1, max_length=1) = Field(
-        alias="http://www.w3.org/2002/07/owl#versionInfo"
+        alias="http://www.w3.org/2002/07/owl#versionInfo",
+        title="OWL version info",
+        description="https://www.w3.org/TR/owl-ref/#versionInfo-def",
+        example=[{"@value": "2024"}],
     )
 
 
@@ -139,6 +250,9 @@ class ConceptScheme(ConceptSchemeCommon):
 
     definitions: conlist(MultilingualString, min_length=1) = Field(
         alias=RDF["definitions"],
+        title="SKOS definition (one per language)",
+        description="https://www.w3.org/TR/skos-primer/#secdocumentation",
+        example=DEFINITION,
     )
 
     @field_validator("types", mode="after")
@@ -168,14 +282,61 @@ class ConceptScheme(ConceptSchemeCommon):
 
 
 class Relationship(BaseModel):
-    id_: IRI = Field(alias=RDF["id_"])
-    broader: list[Node] = Field(alias=str(RV.broader), default=[])
-    narrower: list[Node] = Field(alias=str(RV.narrower), default=[])
-    exact_match: list[Node] = Field(alias=str(RV.exact_match), default=[])
-    close_match: list[Node] = Field(alias=str(RV.close_match), default=[])
-    broad_match: list[Node] = Field(alias=str(RV.broad_match), default=[])
-    narrow_match: list[Node] = Field(alias=str(RV.narrow_match), default=[])
-    related_match: list[Node] = Field(alias=str(RV.related_match), default=[])
+    id_: IRI = Field(
+        alias=RDF["id_"],
+        title="Object IRI (`@id`)",
+        description="https://www.w3.org/TR/json-ld/#node-identifiers",
+        example="http://data.europa.eu/xsp/cn2024/010021000090",
+    )
+    broader: list[Node] = Field(
+        alias=str(RV.broader),
+        default=[],
+        title="SKOS broader",
+        description="https://www.w3.org/TR/skos-primer/#sechierarchy",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2024/010021000090"}],
+    )
+    narrower: list[Node] = Field(
+        alias=str(RV.narrower),
+        default=[],
+        title="SKOS narrower (use of `broader` is preferred; see docs)",
+        description="https://www.w3.org/TR/skos-primer/#sechierarchy",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2024/010100000080"}],
+    )
+    exact_match: list[Node] = Field(
+        alias=str(RV.exact_match),
+        default=[],
+        title="SKOS exact match",
+        description="https://www.w3.org/TR/skos-primer/#secassociative",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2023/010100000080"}],
+    )
+    close_match: list[Node] = Field(
+        alias=str(RV.close_match),
+        default=[],
+        title="SKOS close match",
+        description="https://www.w3.org/TR/skos-primer/#secassociative",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2023/010100000080"}],
+    )
+    broad_match: list[Node] = Field(
+        alias=str(RV.broad_match),
+        default=[],
+        title="SKOS broad match",
+        description="https://www.w3.org/TR/skos-primer/#secassociative",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2023/010021000090"}],
+    )
+    narrow_match: list[Node] = Field(
+        alias=str(RV.narrow_match),
+        default=[],
+        title="SKOS narrow match",
+        description="https://www.w3.org/TR/skos-primer/#secassociative",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2023/010100000080"}],
+    )
+    related_match: list[Node] = Field(
+        alias=str(RV.related_match),
+        default=[],
+        title="SKOS related match",
+        description="https://www.w3.org/TR/skos-primer/#secassociative",
+        example=[{"@id": "https://www.wikidata.org/wiki/Q726"}],
+    )
 
     _RELATIONSHIP_FIELDS = (
         "broader",
@@ -221,8 +382,22 @@ class Relationship(BaseModel):
 
 
 class Correspondence(ConceptSchemeCommon):
-    definitions: list[MultilingualString] = Field(alias=RDF["definitions"], default=[])
-    compares: conlist(Node, min_length=1) = Field(alias=f"{XKOS}compares")
+    definitions: list[MultilingualString] = Field(
+        alias=RDF["definitions"],
+        default=[],
+        title="SKOS definition (one per language)",
+        description="https://www.w3.org/TR/skos-primer/#secdocumentation",
+        example=DEFINITION,
+    )
+    compares: conlist(Node, min_length=1) = Field(
+        alias=f"{XKOS}compares",
+        title="List of `ConceptScheme` objects being compared",
+        description="https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences",
+        example=[
+            {"@id": "http://data.europa.eu/xsp/cn2023/cn2023"},
+            {"@id": "http://data.europa.eu/xsp/cn2024/cn2024"},
+        ],
+    )
 
     @field_validator("types", mode="after")
     @classmethod
@@ -251,8 +426,18 @@ class Correspondence(ConceptSchemeCommon):
 
 
 class MadeOf(BaseModel):
-    id_: IRI = Field(alias=RDF["id_"])
-    made_ofs: list[Node] = Field(alias=RDF["made_ofs"])
+    id_: IRI = Field(
+        alias=RDF["id_"],
+        title="Object IRI (`@id`)",
+        description="https://www.w3.org/TR/json-ld/#node-identifiers",
+        example="http://data.europa.eu/xsp/cn2024/010021000090",
+    )
+    made_ofs: list[Node] = Field(
+        alias=RDF["made_ofs"],
+        title="List of `ConceptAssociation` objects in a `Correspondence`",
+        description="https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences",
+        example="http://data.europa.eu/xsp/cn2024/010021000090",
+    )
 
     model_config = ConfigDict(extra="forbid")
 
@@ -261,10 +446,30 @@ class MadeOf(BaseModel):
 
 
 class Association(BaseModel):
-    id_: IRI = Field(alias=RDF["id_"])
-    types: conlist(item_type=IRI) = Field(alias=RDF["types"])
-    source_concepts: conlist(Node, min_length=1) = Field(alias=RDF["source_concepts"])
-    target_concepts: conlist(Node, min_length=1) = Field(alias=RDF["target_concepts"])
+    id_: IRI = Field(
+        alias=RDF["id_"],
+        title="Object IRI (`@id`)",
+        description="https://www.w3.org/TR/json-ld/#node-identifiers",
+        example="http://data.europa.eu/xsp/cn2023_cn2024/something",
+    )
+    types: conlist(item_type=IRI) = Field(
+        alias=RDF["types"],
+        title="Object `@type`",
+        description="https://www.w3.org/TR/json-ld/#specifying-the-type",
+        example=["http://rdf-vocabulary.ddialliance.org/xkos#ConceptAssociation"],
+    )
+    source_concepts: conlist(Node, min_length=1) = Field(
+        alias=RDF["source_concepts"],
+        title="List of source `Concept` objects",
+        description="https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2023/010011000090"}],
+    )
+    target_concepts: conlist(Node, min_length=1) = Field(
+        alias=RDF["target_concepts"],
+        title="List of target `Concept` objects",
+        description="https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences",
+        example=[{"@id": "http://data.europa.eu/xsp/cn2024/010011000090"}],
+    )
 
     model_config = ConfigDict(extra="allow")
 

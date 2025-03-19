@@ -63,8 +63,10 @@ async def verify_auth_token(
 
 @router.get(
     Paths.concept,
-    summary="Get a Concept object",
+    summary="Get a `Concept` object",
     response_model=response.Concept,
+    tags=["Concept"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def concept_get(
     iri: str,
@@ -79,9 +81,11 @@ async def concept_get(
 
 @router.post(
     Paths.concept,
-    summary="Create a Concept object",
+    summary="Create a `Concept` object",
     response_model=response.Concept,
     dependencies=[Depends(verify_auth_token)],
+    tags=["Concept"],
+    responses={409: {"description": "Resource already exists"}},
 )
 async def concept_create(
     request: Request,
@@ -109,9 +113,11 @@ async def concept_create(
 
 @router.put(
     Paths.concept,
-    summary="Update a Concept object",
+    summary="Update a `Concept` object",
     response_model=response.Concept,
     dependencies=[Depends(verify_auth_token)],
+    tags=["Concept"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def concept_update(
     request: Request,
@@ -136,9 +142,11 @@ async def concept_update(
 
 @router.delete(
     Paths.concept,
-    summary="Delete a Concept object",
+    summary="Delete a `Concept` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
+    tags=["Concept"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def concept_delete(
     iri: str,
@@ -155,8 +163,10 @@ async def concept_delete(
 
 @router.get(
     Paths.concept_scheme,
-    summary="Get a ConceptScheme object",
+    summary="Get a `ConceptScheme` object",
     response_model=response.ConceptScheme,
+    tags=["ConceptScheme"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def concept_scheme_get(
     iri: str,
@@ -171,14 +181,16 @@ async def concept_scheme_get(
 
 @router.post(
     Paths.concept_scheme,
-    summary="Create a Concept Scheme object",
+    summary="Create a `ConceptScheme` object",
     response_model=response.ConceptScheme,
     dependencies=[Depends(verify_auth_token)],
+    tags=["ConceptScheme"],
 )
 async def concept_scheme_create(
     request: Request,
     concept_scheme: req.ConceptScheme,
     service=Depends(get_graph_service),
+    responses={409: {"description": "Resource already exists"}},
 ) -> response.ConceptScheme:
     try:
         cs = de.ConceptScheme.from_json_ld(await request.json())
@@ -192,14 +204,16 @@ async def concept_scheme_create(
 
 @router.put(
     Paths.concept_scheme,
-    summary="Update a Concept Scheme object",
+    summary="Update a `ConceptScheme` object",
     response_model=response.ConceptScheme,
     dependencies=[Depends(verify_auth_token)],
+    tags=["ConceptScheme"],
 )
 async def concept_scheme_update(
     request: Request,
     concept_scheme: req.ConceptScheme,
     service=Depends(get_graph_service),
+    responses={404: {"description": "Resource not found"}},
 ) -> response.ConceptScheme:
     try:
         cs = de.ConceptScheme.from_json_ld(await request.json())
@@ -211,9 +225,11 @@ async def concept_scheme_update(
 
 @router.delete(
     Paths.concept_scheme,
-    summary="Delete a Concept Scheme object",
+    summary="Delete a `ConceptScheme` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
+    tags=["ConceptScheme"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def concept_scheme_delete(
     iri: str,
@@ -230,9 +246,10 @@ async def concept_scheme_delete(
 
 @router.get(
     Paths.relationship,
-    summary="Get a list of Relationship objects",
+    summary="Get a list of `Concept` relationships",
     response_model=list[response.Relationship],
     response_model_exclude_unset=True,
+    tags=["Concept"],
 )
 async def relationships_get(
     iri: str,
@@ -246,10 +263,12 @@ async def relationships_get(
 
 @router.post(
     Paths.relationship,
-    summary="Create a list of Relationship objects",
+    summary="Create a list of `Concept` relationships",
     response_model=list[response.Relationship],
     response_model_exclude_unset=True,
     dependencies=[Depends(verify_auth_token)],
+    tags=["Concept"],
+    responses={409: {"description": "Resource already exists"}},
 )
 async def relationships_create(
     request: Request,
@@ -271,8 +290,9 @@ async def relationships_create(
 
 @router.delete(
     Paths.relationship,
-    summary="Delete a list of Relationship objects",
+    summary="Delete a list of `Concept` relationships",
     dependencies=[Depends(verify_auth_token)],
+    tags=["Concept"],
 )
 async def relationship_delete(
     request: Request,
@@ -295,8 +315,10 @@ async def relationship_delete(
 
 @router.get(
     Paths.correspondence,
-    summary="Get a Correspondence object",
+    summary="Get a `Correspondence` object",
     response_model=response.Correspondence,
+    tags=["Correspondence"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def correspondence_get(
     iri: str,
@@ -311,9 +333,11 @@ async def correspondence_get(
 
 @router.post(
     Paths.correspondence,
-    summary="Create a Correspondence object",
+    summary="Create a `Correspondence` object",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
+    tags=["Correspondence"],
+    responses={409: {"description": "Resource already exists"}},
 )
 async def correspondence_create(
     request: Request,
@@ -332,9 +356,11 @@ async def correspondence_create(
 
 @router.put(
     Paths.correspondence,
-    summary="Update a Correspondence object",
+    summary="Update a `Correspondence` object",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
+    tags=["Correspondence"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def correspondence_update(
     request: Request,
@@ -353,9 +379,11 @@ async def correspondence_update(
 
 @router.delete(
     Paths.correspondence,
-    summary="Delete a Correspondence object",
+    summary="Delete a `Correspondence` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
+    tags=["Correspondence"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def correspondence_delete(
     iri: str,
@@ -372,8 +400,10 @@ async def correspondence_delete(
 
 @router.get(
     Paths.association,
-    summary="Get a Association object",
+    summary="Get an `Association` object",
     response_model=response.Association,
+    tags=["ConceptAssociation"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def association_get(
     iri: str,
@@ -388,9 +418,11 @@ async def association_get(
 
 @router.post(
     Paths.association,
-    summary="Create an Association object",
+    summary="Create an `Association` object",
     response_model=response.Association,
     dependencies=[Depends(verify_auth_token)],
+    tags=["ConceptAssociation"],
+    responses={409: {"description": "Resource already exists"}},
 )
 async def association_create(
     request: Request,
@@ -407,9 +439,11 @@ async def association_create(
 
 @router.delete(
     Paths.association,
-    summary="Delete an Association object",
+    summary="Delete an `Association` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
+    tags=["ConceptAssociation"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def association_delete(
     iri: str,
@@ -423,9 +457,11 @@ async def association_delete(
 
 @router.post(
     Paths.made_of,
-    summary="Add some `madeOf` links",
+    summary="Add some `Correspondence` `madeOf` links",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
+    tags=["Correspondence"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def made_of_add(
     request: Request,
@@ -444,9 +480,11 @@ async def made_of_add(
 
 @router.delete(
     Paths.made_of,
-    summary="Remove some `madeOf` links",
+    summary="Remove some `Correspondence` `madeOf` links",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
+    tags=["Correspondence"],
+    responses={404: {"description": "Resource not found"}},
 )
 async def made_of_remove(
     request: Request,
@@ -465,8 +503,10 @@ async def made_of_remove(
 
 @router.get(
     Paths.search,
-    summary="Search for Concept objects",
+    summary="Search for `Concept` objects",
     response_model=list[de.SearchResult],
+    tags=["Concept"],
+    responses={503: {"description": "Search engine not available"}},
 )
 async def concept_search(
     query: str,
@@ -487,8 +527,10 @@ async def concept_search(
 
 @router.get(
     Paths.suggest,
-    summary="Suggest Concept objects for given prefix",
+    summary="Suggestion search for `Concept` objects",
     response_model=list[de.SearchResult],
+    tags=["Concept"],
+    responses={503: {"description": "Search engine not available"}},
 )
 async def concept_suggest(
     query: str,
@@ -512,6 +554,8 @@ async def concept_suggest(
 @router.get(
     Paths.catchall,
     summary="Get a KOS graph object which shares the same base URL as PyST",
+    responses={404: {"description": "Resource not found"}},
+    include_in_schema=False,
 )
 async def generic_get_from_iri(
     request: Request, _: str, service=Depends(get_graph_service)
