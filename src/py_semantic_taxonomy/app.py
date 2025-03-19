@@ -4,8 +4,8 @@ from py_semantic_taxonomy.adapters.persistence.database import (
     create_engine,
     init_db,
 )
-from py_semantic_taxonomy.adapters.routers.dependencies import get_search
 from py_semantic_taxonomy.adapters.routers.router import router
+from py_semantic_taxonomy.dependencies import get_search_service
 
 # from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,7 +19,7 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     async def search():
-        ts = get_search()
+        ts = get_search_service()
         if ts.configured:
             await ts.initialize()
 

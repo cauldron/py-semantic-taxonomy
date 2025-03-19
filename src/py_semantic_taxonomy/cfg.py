@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     typesense_url: str = "missing"
     typesense_api_key: str = "missing"
     typesense_embedding_model: str = "ts/all-MiniLM-L12-v2"
-    typesense_exclude_if_language_missing: bool = True
+    typesense_exclude_if_missing_for_language: bool = True
 
     languages: list[str] = ["en", "de", "es", "da", "fr", "pt", "it"]
 

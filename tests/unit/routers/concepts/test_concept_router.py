@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 from py_semantic_taxonomy.adapters.routers.router import Paths
 from py_semantic_taxonomy.application.graph_service import GraphService
-from py_semantic_taxonomy.application.search_service import TypesenseSearch
+from py_semantic_taxonomy.application.search_service import SearchService
 from py_semantic_taxonomy.domain.constants import SKOS, RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     Concept,
@@ -242,7 +242,7 @@ async def test_concept_delete_not_found(cn, client, monkeypatch):
 
 async def test_concept_search(anonymous_client, monkeypatch):
     monkeypatch.setattr(
-        TypesenseSearch,
+        SearchService,
         "search",
         AsyncMock(
             return_value=[SearchResult(id_="http://example.com/foo", label="foo", highlight="bar")]
@@ -259,7 +259,7 @@ async def test_concept_search(anonymous_client, monkeypatch):
 
 async def test_concept_search_not_configured(anonymous_client, monkeypatch):
     monkeypatch.setattr(
-        TypesenseSearch,
+        SearchService,
         "search",
         AsyncMock(side_effect=SearchNotConfigured()),
     )
@@ -273,7 +273,7 @@ async def test_concept_search_not_configured(anonymous_client, monkeypatch):
 
 async def test_concept_search_unknown_language(anonymous_client, monkeypatch):
     monkeypatch.setattr(
-        TypesenseSearch,
+        SearchService,
         "search",
         AsyncMock(side_effect=UnknownLanguage()),
     )
@@ -287,7 +287,7 @@ async def test_concept_search_unknown_language(anonymous_client, monkeypatch):
 
 async def test_concept_suggest(anonymous_client, monkeypatch):
     monkeypatch.setattr(
-        TypesenseSearch,
+        SearchService,
         "suggest",
         AsyncMock(
             return_value=[SearchResult(id_="http://example.com/foo", label="foo", highlight="bar")]
@@ -304,7 +304,7 @@ async def test_concept_suggest(anonymous_client, monkeypatch):
 
 async def test_concept_suggest_not_configured(anonymous_client, monkeypatch):
     monkeypatch.setattr(
-        TypesenseSearch,
+        SearchService,
         "suggest",
         AsyncMock(side_effect=SearchNotConfigured()),
     )
@@ -316,7 +316,7 @@ async def test_concept_suggest_not_configured(anonymous_client, monkeypatch):
 
 async def test_concept_suggest_unknown_language(anonymous_client, monkeypatch):
     monkeypatch.setattr(
-        TypesenseSearch,
+        SearchService,
         "suggest",
         AsyncMock(side_effect=UnknownLanguage()),
     )

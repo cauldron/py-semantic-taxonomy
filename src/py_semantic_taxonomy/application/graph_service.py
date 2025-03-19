@@ -1,6 +1,4 @@
-from fastapi.params import Depends
-
-from py_semantic_taxonomy.adapters.routers.dependencies import get_kos_graph, get_search
+from py_semantic_taxonomy.dependencies import get_kos_graph, get_search_service
 from py_semantic_taxonomy.domain.constants import (
     SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES,
     RelationshipVerbs,
@@ -30,13 +28,11 @@ from py_semantic_taxonomy.domain.ports import KOSGraphDatabase, SearchService
 class GraphService:
     def __init__(
         self,
-        graph: KOSGraphDatabase = Depends(get_kos_graph),
-        search: SearchService = Depends(get_search),
+        graph: KOSGraphDatabase | None = None,
+        search: SearchService | None = None,
     ):
-        self.graph = graph
-        self.search = search
-        print(type(self.graph))
-        print(type(self.search))
+        self.graph = graph or get_kos_graph()
+        self.search = search or get_search_service()
 
     async def get_object_type(self, iri: str) -> GraphObject:
         return await self.graph.get_object_type(iri=iri)

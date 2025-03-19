@@ -1,7 +1,7 @@
 from copy import copy
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
-from urllib.parse import quote, unquote
+from urllib.parse import quote_plus, unquote
 
 from py_semantic_taxonomy.domain.constants import (
     RDF_MAPPING,
@@ -9,6 +9,7 @@ from py_semantic_taxonomy.domain.constants import (
     AssociationKind,
     RelationshipVerbs,
 )
+from py_semantic_taxonomy.domain.hash_utils import hash_fnv64
 
 
 def select_language(objs: list[dict], language: str, concatenate: bool = False) -> str:
@@ -78,7 +79,10 @@ class Concept(SKOS):
 
     def to_search_dict(self, language: str) -> dict:
         return {
-            "id": quote(self.id_),
+            # Can't use URL as id, even if escaped:
+            # https://github.com/typesense/typesense/issues/192
+            "id": hash_fnv64(self.id_),
+            "url": quote_plus(self.id_),
             "alt_labels": select_language(self.alt_labels, language),
             "hidden_labels": select_language(self.hidden_labels, language),
             # One per language but can have language variants
@@ -202,7 +206,7 @@ class SearchResult:
     def from_typesense_results(results: dict) -> list["SearchResult"]:
         return [
             SearchResult(
-                id_=unquote(res["document"]["id"]),
+                id_=unquote(res["document"]["url"]),
                 label=res["document"]["pref_label"],
                 highlight=(
                     res["highlight"]["pref_label"]["snippet"]

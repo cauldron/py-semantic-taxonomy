@@ -96,7 +96,8 @@ def test_concept_to_search_dict(cn):
     cn.concept_top[RDF["hidden_labels"]] = [{"@language": "jp", "@value": "ふー"}]
     given = Concept.from_json_ld(cn.concept_top).to_search_dict("pt")
     expected = {
-        "id": "http%3A//data.europa.eu/xsp/cn2024/010011000090",
+        "id": 'iMEtIMBiU8E',
+        "url": "http%3A%2F%2Fdata.europa.eu%2Fxsp%2Fcn2024%2F010011000090",
         "alt_labels": ["foo", "bar"],
         "hidden_labels": [],
         "pref_label": "SECÇÃO I - ANIMAIS VIVOS E PRODUTOS DO REINO ANIMAL",

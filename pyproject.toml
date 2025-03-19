@@ -104,7 +104,7 @@ markers = [
     "typesense"
 ]
 lru_cache_disabled = '''
-    py_semantic_taxonomy.adapters.routers.dependencies
+    py_semantic_taxonomy.dependencies
     py_semantic_taxonomy.cfg
     '''
 

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from typing import Callable
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import httpx
 import pytest
@@ -15,6 +15,7 @@ from testcontainers.core.waiting_utils import wait_for_logs
 from testcontainers.postgres import PostgresContainer
 
 from py_semantic_taxonomy.application.graph_service import GraphService
+from py_semantic_taxonomy.application.search_service import SearchService
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     Association,
@@ -25,7 +26,8 @@ from py_semantic_taxonomy.domain.entities import (
     MadeOf,
     Relationship,
 )
-from py_semantic_taxonomy.domain.ports import KOSGraphDatabase, SearchService
+from py_semantic_taxonomy.domain.ports import KOSGraphDatabase, SearchEngine
+from py_semantic_taxonomy.domain.ports import SearchService as SearchServicePort
 
 
 @pytest.fixture
@@ -112,13 +114,22 @@ def mock_kos_graph() -> AsyncMock:
 
 
 @pytest.fixture
-def mock_search_service() -> AsyncMock:
-    return AsyncMock(spec=SearchService)
+def mock_search_engine() -> Mock:
+    return AsyncMock(spec=SearchEngine)
+
+
+@pytest.fixture()
+def search_service(mock_search_engine, monkeypatch) -> SearchService:
+    monkeypatch.setenv("PyST_typesense_url", "ts_url_test")
+    monkeypatch.setenv("PyST_typesense_api_key", "ts_api_key_test")
+    monkeypatch.setenv("PyST_typesense_embedding_model", "ts_embedding_test")
+    monkeypatch.setenv("PyST_languages", '["en", "de"]')
+    return SearchService(engine=mock_search_engine)
 
 
 @pytest.fixture
-def graph_service(mock_kos_graph, mock_search_service) -> GraphService:
-    return GraphService(graph=mock_kos_graph, search=mock_search_service)
+def graph_service(mock_kos_graph, search_service) -> GraphService:
+    return GraphService(graph=mock_kos_graph, search=AsyncMock(spec=SearchServicePort))
 
 
 @pytest.fixture
@@ -227,9 +238,9 @@ def typesense_container(monkeypatch, test_password: str = "123abc"):
 
 @pytest.fixture
 async def typesense(typesense_container, entities):
-    from py_semantic_taxonomy.adapters.routers.dependencies import get_search
+    from py_semantic_taxonomy.dependencies import get_search_service
 
-    ts = get_search()
+    ts = get_search_service()
     await ts.initialize()
 
     for i in [0, 1, 5, 6]:
