@@ -1,5 +1,5 @@
 from typing import Iterable
-from urllib.parse import quote_plus, urlparse
+from urllib.parse import urlparse
 
 import structlog
 import typesense
@@ -27,7 +27,7 @@ class TypesenseSearchEngine:
 
     async def _collection_labels(self) -> list[str]:
         collections = await self.client.collections.retrieve()
-        return [obj["name"] for obj in collections]
+        return sorted([obj["name"] for obj in collections])
 
     async def initialize(self, collections: Iterable[str]) -> None:
         collection_labels = await self._collection_labels()

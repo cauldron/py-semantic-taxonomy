@@ -96,7 +96,7 @@ def test_concept_to_search_dict(cn):
     cn.concept_top[RDF["hidden_labels"]] = [{"@language": "jp", "@value": "ふー"}]
     given = Concept.from_json_ld(cn.concept_top).to_search_dict("pt")
     expected = {
-        "id": 'iMEtIMBiU8E',
+        "id": "iMEtIMBiU8E",
         "url": "http%3A%2F%2Fdata.europa.eu%2Fxsp%2Fcn2024%2F010011000090",
         "alt_labels": ["foo", "bar"],
         "hidden_labels": [],

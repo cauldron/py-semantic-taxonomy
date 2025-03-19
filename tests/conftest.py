@@ -230,6 +230,7 @@ def typesense_container(monkeypatch, test_password: str = "123abc"):
 
     monkeypatch.setenv("PyST_typesense_url", f"http://{ip}:{port}")
     monkeypatch.setenv("PyST_typesense_api_key", test_password)
+    monkeypatch.setenv("PyST_languages", '["en", "de"]')
 
     yield
 

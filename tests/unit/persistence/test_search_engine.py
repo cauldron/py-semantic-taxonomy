@@ -1,96 +1,53 @@
-# from unittest.mock import AsyncMock, Mock
+import pytest
 
-# import pytest
-
-# from py_semantic_taxonomy.application.search_service import TypesenseSearch, c, typesense
-# from py_semantic_taxonomy.domain.entities import SearchNotConfigured, UnknownLanguage
+from py_semantic_taxonomy.dependencies import get_search_engine
 
 
-# @pytest.fixture
-# def ts_client(monkeypatch):
-#     monkeypatch.setenv("PyST_typesense_url", "http://example.com:1234/")
-#     monkeypatch.setenv("PyST_typesense_api_key", "abc123")
-#     monkeypatch.setenv("PyST_languages", '["en", "de"]')
+@pytest.mark.typesense
+async def test_search_engine(typesense, entities):
+    engine = get_search_engine()
+    collections = await engine._collection_labels()
+    assert collections == ["pyst-concepts-de", "pyst-concepts-en"]
 
-#     client = Mock()
-#     monkeypatch.setattr(typesense, "Client", client)
-#     return client
+    await engine.reset()
 
+    assert not await engine._collection_labels()
 
-# async def test_search_init(ts_client):
-#     ts = TypesenseSearch()
-#     assert ts.configured
-#     assert ts.languages == ["en", "de"]
-#     assert ts.embedding_model == "ts/all-MiniLM-L12-v2"
-#     given = {
-#         "api_key": "abc123",
-#         "nodes": [{"host": "example.com", "port": 1234, "protocol": "http"}],
-#         "connection_timeout_seconds": 10,
-#     }
-#     ts_client.assert_called_with(given)
+    await engine.initialize(collections)
+    collections = await engine._collection_labels()
+    assert collections == ["pyst-concepts-de", "pyst-concepts-en"]
 
+    sd_en = entities[1].to_search_dict("en")
+    await engine.create_concept(sd_en, "pyst-concepts-en")
 
-# async def test_search_db_initialization_not_configured(ts_client):
-#     ts = TypesenseSearch()
-#     ts.configured = False
-#     with pytest.raises(SearchNotConfigured):
-#         await ts.initialize()
+    assert await engine.client.collections["pyst-concepts-en"].documents[sd_en["id"]].retrieve()
 
+    results = await engine.search("moo", "pyst-concepts-en", True, False)
+    assert results[0].id_ == entities[1].id_
 
-# async def test_search_db_initialization_no_language_intersection(ts_client):
-#     ts = TypesenseSearch()
-#     ts.client.collections = AsyncMock()
-#     ts.client.collections.retrieve.return_value = [
-#         {"name": c("de")},
-#         {"name": c("fr")},
-#         {"name": c("en")},
-#     ]
-#     await ts.initialize()
-#     ts.client.collections.create.assert_not_called()
+    results = await engine.search("moo", "pyst-concepts-en", False, False)
+    assert not results
 
+    results = await engine.search("anim", "pyst-concepts-en", False, True)
+    assert results[0].id_ == entities[1].id_
 
-# async def test_search_db_initialization_language_intersection(ts_client):
-#     ts = TypesenseSearch()
-#     ts.client.collections = AsyncMock()
-#     ts.client.collections.retrieve.return_value = [{"name": c("de")}, {"name": c("fr")}]
-#     await ts.initialize()
-#     ts.client.collections.create.assert_called_once()
+    updated = {
+        "id": sd_en["id"],
+        "url": "http%3A%2F%2Fdata.europa.eu%2Fxsp%2Fcn2024%2F010021000090",
+        "alt_labels": ["CHAPTER 1 - BIG TRUCKS GO VROOM VROOM"],
+        "hidden_labels": [],
+        "pref_label": "CHAPTER 1 - TRUCKS",
+        "definition": "",
+        "notation": "01",
+        "all_languages_pref_labels": ["CHAPTER 1 - LIVE ANIMALS", "CAPÍTULO 1 - ANIMAIS VIVOS"],
+    }
+    await engine.update_concept(updated, "pyst-concepts-en")
 
+    results = await engine.search("diesel", "pyst-concepts-en", True, False)
+    assert results[0].id_ == entities[1].id_
+    assert results[0].label == "CHAPTER 1 - TRUCKS"
 
-# async def test_search_reset_not_configured(ts_client):
-#     ts = TypesenseSearch()
-#     ts.configured = False
-#     with pytest.raises(SearchNotConfigured):
-#         await ts.reset()
+    await engine.delete_concept(sd_en["id"], "pyst-concepts-en")
 
-
-# @pytest.mark.skip(
-#     reason="Can't figure out how to get async fixture into `client.collections[collection]`"
-# )
-# async def test_search_reset(ts_client):
-#     ts = TypesenseSearch()
-#     ts.client.collections = AsyncMock()
-#     ts.client.collections.retrieve.return_value = [c("de")]
-#     await ts.reset()
-#     ts.client.collections.create.assert_called_with(c("de"))
-
-
-# async def test_search_create_concept_not_configured(ts_client):
-#     ts = TypesenseSearch()
-#     ts.configured = False
-#     with pytest.raises(SearchNotConfigured):
-#         await ts.create_concept(None)
-
-
-# async def test_search_update_concept_not_configured(ts_client):
-#     ts = TypesenseSearch()
-#     ts.configured = False
-#     with pytest.raises(SearchNotConfigured):
-#         await ts.update_concept(None)
-
-
-# async def test_search_delete_concept_not_configured(ts_client):
-#     ts = TypesenseSearch()
-#     ts.configured = False
-#     with pytest.raises(SearchNotConfigured):
-#         await ts.delete_concept(None)
+    results = await engine.search("diesel", "pyst-concepts-en", True, False)
+    assert not results

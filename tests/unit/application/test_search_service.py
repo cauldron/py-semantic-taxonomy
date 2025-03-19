@@ -11,7 +11,9 @@ def test_search_service_instantiation(search_service):
 
 async def test_search_service_initialize_search_index(search_service):
     await search_service.initialize()
-    search_service.engine.initialize.assert_called_once_with(list(search_service.languages.values()))
+    search_service.engine.initialize.assert_called_once_with(
+        list(search_service.languages.values())
+    )
 
 
 async def test_search_service_initialize_search_index_error(search_service):
