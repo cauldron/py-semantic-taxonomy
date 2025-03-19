@@ -13,7 +13,7 @@ if __name__ == "__main__":
     app = create_app()
     openapi = app.openapi()
     openapi["info"]["x-logo"] = {
-        "url": "https://github.com/cauldron/py-semantic-taxonomy/blob/main/docs/logo.png"
+        "url": "https://docs.pyst.dev/logo.png"
     }
 
     with open(output_dir / "openapi.json", "w") as f:
