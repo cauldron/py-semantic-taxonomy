@@ -41,7 +41,7 @@ dependencies = [
     "sqlalchemy>=2.0",
     "structlog",
     # Fork of typesense client with async support
-    "typesense@git+https://github.com/Quilt-AI/typesense-python",
+    "pyst_typesense_async",
     "uvicorn",
 ]
 
@@ -83,7 +83,6 @@ dev = [
 ]
 
 [tool.setuptools]
-license-files = ["LICENSE"]
 include-package-data = true
 package-dir = {"" = "src"}
 
