@@ -4,7 +4,7 @@
     "title": "FastAPI",
     "version": "0.1.0",
     "x-logo": {
-      "url": "https://docs.pyst.dev/logo.png"
+      "url": "https://docs.pyst.dev/img/logo.png"
     }
   },
   "paths": {
