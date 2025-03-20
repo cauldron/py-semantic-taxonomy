@@ -1,0 +1,39 @@
+site_name: py-semantic-taxonomy (PyST)
+site_url: https://docs.pyst.dev
+site_dir: docs
+repo_url: https://github.com/cauldron/py-semantic-taxonomy/
+docs_dir: docs-src
+edit_uri: docs-src
+copyright: © 2025 Cauldron Solutions GmbH | Code under MIT License
+theme: # https://www.mkdocs.org/user-guide/choosing-your-theme/
+  name: material
+  #custom_dir: docs/_overrides
+  logo: img/logo.png
+  favicon: img/favicon-96x96.png
+  highlightjs: true
+  navigation_depth: 2
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.expand
+    - navigation.path
+    - navigation.indexes
+    - navigation.top
+    - content.footnote.tooltips
+    - content.code.copy
+  palette:
+    primary: red
+plugins:
+  - search
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - attr_list
+  - toc:
+      permalink: "#"
+nav:
+  - Home: 'index.md'
+  - Data model: 'data-model.md'
+  - Architecture: 'architecture.md'
+  - Development and testing: 'development.md'

@@ -1,0 +1,933 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://docs.pyst.dev/data-model/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../architecture/">
+      
+      
+      <link rel="icon" href="../img/favicon-96x96.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.9">
+    
+    
+      
+        <title>Data model - py-semantic-taxonomy (PyST)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.4af4bdda.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="red" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#data-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="py-semantic-taxonomy (PyST)" class="md-header__button md-logo" aria-label="py-semantic-taxonomy (PyST)" data-md-component="logo">
+      
+  <img src="../img/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            py-semantic-taxonomy (PyST)
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Data model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/cauldron/py-semantic-taxonomy/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="py-semantic-taxonomy (PyST)" class="md-nav__button md-logo" aria-label="py-semantic-taxonomy (PyST)" data-md-component="logo">
+      
+  <img src="../img/logo.png" alt="logo">
+
+    </a>
+    py-semantic-taxonomy (PyST)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/cauldron/py-semantic-taxonomy/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Data model
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Data model
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#concept-and-conceptscheme" class="md-nav__link">
+    <span class="md-ellipsis">
+      Concept and ConceptScheme
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conceptassociation-and-correspondence" class="md-nav__link">
+    <span class="md-ellipsis">
+      ConceptAssociation and Correspondence
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conditional-conceptassociation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conditional ConceptAssociation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hierarchical-and-associative-concept-relationships" class="md-nav__link">
+    <span class="md-ellipsis">
+      Hierarchical and associative Concept relationships
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#general-constraints-and-assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      General constraints and assumptions
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tracking changes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publication-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      Publication status
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conceptscheme" class="md-nav__link">
+    <span class="md-ellipsis">
+      ConceptScheme
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      Concept
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#correspondence" class="md-nav__link">
+    <span class="md-ellipsis">
+      Correspondence
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conceptassociation" class="md-nav__link">
+    <span class="md-ellipsis">
+      ConceptAssociation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Development and testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#concept-and-conceptscheme" class="md-nav__link">
+    <span class="md-ellipsis">
+      Concept and ConceptScheme
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conceptassociation-and-correspondence" class="md-nav__link">
+    <span class="md-ellipsis">
+      ConceptAssociation and Correspondence
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conditional-conceptassociation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conditional ConceptAssociation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hierarchical-and-associative-concept-relationships" class="md-nav__link">
+    <span class="md-ellipsis">
+      Hierarchical and associative Concept relationships
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#general-constraints-and-assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      General constraints and assumptions
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tracking changes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publication-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      Publication status
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conceptscheme" class="md-nav__link">
+    <span class="md-ellipsis">
+      ConceptScheme
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      Concept
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#correspondence" class="md-nav__link">
+    <span class="md-ellipsis">
+      Correspondence
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conceptassociation" class="md-nav__link">
+    <span class="md-ellipsis">
+      ConceptAssociation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="data-model">Data Model<a class="headerlink" href="#data-model" title="Permanent link">#</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">#</a></h2>
+<p>The data model PyST has four fundamental classes: SKOS <a href="https://www.w3.org/TR/skos-primer/#secconcept">Concept</a>, SKOS <a href="https://www.w3.org/TR/skos-primer/#secscheme">ConceptScheme</a>, XKOS <a href="https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences">Correspondence</a>, and XKOS <a href="https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences">ConceptAssociation</a>.</p>
+<h3 id="concept-and-conceptscheme"><code>Concept</code> and <code>ConceptScheme</code><a class="headerlink" href="#concept-and-conceptscheme" title="Permanent link">#</a></h3>
+<p>Each <code>Concept</code> belongs to at one <code>ConceptSchema</code>. "Belonging" is given with the <code>Concept.inScheme</code> property.</p>
+<p><img alt="Concepts in concept scheme graph" src="../img/scheme-graph.png" /></p>
+<p>These <code>Concept</code> relationships in a given <code>ConceptScheme</code> form a graph. Each "root" in the graph is a "top" <code>Concept</code> - i.e. a <code>Concept</code> which has <em>incoming</em> <code>skos:broader</code> relationships, but no <em>outgoing</em> <code>skos:broader</code> relationships. SKOS has a potentially confusing way of encoding <code>skos:broader</code> and <code>skos:narrower</code>, because the <a href="https://en.wikipedia.org/wiki/Semantic_triple">semantic triple</a> <code>A skos:broader B</code> means that object <code>A</code> has a relationship to a broader object <code>B</code>, <strong>not</strong> that <code>A</code> is broader than <code>B</code> (just the opposite!). SKOS uses <code>skos:topConceptOf</code> to mark these "top" <code>Concept</code> objects.</p>
+<p><code>ConceptScheme</code> graphs are <a href="https://en.wikipedia.org/wiki/Directed_acyclic_graph">directed acyclic graphs</a>. They are directed because their edges (<code>A skos:broader B</code>) have direction and are not symmetric; they are acyclic because of their nature in describing taxonomies which always get broader as one goes "up" the hierarchy towards the "top" <code>Concepts</code>.</p>
+<p>A PyST deployment will normally have many <code>ConceptScheme</code> graphs, and these individual graphs can be linked in several ways. <code>Concepts</code> can belong to more than one <code>ConceptScheme</code> - for example, we will be using the <a href="https://taxation-customs.ec.europa.eu/customs-4/calculation-customs-duties/customs-tariff/combined-nomenclature_en">Combined Nomenclature or CN</a> as a base classification for products, but supplementing it with more specific graphs (like the <a href="https://openenergyplatform.org/ontology/">Open Energy Ontology or OEO</a>) when more detail is needed. As <a href="#hierarchical-and-associative-concept-relationships">is discussed below</a>, we can't have hierarchical relationships which cross <code>ConceptScheme</code> graphs, but if introduce a third common <code>ConceptScheme</code> we can create hierarchies which span input <code>ConceptSchemes</code>:</p>
+<p><img alt="Hierarchical relationships spanning concept scheme graphs" src="../img/spanning.png" /></p>
+<h3 id="conceptassociation-and-correspondence"><code>ConceptAssociation</code> and <code>Correspondence</code><a class="headerlink" href="#conceptassociation-and-correspondence" title="Permanent link">#</a></h3>
+<p><code>ConceptAssociation</code> and <code>Correspondence</code> are another fundamental type of relationship we can put in the graph. Just like the SKOS term <code>ConceptScheme</code> serves as an organizational unit for <code>Concepts</code>, the XKOS term <code>Correspondence</code> is an organizational unit for these <code>ConceptAssociations</code>.</p>
+<p><img alt="Correspondence and concept associations" src="../img/correspondence.png" /></p>
+<p>While the XKOS standard does allow M-to-N mappings (i.e. multiple concepts in one concept scheme mapping to multiple concepts in another concept scheme), we require that each concept in the source concept scheme be mapped separately to the appropriate target concepts.</p>
+<p>One frustration of the current XKOS standard is that no additional properties for describing the qualities of <code>ConceptAssociation</code> are offered: "In this version, XKOS does not define any properties or sub-classes for <code>xkos:Correspondence</code> and <code>xkos:ConceptAssociation</code> in order to model these different types of correspondences. This may be added in a future version." (<a href="https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences">Source</a>). This means that if we want to indicate the <em>quality</em> of a mapping between two <code>Concepts</code> in addition to their membership in a <code>ConceptAssociation</code>, we would need to create a separate <a href="#hierarchical-and-associative-concept-relationships">associative</a> relationship. Note that this means that these associative properties will not be linked directly to the <code>ConceptAssociation</code> instance.</p>
+<p>We don't assume reciprocity for <code>ConceptAssociations</code> - i.e. if source <code>A</code> is mapped to target <code>B</code>, it doesn't mean that source <code>B</code> is mapped to target <code>A</code>.</p>
+<h2 id="conditional-conceptassociation">Conditional <code>ConceptAssociation</code><a class="headerlink" href="#conditional-conceptassociation" title="Permanent link">#</a></h2>
+<p>In certain cases a <code>Concept</code> in scheme <code>A</code> can correspond to a <code>Concept</code> in scheme <code>B</code>, but only when it is paired with another <code>Concept</code> from scheme <code>C</code>. For example, <code>A:electricity</code> is equivalent to <code>B:renewable_electricity</code> when it is produced by <code>C:wind_turbine</code>.</p>
+<p>We will slightly abuse the <code>ConceptAssociation</code> class to meet this modelling need by allowing <code>ConceptAssociation</code> to link <em>three</em> <code>ConceptSchemes</code>. In this case, each <code>ConceptAssociation</code> should have <em>two</em> <code>sourceConcepts</code> and <em>one</em> <code>targetConcept</code>.</p>
+<p><img alt="Conditional concept associations" src="../img/conditional.png" /></p>
+<p>Note that conditionality here is implicit - it is not given by a specific property but only because there are two <code>sourceConcepts</code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Our usage here differs from <a href="https://linked-statistics.github.io/xkos/xkos-best-practices.html">XKOS best practices</a>. Please reach out to <code>info@cauldron.ch</code> if you have alternative ideas on how to implement conditional association.</p>
+</div>
+<h2 id="hierarchical-and-associative-concept-relationships">Hierarchical and associative <code>Concept</code> relationships<a class="headerlink" href="#hierarchical-and-associative-concept-relationships" title="Permanent link">#</a></h2>
+<p>A <a href="https://www.w3.org/TR/2005/WD-swbp-skos-core-guide-20051102/#sechierarchy"><em>hierarchical</em> relationship</a> is a <code>skos:broader</code> or <code>skos:narrower</code> (or <code>skos:broaderTransitive</code>/<code>skos:narrowerTransitive</code>) relationship within a <code>ConceptScheme</code> taxonomy. An <a href="https://www.w3.org/TR/2005/WD-swbp-skos-core-guide-20051102/#secassociative"><em>associative</em> relationship</a> crosses from one <code>ConceptScheme</code> to another, or from one "branch" of a <code>ConceptScheme</code> to another, and uses the SKOS properties <code>skos:related</code>, <code>skos:exactMatch</code>, <code>skos:closeMatch</code>, <code>skos:relatedMatch</code>, <code>skos:broadMatch</code>, and <code>skos:narrowMatch</code>.</p>
+<p>You shouldn't specify associative relationships for two concepts which are related through a transitive chain of <code>skos:broader</code> relationships. PyST does some basic checks to enforce this distinction, though because we allow <code>Concepts</code> to belong to more than one <code>ConceptScheme</code> it's difficult to do comprehensive checks.</p>
+<h2 id="general-constraints-and-assumptions">General constraints and assumptions<a class="headerlink" href="#general-constraints-and-assumptions" title="Permanent link">#</a></h2>
+<p>PyST is a opinionated software - it puts additional constraints on the SKOS and XKOS ontologies to ensure consistency and usability.</p>
+<p>PyST uses the <a href="https://en.wikipedia.org/wiki/Closed-world_assumption">open-world assumption</a> in its logic. The open-world assumption is that there are facts which are true but are not stated in our system. So, for example, just because our system doesn't have a <code>skos:broader</code> relationship or a <code>ConceptAssociation</code> between two <code>Concepts</code> doesn't mean that those links don't exist - just that we don't know abot them yet.</p>
+<p>There are a few general constraints which are applied to all classes:</p>
+<ul>
+<li>We assume that <code>Concepts</code> within a <code>ConceptScheme</code> have a strictly <strong>transitive hierarchy</strong> - e.g. if <code>A</code> is broader than <code>B</code>, and <code>B</code> is broader than <code>C</code>, then <code>A</code> is always broader than <code>C</code>. There is therefore no need to specify <code>broaderTransitive</code> or <code>narrowerTransitive</code>, as these are implicit in the taxonomy graph. Similarly, as <code>broader</code> and <code>narrower</code> are reciprocal, API inputs should only specify <code>broader</code> relationships - giving both sides of a <code>broader</code>/<code>narrower</code> relationship will raise a <code>DuplicateRelationship</code> error.</li>
+<li>Incoming data must be JSON-LD in the <a href="https://www.w3.org/TR/json-ld11/#expanded-document-form">JSON-LD 1.1 expanded form</a>. Expanded form means that there is no <code>@context</code> section of the JSON-LD document.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you are using <a href="https://rdflib.readthedocs.io/en/7.1.1/index.html">rdflib</a>, you may run into trouble with nested namespaces. Specifying <code>version=1.1</code> during parsing (i.e. <code>rdflib.Graph().parse(..., version="1.1")</code> or reading and re-serializing with <a href="https://github.com/digitalbazaar/pyld">PyLD</a> should work.</p>
+</div>
+<ul>
+<li>All string literals <strong>must</strong> specify a language and <em>can</em> specify a direction. In other words, <code>"ceci n'est pas une pipe"</code> is not allowed - you must instead give <code>{"@language": "fr", "@value": "ceci n'est pas une pipe"}</code>.</li>
+<li>Only one <code>skos:prefLabel</code> and one <code>skos:definition</code> per language code are allowed.</li>
+<li>If specifying a version using <code>owl:versionInfo</code>, only one value is allowed.</li>
+</ul>
+<h2 id="tracking-changes">Tracking changes<a class="headerlink" href="#tracking-changes" title="Permanent link">#</a></h2>
+<p>We follow the SKOS Primer guidance on <a href="https://www.w3.org/TR/skos-primer/#secdocumentation">documentary notes</a> for the fields <code>skos:changeNote</code>, <code>skos:editorialNote</code>, and <code>skos:historyNote</code>:</p>
+<ul>
+<li><code>skos:changeNote</code> documents fine-grained changes to a concept, for the purposes of administration and maintenance, e.g. "Moved from under 'fruits' to under 'vegetables' by Horace Gray"</li>
+<li><code>skos:editorialNote</code> supplies information that is an aid to administrative housekeeping, such as reminders of editorial work still to be done, e.g. "Check spelling with John Doe"</li>
+<li><code>skos:historyNote</code> describes significant changes to the meaning or the form of a concept, e.g. "estab. 1975; heading was: Cruelty to children [1952-1975]"</li>
+</ul>
+<p>All three of these notes are required to be RDF resources instead of string literals, and in addition to their values (<code>rdf:value</code>), they <strong>must</strong> also include a creator (<code>dcterms:creator</code>) and an issuance timestamp (<code>dcterms:issued</code>). Here is an example:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;http://purl.org/dc/terms/creator&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://example.com/john.doe&quot;</span><span class="p">}],</span>
+<span class="w">    </span><span class="nt">&quot;http://purl.org/dc/terms/issued&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://www.w3.org/2001/XMLSchema#date&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1999-01-23&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="nt">&quot;@language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Moved from under &#39;fruits&#39; to under &#39;vegetables&#39;&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="publication-status">Publication status<a class="headerlink" href="#publication-status" title="Permanent link">#</a></h2>
+<p>SKOS and XKOS don't provide constructs for tracking status. We have <a href="https://github.com/cauldron/py-semantic-taxonomy/issues/16">chosen to use</a> a subset of the <a href="https://en.wikipedia.org/wiki/Bibliographic_Ontology">BIBO</a> ontology, and support three different status options:</p>
+<ul>
+<li>draft (<code>http://purl.org/ontology/bibo/status/draft</code>)</li>
+<li>accepted (<code>http://purl.org/ontology/bibo/status/accepted</code>)</li>
+<li>rejected (<code>http://purl.org/ontology/bibo/status/rejected</code>)</li>
+</ul>
+<p>The predicate verb is <code>http://purl.org/ontology/bibo/status</code>.</p>
+<h2 id="conceptscheme"><code>ConceptScheme</code><a class="headerlink" href="#conceptscheme" title="Permanent link">#</a></h2>
+<p>We impose the following additional constraints on <code>ConceptScheme</code> objects:</p>
+<ul>
+<li>At least one <code>skos:prefLabel</code> and one <code>skos:definition</code> are required</li>
+<li><code>bibo:status</code>, <code>dcterms:created</code>, <code>owl:versionInfo</code> are required</li>
+<li>Exactly one <code>owl:versionInfo</code> value is specified</li>
+<li>At least one definition (<code>skos:definition</code>) is given</li>
+<li>Instead of supplying a (very long) list of <code>skos:hasTopConcept</code> concept references, please instead specify <code>skos:topConceptOf</code> on the <code>Concept</code> instances.</li>
+</ul>
+<p>Here is a minimal <code>ConceptScheme</code> example:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2024/cn2024&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;http://www.w3.org/2004/02/skos/core#ConceptScheme&quot;</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://purl.org/dc/terms/created&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://www.w3.org/2001/XMLSchema#dateTime&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2023-10-11T13:59:56&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://purl.org/dc/terms/creator&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://publications.europa.eu/resource/authority/corporate-body/ESTAT&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://publications.europa.eu/resource/authority/corporate-body/TAXUD&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2002/07/owl#versionInfo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://purl.org/ontology/bibo/status&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://purl.org/ontology/bibo/status/accepted&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2004/02/skos/core#prefLabel&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Combined Nomenclature, 2024 (CN 2024)&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Nomenclatura Combinada, 2024 (NC 2024)&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pt&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2004/02/skos/core#definition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The main classification for the European ITGS (International trade in goods statistics)  is the Combined Nomenclature (CN). This is the primary nomenclature as it is the one used by the EU Member States to collect detailed data on their trading of goods since 1988. Before the introduction of the CN, ITGS were based on a product classification called NIMEXE.  The CN is based on the Harmonised Commodity Description and Coding System (managed by the World Customs Organisation (WCO). The Harmonised System (HS) is an international classification at two, four and six-digit level which classifies goods according to their nature. It was introduced in 1988 and, since then, was revised six times: in 1996, 2002, 2007, 2012, 2017 and 2022. The CN corresponds to the HS plus a further breakdown at eight-digit level defined to meet EU needs. The CN is revised annually and, as a Council Regulation, is binding on the Member States.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2004/02/skos/core#notation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;CN 2024&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="concept"><code>Concept</code><a class="headerlink" href="#concept" title="Permanent link">#</a></h2>
+<p>We impose the following additional constraints on <code>Concept</code> objects:</p>
+<ul>
+<li>At least one <code>skos:prefLabel</code> is required</li>
+<li>A <code>bibo:status</code> is required</li>
+<li>Each <code>Concept</code> must be in at least one known (i.e. in our database already) <code>ConceptScheme</code>. <code>Concepts</code> can belong to more than one <code>ConceptScheme</code>.</li>
+<li><code>Concepts</code> can be in a relationship with itself. Insert your own joke here.</li>
+<li>The use of <code>skos:note</code> is discouraged (but not prohibited) in favor of the specific <code>skos:note</code> subclasses: <code>skos:scopeNote</code>, <code>skos:definition</code>, <code>skos:example</code>, <code>skos:historyNote</code>, <code>skos:editorialNote</code>, and <code>skos:changeNote</code>. Their use should follow the intended use as documented in the <a href="https://www.w3.org/TR/skos-primer/#secdocumentation">SKOS Primer</a>.</li>
+<li><code>skos:notation</code> must be a <a href="https://www.w3.org/TR/2004/REC-rdf-concepts-20040210/#dfn-typed-literal">typed literal</a> - not a string literal - and not include a <code>@language</code> tag. The default datatype should be <code>http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral</code>.</li>
+<li>We <strong>break from</strong> <a href="https://www.w3.org/TR/skos-reference/#L2613">SKOS guidance</a> to prohibit <code>skos:notation</code> having the same value as <code>skos:prefLabel</code>. A notation is <a href="https://www.w3.org/TR/skos-reference/#L2064">'a string of characters such as "T58.5" or "303.4833" used to uniquely identify a concept within the scope of a given concept scheme'</a>; this definition is inconsistent with <a href="https://www.w3.org/TR/skos-reference/#L2831">lexical labels</a> like <code>skos:prefLabel</code>, which are human-readable and in a natural language. In our system, <code>skos:prefLabel</code> is required but <code>skos:notation</code> is optional.</li>
+</ul>
+<p>Here is a minimal <code>Concept</code> example:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2024/010011000090&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;http://www.w3.org/2004/02/skos/core#Concept&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2004/02/skos/core#inScheme&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2024/cn2024&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://purl.org/ontology/bibo/status&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://purl.org/ontology/bibo/status/accepted&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2004/02/skos/core#prefLabel&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SECTION I - LIVE ANIMALS; ANIMAL PRODUCTS&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SEC\u00c7\u00c3O I - ANIMAIS VIVOS E PRODUTOS DO REINO ANIMAL&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pt&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2004/02/skos/core#notation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;I&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2004/02/skos/core#definition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;LIVE ANIMALS; ANIMAL PRODUCTS&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2004/02/skos/core#topConceptOf&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2024/cn2024&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="correspondence">Correspondence<a class="headerlink" href="#correspondence" title="Permanent link">#</a></h2>
+<p>The <a href="https://rdf-vocabulary.ddialliance.org/xkos.html">XKOS</a> ontology provides the <a href="https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences">Correspondence</a> class definition, which we use follow the <a href="http://linked-statistics.github.io/xkos/xkos-best-practices.html">XKOS best practice guide</a>. A <code>Correspondence</code> instance is very similar to a <code>ConceptScheme</code> - it provides metadata for a collection of child nodes.</p>
+<p>In addition to our <a href="#general-constraints-and-assumptions">generic addition restrictions</a>, <code>Correspondence</code> must have:</p>
+<ul>
+<li>Exactly one <code>http://purl.org/dc/terms/issued</code> value.</li>
+</ul>
+<p>Here is an example of a valid <code>Correspondence</code> in JSON-LD:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2024/CN2024_CN2023&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;http://rdf-vocabulary.ddialliance.org/xkos#Correspondence&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://rdf-vocabulary.ddialliance.org/xkos#compares&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2024&quot;</span><span class="p">}</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2023&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2004/02/skos/core#definition&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;This table is indicative and has no legal value.&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2004/02/skos/core#prefLabel&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Transposition between CN 2024 and CN 2023&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://purl.org/dc/terms/issued&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://www.w3.org/2001/XMLSchema#dateTime&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-07-02T08:41:55&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="conceptassociation"><code>ConceptAssociation</code><a class="headerlink" href="#conceptassociation" title="Permanent link">#</a></h2>
+<p>We don't impose any additional restrictions outside of the XKOS specification on <code>ConceptAssociation</code>.</p>
+<p>XKOS doesn't provide any additional properties <code>ConceptAssociations</code>, but we can use <code>qudt:conversionMultiplier</code> to give 1-N partitioning or allocation constants. Though this isn't the intention of this predicate in <a href="https://qudt.org/">QUDT</a>, it domain and range fit, and allocation is similar enough to unit conversion. Please feel free to suggest an alternative if you find something which fits better!</p>
+<p>Here is an example of a valid 1-to-N <code>ConceptAssociation</code> in JSON-LD:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2024/CN2024_CN2023_010239100080&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;http://rdf-vocabulary.ddialliance.org/xkos#ConceptAssociation&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://rdf-vocabulary.ddialliance.org/xkos#sourceConcept&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2024/010239000080&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://rdf-vocabulary.ddialliance.org/xkos#targetConcept&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2024/010239900080&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;http://qudt.org/3.0.0/schema/qudt/conversionMultiplier&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.75</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2024/010239100080&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;http://qudt.org/3.0.0/schema/qudt/conversionMultiplier&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.25</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>And here is a <em>conditional</em> <code>ConceptAssociation</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://example.com/conditional&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;http://rdf-vocabulary.ddialliance.org/xkos#ConceptAssociation&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://rdf-vocabulary.ddialliance.org/xkos#sourceConcept&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://example.com/A/electricity&quot;</span><span class="p">},</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://example.com/C/wind_turbine&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://rdf-vocabulary.ddialliance.org/xkos#targetConcept&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://example.com/B/renewable_electricity&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      © 2025 Cauldron Solutions GmbH | Code under MIT License
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.expand", "navigation.path", "navigation.indexes", "navigation.top", "content.footnote.tooltips", "content.code.copy"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c8b220af.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -70,6 +70,8 @@ dev = [
     "pre-commit",
     "aiosqlite",
     "httpx",
+    "mkdocs",
+    "mkdocs-material",
     "pylint",
     "pytest",
     "pytest-antilru",
