@@ -36,4 +36,5 @@ nav:
   - Home: 'index.md'
   - Data model: 'data-model.md'
   - Architecture: 'architecture.md'
+  - API docs: 'https://docs.pyst.dev/api/'
   - Development and testing: 'development.md'
