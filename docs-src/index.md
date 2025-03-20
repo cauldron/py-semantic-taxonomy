@@ -4,6 +4,7 @@ PyST is opinionated server software for creating, maintaining, and publishing [S
 
 * [API docs](https://docs.pyst.dev/api/), [OpenAPI 3.1 JSON](https://docs.pyst.dev/api/openapi.json), [OpenAPI 3.1 YAML](https://docs.pyst.dev/api/openapi.yaml)
 * [GitHub repo](https://github.com/cauldron/py-semantic-taxonomy/)
+* [Example notebook](https://github.com/cauldron/py-semantic-taxonomy/blob/main/examples/PyST%20basic%20demo.ipynb)
 
 PyST was built and is maintained by [Cauldron Solutions](https://www.cauldron.ch/).
 
