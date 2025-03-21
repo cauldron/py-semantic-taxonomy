@@ -2,7 +2,7 @@
 
 ## Overview
 
-The software architecture of PyST is divided into three layers: router, application, and persistence. Each has its own [data transfer objects (DTO](https://en.wikipedia.org/wiki/Data_transfer_object), protocols, and unit tests.
+The software architecture of PyST is divided into three layers: router, application, and persistence. Each has its own [data transfer objects (DTO)](https://en.wikipedia.org/wiki/Data_transfer_object), protocols, and unit tests.
 
 ![Architecture diagram with three layers and DTOs](img/architecture.png){ width=300 }
 
