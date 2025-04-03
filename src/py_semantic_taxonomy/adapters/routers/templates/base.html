@@ -116,11 +116,16 @@
                                 type="text"
                                 name="query"
                                 placeholder="Search concepts..."
-                                class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                class="w-full px-4 py-2 pl-10 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                                 autocomplete="off"
                             />
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-500 bg-gray-100 border border-gray-200 rounded-md">
+                                    <span class="hidden md:inline" id="shortcut-key">Ctrl</span><span class="hidden md:inline">+</span>K
+                                </kbd>
                             </div>
                             <input type="hidden" name="semantic" value="true" />
                         </div>
@@ -175,11 +180,28 @@
             });
         });
 
+        // Detect OS and update shortcut key
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        if (isMac) {
+            document.getElementById('shortcut-key').textContent = '⌘';
+        } else {
+            document.getElementById('shortcut-key').textContent = 'Ctrl';
+        }
+
         // Search functionality
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.querySelector('input[name="query"]');
             const suggestionsDiv = document.getElementById('suggestions');
             let debounceTimer;
+
+            // Handle keyboard shortcut
+            document.addEventListener('keydown', function(e) {
+                // Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+            });
 
             // Debounce function
             function debounce(func, delay) {
