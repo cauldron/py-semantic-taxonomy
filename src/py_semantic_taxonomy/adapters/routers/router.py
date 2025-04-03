@@ -163,15 +163,19 @@ async def concept_delete(
 
 @router.get(
     Paths.concept_scheme,
-    summary="Get a `ConceptScheme` object",
-    response_model=response.ConceptScheme,
+    summary="Get a `ConceptScheme` object or list all concept schemes",
+    response_model=response.ConceptScheme | list[response.ConceptScheme],
     tags=["ConceptScheme"],
     responses={404: {"description": "Resource not found"}},
 )
 async def concept_scheme_get(
-    iri: str,
+    iri: str | None = None,
     service=Depends(get_graph_service),
-) -> response.ConceptScheme:
+) -> response.ConceptScheme | list[response.ConceptScheme]:
+    if iri is None:
+        concept_schemes = await service.concept_scheme_list()
+        return [response.ConceptScheme(**cs.to_json_ld()) for cs in concept_schemes]
+
     try:
         obj = await service.concept_scheme_get(iri=iri)
         return response.ConceptScheme(**obj.to_json_ld())
