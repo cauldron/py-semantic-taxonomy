@@ -150,6 +150,16 @@ class PostgresKOSGraphDatabase:
             await conn.commit()
         return result.rowcount
 
+    async def concepts_get_for_scheme(self, concept_scheme_id: str) -> list[Concept]:
+        """Get all concepts that belong to a given concept scheme."""
+        async with self.engine.connect() as conn:
+            stmt = select(concept_table).where(
+                concept_table.c.schemes.op("@>")([{"@id": concept_scheme_id}])
+            )
+            result = (await conn.execute(stmt)).fetchall()
+            await conn.rollback()
+        return [Concept(**row._mapping) for row in result]
+
     async def known_concept_schemes_for_concept_hierarchical_relationships(
         self, iri: str
     ) -> list[str]:
