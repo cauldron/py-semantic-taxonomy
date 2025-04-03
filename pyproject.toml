@@ -30,7 +30,7 @@ dependencies = [
     "asyncpg",
     "fastapi",
     "fastapi_pagination",
-    "greenlet",
+    "jinja2",
     "langcodes",
     "orjson",
     "pydantic>=2",
