@@ -42,6 +42,11 @@ class GraphService:
     async def concept_get(self, iri: str) -> Concept:
         return await self.graph.concept_get(iri=iri)
 
+    async def concept_list(self) -> list[Concept]:
+        """Get a list of all concepts."""
+        iris = await self.graph.concept_get_all_iris()
+        return [await self.concept_get(iri) for iri in iris]
+
     async def _concept_refers_to_concept_scheme_in_database(self, concept: Concept) -> None:
         concept_schemes = set(await self.concept_scheme_get_all_iris())
         given_cs = {cs["@id"] for cs in concept.schemes}

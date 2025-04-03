@@ -63,15 +63,19 @@ async def verify_auth_token(
 
 @router.get(
     Paths.concepts,
-    summary="Get a `Concept` object",
-    response_model=response.Concept,
+    summary="Get a `Concept` object or list all concepts",
+    response_model=response.Concept | list[response.Concept],
     tags=["Concept"],
     responses={404: {"description": "Resource not found"}},
 )
 async def concept_get(
-    iri: str,
+    iri: str | None = None,
     service=Depends(get_graph_service),
-) -> response.Concept:
+) -> response.Concept | list[response.Concept]:
+    if iri is None:
+        concepts = await service.concept_list()
+        return [response.Concept(**c.to_json_ld()) for c in concepts]
+
     try:
         obj = await service.concept_get(iri=iri)
         return response.Concept(**obj.to_json_ld())
