@@ -12,7 +12,7 @@ from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
 
-router = APIRouter()
+router = APIRouter(prefix="/v1")
 
 
 class Paths(StrEnum):
