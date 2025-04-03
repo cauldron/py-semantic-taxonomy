@@ -79,3 +79,62 @@ async def web_concept_scheme_view(
         raise HTTPException(
             status_code=500, detail="Database error while fetching concept scheme"
         )
+
+
+@router.get(
+    WebPaths.concept_view,
+    response_class=HTMLResponse,
+)
+async def web_concept_view(
+    request: Request,
+    iri: str = Path(..., description="The IRI of the concept to view"),
+    service=Depends(get_graph_service),
+) -> HTMLResponse:
+    """View a specific concept."""
+    try:
+        decoded_iri = unquote(iri)
+        concept = await service.concept_get(iri=decoded_iri)
+        relationships = await service.relationships_get(
+            iri=decoded_iri, source=True, target=True
+        )
+
+        relationships_data = []
+        for rel in relationships:
+            relationships_data.append(
+                {"source": rel.source, "target": rel.target, "predicate": rel.predicate}
+            )
+
+        related_concepts = {}
+        for rel in relationships:
+            related_iri = rel.target if rel.source == decoded_iri else rel.source
+            if related_iri not in related_concepts:
+                try:
+                    related_concept = await service.concept_get(iri=related_iri)
+                    related_concepts[related_iri] = related_concept.to_json_ld()
+                except de.ConceptNotFoundError:
+                    logger.warning(
+                        "Related concept not found",
+                        concept_iri=iri,
+                        related_iri=related_iri,
+                    )
+
+        return templates.TemplateResponse(
+            "concept_view.html",
+            {
+                "request": request,
+                "concept": concept.to_json_ld(),
+                "relationships": relationships_data,
+                "related_concepts": related_concepts,
+            },
+        )
+    except de.ConceptNotFoundError:
+        raise HTTPException(
+            status_code=404, detail=f"Concept with IRI `{iri}` not found"
+        )
+    except de.ConceptSchemesNotInDatabase as e:
+        logger.error(
+            "Database error while fetching concept", iri=decoded_iri, error=str(e)
+        )
+        raise HTTPException(
+            status_code=500, detail="Database error while fetching concept"
+        )
