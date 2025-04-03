@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from py_semantic_taxonomy.dependencies import get_graph_service
+from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
 
 logger = structlog.get_logger("py-semantic-taxonomy")
@@ -22,6 +22,7 @@ class WebPaths(StrEnum):
     concept_schemes = "/concept_schemes/"
     concept_scheme_view = "/concept_scheme/{iri:path}"
     concept_view = "/concept/{iri:path}"
+    search = "/search/"
 
 
 @router.get(
@@ -137,4 +138,40 @@ async def web_concept_view(
         )
         raise HTTPException(
             status_code=500, detail="Database error while fetching concept"
+        )
+
+
+@router.get(
+    WebPaths.search,
+    response_class=HTMLResponse,
+)
+async def web_search(
+    request: Request,
+    query: str = "",
+    language: str = "en",
+    semantic: bool = True,
+    search_service=Depends(get_search_service),
+) -> HTMLResponse:
+    """Search for concepts."""
+    try:
+        results = []
+        if query:
+            results = await search_service.search(
+                query=query, language=language, semantic=semantic
+            )
+        return templates.TemplateResponse(
+            "search.html",
+            {
+                "request": request,
+                "query": query,
+                "language": language,
+                "semantic": semantic,
+                "results": results,
+            },
+        )
+    except de.SearchNotConfigured:
+        raise HTTPException(status_code=503, detail="Search engine not available")
+    except de.UnknownLanguage:
+        raise HTTPException(
+            status_code=422, detail="Search engine not configured for given language"
         )

@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Search - PyST{% endblock %}
+
+{% block page_header %}
+<h1>Search Concepts</h1>
+<p>Search through all concepts using semantic or keyword-based search</p>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Search Form -->
+    <div class="card p-6">
+        <form id="searchForm" class="space-y-4">
+            <div class="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+                <div class="flex-grow">
+                    <div class="relative">
+                        <div class="flex items-center">
+                            <input
+                                type="text"
+                                name="query"
+                                value="{{ query }}"
+                                placeholder="Search concepts..."
+                                class="w-full px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                autocomplete="off"
+                            />
+                            <div class="flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-lg bg-gray-50">
+                                <label class="flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        name="semantic"
+                                        {% if semantic %}checked{% endif %}
+                                        class="sr-only peer"
+                                    />
+                                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ef5552] peer-checked:hover:bg-[#dc2626]"></div>
+                                    <span class="ml-2 text-sm font-medium text-gray-700">Semantic</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="suggestions" class="absolute w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg hidden">
+                            <!-- Suggestions will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <select
+                        name="language"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    >
+                        <option value="en" {% if language == "en" %}selected{% endif %}>English</option>
+                        <option value="de" {% if language == "de" %}selected{% endif %}>German</option>
+                        <option value="es" {% if language == "es" %}selected{% endif %}>Spanish</option>
+                        <option value="da" {% if language == "da" %}selected{% endif %}>Danish</option>
+                        <option value="fr" {% if language == "fr" %}selected{% endif %}>French</option>
+                        <option value="pt" {% if language == "pt" %}selected{% endif %}>Portuguese</option>
+                        <option value="it" {% if language == "it" %}selected{% endif %}>Italian</option>
+                    </select>
+                    <button
+                        type="submit"
+                        class="btn-primary"
+                    >
+                        <i class="fas fa-search mr-2"></i>Search
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results -->
+    {% if query %}
+    <div class="card p-6">
+        <h2 class="text-xl font-semibold mb-4">Search Results for "{{ query }}"</h2>
+        {% if results %}
+        <div class="space-y-2">
+            {% for result in results %}
+            <div class="border border-gray-200 rounded-lg p-3 hover:border-primary transition-colors group">
+                <div class="grid grid-cols-12 gap-4">
+                    <div class="col-span-3">
+                        <a href="/web/concept/{{ result.id_ }}" class="block hover:no-underline">
+                            <h3 class="text-lg font-medium text-primary">
+                                {{ result.label }}
+                            </h3>
+                            <div class="mt-1 text-sm text-gray-500">
+                                <i class="fas fa-link mr-1"></i>
+                                <span class="font-mono text-xs break-all">{{ result.id_ }}</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-span-8">
+                        {% if result.highlight %}
+                            {% set highlight_text = result.highlight | striptags %}
+                            {% if highlight_text != result.label %}
+                            <p class="text-gray-600">{{ result.highlight | safe }}</p>
+                            {% endif %}
+                        {% endif %}
+                        <div id="concept-info-{{ loop.index }}" class="text-sm text-gray-500 mt-1">
+                            <i class="fas fa-spinner fa-spin mr-2"></i>Loading concept details...
+                        </div>
+                    </div>
+                    <div class="col-span-1 flex items-center justify-end">
+                        <a href="/web/concept/{{ result.id_ }}" class="text-gray-300 group-hover:text-primary transition-colors">
+                            <i class="fas fa-chevron-right text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+            <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500">No results found for your search query.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="query"]');
+    const suggestionsDiv = document.getElementById('suggestions');
+    let debounceTimer;
+
+    // Debounce function
+    function debounce(func, delay) {
+        return function() {
+            const context = this;
+            const args = arguments;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => func.apply(context, args), delay);
+        };
+    }
+
+    // Fetch suggestions
+    async function fetchSuggestions(query) {
+        if (!query) {
+            suggestionsDiv.classList.add('hidden');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/concept/suggest/?query=${encodeURIComponent(query)}&language=${document.querySelector('select[name="language"]').value}`);
+            const suggestions = await response.json();
+
+            if (suggestions.length > 0) {
+                const limitedSuggestions = suggestions.slice(0, 5);
+                const hasMore = suggestions.length > 5;
+
+                suggestionsDiv.innerHTML = `
+                    ${limitedSuggestions.map(suggestion => `
+                        <div class="p-2 hover:bg-gray-100 cursor-pointer" onclick="selectSuggestion('${suggestion.label}')">
+                            ${suggestion.label}
+                        </div>
+                    `).join('')}
+                    ${hasMore ? `
+                        <div class="p-2 text-sm text-gray-500 text-center border-t border-gray-200">
+                            +${suggestions.length - 5} more results
+                        </div>
+                    ` : ''}
+                `;
+                suggestionsDiv.classList.remove('hidden');
+            } else {
+                suggestionsDiv.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error fetching suggestions:', error);
+            suggestionsDiv.classList.add('hidden');
+        }
+    }
+
+    // Fetch concept details
+    async function fetchConceptDetails(iri, elementId) {
+        try {
+            const response = await fetch(`/concept/?iri=${encodeURIComponent(iri)}`);
+            const concept = await response.json();
+            console.log('Concept API Response:', concept); // Debug log
+
+            const infoDiv = document.getElementById(elementId);
+            if (concept) {
+                const schemes = concept['http://www.w3.org/2004/02/skos/core#inScheme'] || [];
+                const definition = concept['http://www.w3.org/2004/02/skos/core#definition']?.find(d => d['@language'] === document.querySelector('select[name="language"]').value)?.['@value'];
+
+                console.log('Schemes:', schemes); // Debug log
+                console.log('Definition:', definition); // Debug log
+
+                infoDiv.innerHTML = `
+                    <div class="space-y-1">
+                        ${schemes.length > 0 ? `
+                            <div class="flex items-center">
+                                <i class="fas fa-layer-group mr-2"></i>
+                                <div class="flex flex-wrap gap-1">
+                                    ${schemes.map(scheme => `
+                                        <a href="/web/concept_scheme/${scheme['@id']}" class="text-primary hover:text-primary-hover text-xs">
+                                            ${scheme['@id'].split('/').pop()}
+                                        </a>
+                                    `).join(', ')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${definition ? `
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle mr-2 mt-0.5"></i>
+                                <span class="text-xs">${definition}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                infoDiv.innerHTML = '<span class="text-red-500 text-xs">Failed to load concept details</span>';
+            }
+        } catch (error) {
+            console.error('Error fetching concept details:', error);
+            document.getElementById(elementId).innerHTML = '<span class="text-red-500 text-xs">Failed to load concept details</span>';
+        }
+    }
+
+    // Handle input with debounce
+    searchInput.addEventListener('input', debounce(function(e) {
+        fetchSuggestions(e.target.value);
+    }, 300));
+
+    // Handle suggestion selection
+    window.selectSuggestion = function(suggestion) {
+        searchInput.value = suggestion;
+        suggestionsDiv.classList.add('hidden');
+        document.getElementById('searchForm').submit();
+    };
+
+    // Close suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+            suggestionsDiv.classList.add('hidden');
+        }
+    });
+
+    // Fetch concept details for all results
+    document.querySelectorAll('[id^="concept-info-"]').forEach(element => {
+        const conceptLink = element.closest('.border').querySelector('a');
+        const iri = conceptLink.href.split('/web/concept/')[1];
+        fetchConceptDetails(iri, element.id);
+    });
+});
+</script>
+{% endblock %}
