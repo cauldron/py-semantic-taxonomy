@@ -17,11 +17,16 @@ router = APIRouter(prefix="/v1")
 
 class Paths(StrEnum):
     concepts = "/concepts"
+    concept = "/concepts/{iri}"
     concept_schemes = "/concept_schemes"
-    catchall = "/{_:path}"
+    concept_scheme = "/concept_schemes/{iri}"
+    catchall = "{_:path}"
     relationships = "/relationships"
+    relationship = "/relationships/{iri}"
     correspondences = "/correspondences"
+    correspondence = "/correspondences/{iri}"
     associations = "/associations"
+    association = "/associations/{iri}"
     made_of = "/made_of"
     search = "/concepts/search"
     suggest = "/concepts/suggest"
@@ -63,19 +68,28 @@ async def verify_auth_token(
 
 @router.get(
     Paths.concepts,
-    summary="Get a `Concept` object or list all concepts",
-    response_model=response.Concept | list[response.Concept],
+    summary="List all concepts",
+    response_model=list[response.Concept],
+    tags=["Concept"],
+)
+async def concept_list(
+    service=Depends(get_graph_service),
+) -> list[response.Concept]:
+    concepts = await service.concept_list()
+    return [response.Concept(**c.to_json_ld()) for c in concepts]
+
+
+@router.get(
+    Paths.concept,
+    summary="Get a `Concept` object",
+    response_model=response.Concept,
     tags=["Concept"],
     responses={404: {"description": "Resource not found"}},
 )
 async def concept_get(
-    iri: str | None = None,
+    iri: str,
     service=Depends(get_graph_service),
-) -> response.Concept | list[response.Concept]:
-    if iri is None:
-        concepts = await service.concept_list()
-        return [response.Concept(**c.to_json_ld()) for c in concepts]
-
+) -> response.Concept:
     try:
         obj = await service.concept_get(iri=iri)
         return response.Concept(**obj.to_json_ld())
@@ -167,19 +181,28 @@ async def concept_delete(
 
 @router.get(
     Paths.concept_schemes,
-    summary="Get a `ConceptScheme` object or list all concept schemes",
-    response_model=response.ConceptScheme | list[response.ConceptScheme],
+    summary="List all concept schemes",
+    response_model=list[response.ConceptScheme],
+    tags=["ConceptScheme"],
+)
+async def concept_scheme_list(
+    service=Depends(get_graph_service),
+) -> list[response.ConceptScheme]:
+    concept_schemes = await service.concept_scheme_list()
+    return [response.ConceptScheme(**cs.to_json_ld()) for cs in concept_schemes]
+
+
+@router.get(
+    Paths.concept_scheme,
+    summary="Get a `ConceptScheme` object",
+    response_model=response.ConceptScheme,
     tags=["ConceptScheme"],
     responses={404: {"description": "Resource not found"}},
 )
 async def concept_scheme_get(
-    iri: str | None = None,
+    iri: str,
     service=Depends(get_graph_service),
-) -> response.ConceptScheme | list[response.ConceptScheme]:
-    if iri is None:
-        concept_schemes = await service.concept_scheme_list()
-        return [response.ConceptScheme(**cs.to_json_ld()) for cs in concept_schemes]
-
+) -> response.ConceptScheme:
     try:
         obj = await service.concept_scheme_get(iri=iri)
         return response.ConceptScheme(**obj.to_json_ld())
@@ -254,7 +277,21 @@ async def concept_scheme_delete(
 
 @router.get(
     Paths.relationships,
-    summary="Get a list of `Concept` relationships",
+    summary="List all relationships",
+    response_model=list[response.Relationship],
+    response_model_exclude_unset=True,
+    tags=["Concept"],
+)
+async def relationships_list(
+    service=Depends(get_graph_service),
+) -> list[response.Relationship]:
+    lst = await service.relationships_get(source=True, target=True)
+    return [response.Relationship(**obj.to_json_ld()) for obj in lst]
+
+
+@router.get(
+    Paths.relationship,
+    summary="Get relationships for a concept",
     response_model=list[response.Relationship],
     response_model_exclude_unset=True,
     tags=["Concept"],
@@ -323,6 +360,19 @@ async def relationship_delete(
 
 @router.get(
     Paths.correspondences,
+    summary="List all correspondences",
+    response_model=list[response.Correspondence],
+    tags=["Correspondence"],
+)
+async def correspondence_list(
+    service=Depends(get_graph_service),
+) -> list[response.Correspondence]:
+    correspondences = await service.correspondence_list()
+    return [response.Correspondence(**c.to_json_ld()) for c in correspondences]
+
+
+@router.get(
+    Paths.correspondence,
     summary="Get a `Correspondence` object",
     response_model=response.Correspondence,
     tags=["Correspondence"],
@@ -408,6 +458,19 @@ async def correspondence_delete(
 
 @router.get(
     Paths.associations,
+    summary="List all associations",
+    response_model=list[response.Association],
+    tags=["ConceptAssociation"],
+)
+async def association_list(
+    service=Depends(get_graph_service),
+) -> list[response.Association]:
+    associations = await service.association_list()
+    return [response.Association(**a.to_json_ld()) for a in associations]
+
+
+@router.get(
+    Paths.association,
     summary="Get an `Association` object",
     response_model=response.Association,
     tags=["ConceptAssociation"],
