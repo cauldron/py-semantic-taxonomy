@@ -1,6 +1,5 @@
 from enum import StrEnum
 from typing import Annotated
-from urllib.parse import quote_plus, urljoin
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -18,7 +17,6 @@ router = APIRouter()
 class Paths(StrEnum):
     concept = "/concept/"
     concept_scheme = "/concept_scheme/"
-    catchall = "/{_:path}"
     relationship = "/relationships/"
     correspondence = "/correspondence/"
     association = "/association/"
@@ -546,30 +544,3 @@ async def concept_suggest(
         raise HTTPException(
             status_code=422, detail="Search engine not configured for given language"
         )
-
-
-# TBD: Add in static route before generic catch-all function
-
-
-@router.get(
-    Paths.catchall,
-    summary="Get a KOS graph object which shares the same base URL as PyST",
-    responses={404: {"description": "Resource not found"}},
-    include_in_schema=False,
-)
-async def generic_get_from_iri(
-    request: Request, _: str, service=Depends(get_graph_service)
-) -> RedirectResponse:
-    try:
-        iri = urljoin(str(request.base_url), request.url.path)
-        object_type = await service.get_object_type(iri=iri)
-        mapping = {
-            de.Concept: "concept_get",
-            de.ConceptScheme: "concept_scheme_get",
-            de.Correspondence: "correspondence_get",
-        }
-        return RedirectResponse(
-            url="{}?iri={}".format(request.url_for(mapping[object_type]), quote_plus(iri))
-        )
-    except de.NotFoundError:
-        raise HTTPException(status_code=404, detail=f"KOS graph object with IRI `{iri}` not found")
