@@ -68,8 +68,13 @@ def create_concept_scheme(index: int) -> ConceptSchemeInput:
 
 def create_concept(scheme_id: str, index: int) -> ConceptCreate:
     """Create a concept with the given index for a specific scheme."""
+    concept_id = f"{scheme_id}/concept{index}"
+    broader = None
+    if index > 1:
+        broader = [Node(id=f"{scheme_id}/concept{index-1}")]
+
     return ConceptCreate(
-        id=f"{scheme_id}/concept{index}",
+        id=concept_id,
         type=["http://www.w3.org/2004/02/skos/core#Concept"],
         http___www_w3_org_2004_02_skos_corepref_label=create_multilingual_string(
             "Example Concept", index
@@ -92,7 +97,8 @@ def create_concept(scheme_id: str, index: int) -> ConceptCreate:
         http___www_w3_org_2004_02_skos_corenotation=[{
             "@value": f"CON-{index:03d}",
             "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"
-        }]
+        }],
+        http___www_w3_org_2004_02_skos_corebroader=broader
     )
 
 async def create_schemes():
