@@ -6,11 +6,11 @@
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
         <h1>Search Results</h1>
-        <p class="text-gray-600">Found {{ results|length }} results for "{{ query }}"</p>
+        <p style="color: var(--text-secondary)">Found {{ results|length }} results for "{{ query }}"</p>
     </div>
-    <div class="flex items-center space-x-2 text-sm text-gray-500">
+    <div class="flex items-center space-x-2 text-sm" style="color: var(--text-secondary)">
         <i class="fas fa-info-circle"></i>
-        <span>Press <kbd class="px-1.5 py-0.5 text-xs font-semibold text-gray-500 bg-gray-100 border border-gray-200 rounded">Esc</kbd> to clear search</span>
+        <span>Press <kbd class="px-1.5 py-0.5 text-xs font-semibold border rounded" style="color: var(--text-secondary); background-color: var(--nav-bg); border-color: var(--border-color)">Esc</kbd> to clear search</span>
     </div>
 </div>
 {% endblock %}
@@ -22,14 +22,14 @@
         {% if results %}
         <div class="space-y-4">
             {% for result in results %}
-            <div class="border border-gray-200 rounded-lg p-3 sm:p-4 hover:border-primary hover:shadow-md transition-all duration-200 group">
+            <div class="border rounded-lg p-3 sm:p-4 hover:border-primary hover:shadow-md transition-all duration-200 group" style="border-color: var(--border-color); background-color: var(--header-bg)">
                 <div class="flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-4">
                     <div class="sm:col-span-3">
                         <a href="/web/concept/{{ result.id_ }}" class="block hover:no-underline">
                             <h3 class="text-lg font-medium text-primary group-hover:text-primary-hover transition-colors duration-200">
                                 {{ result.label }}
                             </h3>
-                            <div class="mt-1 text-sm text-gray-500 group-hover:text-gray-600 transition-colors duration-200">
+                            <div class="mt-1 text-sm group-hover:text-primary transition-colors duration-200" style="color: var(--text-secondary)">
                                 <i class="fas fa-link mr-1"></i>
                                 <span class="font-mono text-xs break-all">{{ result.id_ }}</span>
                             </div>
@@ -40,16 +40,16 @@
                             {% set highlight_text = result.highlight | striptags %}
                             {% if highlight_text != result.label %}
                             <div class="prose prose-sm max-w-none">
-                                <p class="text-gray-600 group-hover:text-gray-700 transition-colors duration-200">{{ result.highlight | safe }}</p>
+                                <p class="group-hover:text-primary transition-colors duration-200" style="color: var(--text-color)">{{ result.highlight | safe }}</p>
                             </div>
                             {% endif %}
                         {% endif %}
-                        <div id="concept-info-{{ loop.index }}" class="text-sm text-gray-500 mt-2 group-hover:text-gray-600 transition-colors duration-200">
+                        <div id="concept-info-{{ loop.index }}" class="text-sm mt-2 group-hover:text-primary transition-colors duration-200" style="color: var(--text-secondary)">
                             <i class="fas fa-spinner fa-spin mr-2"></i>Loading concept details...
                         </div>
                     </div>
                     <div class="sm:col-span-1 flex items-center justify-end">
-                        <a href="/web/concept/{{ result.id_ }}" class="text-gray-300 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200">
+                        <a href="/web/concept/{{ result.id_ }}" class="group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" style="color: var(--text-tertiary)">
                             <i class="fas fa-chevron-right text-xl"></i>
                         </a>
                     </div>
@@ -59,11 +59,11 @@
         </div>
         {% else %}
         <div class="text-center py-8 sm:py-12">
-            <div class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-100 mb-4">
-                <i class="fas fa-search text-xl sm:text-2xl text-gray-400"></i>
+            <div class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4" style="background-color: var(--nav-bg)">
+                <i class="fas fa-search text-xl sm:text-2xl" style="color: var(--text-tertiary)"></i>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No results found</h3>
-            <p class="text-gray-500 max-w-md mx-auto px-4 sm:px-0">
+            <h3 class="text-lg font-medium mb-2" style="color: var(--text-color)">No results found</h3>
+            <p class="max-w-md mx-auto px-4 sm:px-0" style="color: var(--text-secondary)">
                 We couldn't find any concepts matching "{{ query }}". Try adjusting your search terms or try a different query.
             </p>
         </div>
@@ -71,11 +71,11 @@
     </div>
     {% else %}
     <div class="text-center py-8 sm:py-12">
-        <div class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-100 mb-4">
-            <i class="fas fa-search text-xl sm:text-2xl text-gray-400"></i>
+        <div class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full mb-4" style="background-color: var(--nav-bg)">
+            <i class="fas fa-search text-xl sm:text-2xl" style="color: var(--text-tertiary)"></i>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">Start searching</h3>
-        <p class="text-gray-500 max-w-md mx-auto px-4 sm:px-0">
+        <h3 class="text-lg font-medium mb-2" style="color: var(--text-color)">Start searching</h3>
+        <p class="max-w-md mx-auto px-4 sm:px-0" style="color: var(--text-secondary)">
             Enter a search term above to find concepts in the taxonomy. You can use semantic search to find related concepts.
         </p>
     </div>
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="space-y-2">
                         ${schemes.length > 0 ? `
                             <div class="flex items-center">
-                                <i class="fas fa-layer-group mr-2 text-gray-400"></i>
+                                <i class="fas fa-layer-group mr-2" style="color: var(--text-tertiary)"></i>
                                 <div class="flex flex-wrap gap-1">
                                     ${schemes.map(scheme => `
                                         <a href="/web/concept_scheme/${scheme['@id']}" class="text-primary hover:text-primary-hover text-xs">
@@ -129,8 +129,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         ` : ''}
                         ${definition ? `
                             <div class="flex items-start">
-                                <i class="fas fa-info-circle mr-2 mt-0.5 text-gray-400"></i>
-                                <span class="text-xs">${definition}</span>
+                                <i class="fas fa-info-circle mr-2 mt-0.5" style="color: var(--text-tertiary)"></i>
+                                <span class="text-xs" style="color: var(--text-secondary)">${definition}</span>
                             </div>
                         ` : ''}
                     </div>

@@ -11,14 +11,29 @@
             --primary-color: #ef5552;
             --primary-hover: #dc2626;
             --text-color: #1f2937;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
             --bg-color: #ffffff;
             --header-bg: #ffffff;
             --nav-bg: #f8fafc;
+            --border-color: #e5e7eb;
+        }
+        [data-theme="dark"] {
+            --primary-color: #ef5552;
+            --primary-hover: #dc2626;
+            --text-color: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-tertiary: #6b7280;
+            --bg-color: #111827;
+            --header-bg: #1f2937;
+            --nav-bg: #374151;
+            --border-color: #4b5563;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             color: var(--text-color);
             background-color: var(--bg-color);
+            transition: background-color 0.3s, color 0.3s;
         }
         .header {
             background-color: var(--header-bg);
@@ -26,6 +41,10 @@
             position: sticky;
             top: 0;
             z-index: 50;
+            transition: background-color 0.3s;
+        }
+        [data-theme="dark"] .header {
+            border-bottom-color: #374151;
         }
         .logo {
             height: 32px;
@@ -76,6 +95,10 @@
             background-color: var(--nav-bg);
             border-bottom: 1px solid #e5e7eb;
             padding: 2rem 0;
+            transition: background-color 0.3s;
+        }
+        [data-theme="dark"] .page-header {
+            border-bottom-color: #374151;
         }
         .page-header h1 {
             font-size: 2.25rem;
@@ -87,14 +110,40 @@
             color: #6b7280;
             font-size: 1.125rem;
         }
+        [data-theme="dark"] .page-header p {
+            color: #9ca3af;
+        }
         .card {
-            background-color: white;
+            background-color: var(--header-bg);
             border-radius: 0.5rem;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
             transition: all 0.2s;
         }
         .card:hover {
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        [data-theme="dark"] .card {
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+        }
+        [data-theme="dark"] .card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        }
+        [data-theme="dark"] input {
+            background-color: var(--nav-bg);
+            border-color: #4b5563;
+            color: var(--text-color);
+        }
+        [data-theme="dark"] input::placeholder {
+            color: #9ca3af;
+        }
+        [data-theme="dark"] .bg-gray-50 {
+            background-color: #1f2937;
+        }
+        [data-theme="dark"] .border-gray-200 {
+            border-color: #374151;
+        }
+        [data-theme="dark"] .text-gray-500 {
+            color: #9ca3af;
         }
     </style>
 </head>
@@ -106,7 +155,7 @@
                 <div class="flex items-center">
                     <a href="/" class="flex items-center">
                         <img src="https://docs.pyst.dev/img/logo.png" alt="PyST Logo" class="logo mr-3">
-                        <span class="text-xl font-semibold text-gray-900">PyST</span>
+                        <span class="text-xl font-semibold" style="color: var(--text-color)">PyST</span>
                     </a>
                 </div>
                 <div class="flex-1 max-w-md mx-4">
@@ -123,18 +172,21 @@
                                 <i class="fas fa-search text-gray-400"></i>
                             </div>
                             <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-500 bg-gray-100 border border-gray-200 rounded-md">
-                                    <span class="hidden md:inline" id="shortcut-key">Ctrl</span><span class="hidden md:inline">+</span>K
+                                <kbd class="hidden md:inline-flex items-center px-2 py-1.5 text-xs font-semibold border rounded shadow-sm" style="color: var(--text-secondary); background-color: var(--nav-bg); border-color: var(--border-color)">
+                                    <span id="shortcut-key">Ctrl</span><span class="mx-0.5">+</span>K
                                 </kbd>
                             </div>
                             <input type="hidden" name="semantic" value="true" />
                         </div>
-                        <div id="suggestions" class="absolute w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50">
+                        <div id="suggestions" class="absolute w-full mt-1 border rounded-lg shadow-lg hidden z-50" style="background-color: var(--header-bg); border-color: var(--border-color)">
                             <!-- Suggestions will be populated here -->
                         </div>
                     </form>
                 </div>
                 <nav class="flex items-center space-x-4">
+                    <button id="theme-toggle" class="nav-link" aria-label="Toggle dark mode">
+                        <i class="fas fa-moon"></i>
+                    </button>
                     <a href="/web/concept_schemes/" class="nav-link {% if request.url.path == '/web/concept_schemes/' %}active{% endif %}">
                         <i class="fas fa-list mr-2"></i>Concept Schemes
                     </a>
@@ -172,6 +224,27 @@
         </div>
     </footer>
     <script>
+        // Theme handling
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = themeToggle.querySelector('i');
+
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+
+        function updateThemeIcon(theme) {
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
         // Prevent clicks on disabled links
         document.querySelectorAll('a[aria-disabled="true"]').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -230,12 +303,12 @@
 
                         suggestionsDiv.innerHTML = `
                             ${limitedSuggestions.map(suggestion => `
-                                <div class="p-2 hover:bg-gray-100 cursor-pointer" onclick="selectSuggestion('${suggestion.label}')">
+                                <div class="p-2 cursor-pointer transition-colors duration-150 hover-row" onclick="selectSuggestion('${suggestion.label}')" style="color: var(--text-color)">
                                     ${suggestion.label}
                                 </div>
                             `).join('')}
                             ${hasMore ? `
-                                <div class="p-2 text-sm text-gray-500 text-center border-t border-gray-200">
+                                <div class="p-2 text-sm text-center border-t" style="color: var(--text-secondary); border-color: var(--border-color)">
                                     +${suggestions.length - 5} more results
                                 </div>
                             ` : ''}
