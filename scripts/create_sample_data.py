@@ -4,6 +4,7 @@ from typing import List
 
 import pyst_client
 from pyst_client.models import (
+    ConceptCreate,
     ConceptSchemeInput,
     DateTime,
     DateTimeType,
@@ -65,7 +66,36 @@ def create_concept_scheme(index: int) -> ConceptSchemeInput:
         }]
     )
 
-async def main():
+def create_concept(scheme_id: str, index: int) -> ConceptCreate:
+    """Create a concept with the given index for a specific scheme."""
+    return ConceptCreate(
+        id=f"{scheme_id}/concept{index}",
+        type=["http://www.w3.org/2004/02/skos/core#Concept"],
+        http___www_w3_org_2004_02_skos_corepref_label=create_multilingual_string(
+            "Example Concept", index
+        ),
+        http___www_w3_org_2004_02_skos_corein_scheme=[Node(id=scheme_id)],
+        http___purl_org_ontology_bibo_status=[
+            Status(id="http://purl.org/ontology/bibo/status/accepted")
+        ],
+        http___purl_org_dc_terms_created=[DateTime(
+            type=DateTimeType.HTTP_COLON_SLASH_SLASH_WWW_DOT_W3_DOT_ORG_SLASH_2001_SLASH_XML_SCHEMA_HASH_DATE_TIME,
+            value=datetime.now()
+        )],
+        http___purl_org_dc_terms_creator=[
+            Node(id="http://example.com/organization")
+        ],
+        http___www_w3_org_2004_02_skos_coredefinition=create_multilingual_string(
+            "A concept that represents a specific category or idea, version",
+            index
+        ),
+        http___www_w3_org_2004_02_skos_corenotation=[{
+            "@value": f"CON-{index:03d}",
+            "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"
+        }]
+    )
+
+async def create_schemes():
     """Create 10 concept schemes."""
     configuration = pyst_client.Configuration(
         host=API_URL,
@@ -85,6 +115,46 @@ async def main():
                 print(f"Created concept scheme {i} successfully")
             except Exception as e:
                 print(f"Failed to create concept scheme {i}: {str(e)}")
+
+async def create_concepts_for_scheme(scheme_id: str):
+    """Create 5 concepts for a specific scheme."""
+    configuration = pyst_client.Configuration(
+        host=API_URL,
+        api_key={"X-PyST-Auth-Token": API_TOKEN}
+    )
+
+    async with pyst_client.ApiClient(configuration) as api_client:
+        concept_api = pyst_client.ConceptApi(api_client)
+
+        for j in range(1, 6):
+            try:
+                concept = create_concept(scheme_id, j)
+                await concept_api.concept_create_concept_post(
+                    concept_create=concept,
+                    x_pyst_auth_token=API_TOKEN
+                )
+                print(f"Created concept {j} for scheme {scheme_id} successfully")
+            except Exception as e:
+                print(f"Failed to create concept {j} for scheme {scheme_id}: {str(e)}")
+
+async def main():
+    """Create sample data - either schemes, concepts, or both."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Create sample data for the semantic taxonomy')
+    parser.add_argument('--schemes', action='store_true', help='Create concept schemes')
+    parser.add_argument('--concepts', action='store_true', help='Create concepts')
+    parser.add_argument('--scheme-id', type=str, help='Scheme ID to create concepts for (required if --concepts is used)')
+    args = parser.parse_args()
+
+    if args.schemes:
+        await create_schemes()
+
+    if args.concepts:
+        if not args.scheme_id:
+            print("Error: --scheme-id is required when creating concepts")
+            return
+        await create_concepts_for_scheme(args.scheme_id)
 
 if __name__ == "__main__":
     import asyncio
