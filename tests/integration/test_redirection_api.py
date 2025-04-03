@@ -14,7 +14,7 @@ async def test_generic_get_from_iri_concept(postgres, cn_db_engine, cn, client):
 
     del cn.concept_low[f"{SKOS}broader"]
     cn.concept_low["@id"] = "http://test.ninja/foo"
-    await client.post(Paths.concept, json=cn.concept_low)
+    await client.post(Paths.concepts, json=cn.concept_low)
 
     response = await client.get("/foo", follow_redirects=False)
     assert response.status_code == 307
@@ -37,7 +37,7 @@ async def test_generic_get_from_iri_concept_scheme(postgres, cn_db_engine, cn, c
     }
 
     cn.scheme["@id"] = "http://test.ninja/foo"
-    await client.post(Paths.concept_scheme, json=cn.scheme)
+    await client.post(Paths.concept_schemes, json=cn.scheme)
 
     response = await client.get("/foo", follow_redirects=False)
     assert response.status_code == 307
@@ -60,7 +60,7 @@ async def test_generic_get_from_iri_correspondence(postgres, cn_db_engine, cn, c
     }
 
     cn.correspondence["@id"] = "http://test.ninja/foo"
-    await client.post(Paths.correspondence, json=cn.correspondence)
+    await client.post(Paths.correspondences, json=cn.correspondence)
 
     response = await client.get("/foo", follow_redirects=False)
     assert response.status_code == 307

@@ -16,15 +16,15 @@ router = APIRouter()
 
 
 class Paths(StrEnum):
-    concept = "/concept/"
-    concept_scheme = "/concept_scheme/"
+    concepts = "/concepts"
+    concept_schemes = "/concept_schemes"
     catchall = "/{_:path}"
-    relationship = "/relationships/"
-    correspondence = "/correspondence/"
-    association = "/association/"
-    made_of = "/made_of/"
-    search = "/concept/search/"
-    suggest = "/concept/suggest/"
+    relationships = "/relationships"
+    correspondences = "/correspondences"
+    associations = "/associations"
+    made_of = "/made_of"
+    search = "/concepts/search"
+    suggest = "/concepts/suggest"
 
 
 """
@@ -62,7 +62,7 @@ async def verify_auth_token(
 
 
 @router.get(
-    Paths.concept,
+    Paths.concepts,
     summary="Get a `Concept` object",
     response_model=response.Concept,
     tags=["Concept"],
@@ -80,7 +80,7 @@ async def concept_get(
 
 
 @router.post(
-    Paths.concept,
+    Paths.concepts,
     summary="Create a `Concept` object",
     response_model=response.Concept,
     dependencies=[Depends(verify_auth_token)],
@@ -112,7 +112,7 @@ async def concept_create(
 
 
 @router.put(
-    Paths.concept,
+    Paths.concepts,
     summary="Update a `Concept` object",
     response_model=response.Concept,
     dependencies=[Depends(verify_auth_token)],
@@ -141,7 +141,7 @@ async def concept_update(
 
 
 @router.delete(
-    Paths.concept,
+    Paths.concepts,
     summary="Delete a `Concept` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
@@ -162,7 +162,7 @@ async def concept_delete(
 
 
 @router.get(
-    Paths.concept_scheme,
+    Paths.concept_schemes,
     summary="Get a `ConceptScheme` object or list all concept schemes",
     response_model=response.ConceptScheme | list[response.ConceptScheme],
     tags=["ConceptScheme"],
@@ -184,7 +184,7 @@ async def concept_scheme_get(
 
 
 @router.post(
-    Paths.concept_scheme,
+    Paths.concept_schemes,
     summary="Create a `ConceptScheme` object",
     response_model=response.ConceptScheme,
     dependencies=[Depends(verify_auth_token)],
@@ -207,7 +207,7 @@ async def concept_scheme_create(
 
 
 @router.put(
-    Paths.concept_scheme,
+    Paths.concept_schemes,
     summary="Update a `ConceptScheme` object",
     response_model=response.ConceptScheme,
     dependencies=[Depends(verify_auth_token)],
@@ -228,7 +228,7 @@ async def concept_scheme_update(
 
 
 @router.delete(
-    Paths.concept_scheme,
+    Paths.concept_schemes,
     summary="Delete a `ConceptScheme` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
@@ -249,7 +249,7 @@ async def concept_scheme_delete(
 
 
 @router.get(
-    Paths.relationship,
+    Paths.relationships,
     summary="Get a list of `Concept` relationships",
     response_model=list[response.Relationship],
     response_model_exclude_unset=True,
@@ -266,7 +266,7 @@ async def relationships_get(
 
 
 @router.post(
-    Paths.relationship,
+    Paths.relationships,
     summary="Create a list of `Concept` relationships",
     response_model=list[response.Relationship],
     response_model_exclude_unset=True,
@@ -293,7 +293,7 @@ async def relationships_create(
 
 
 @router.delete(
-    Paths.relationship,
+    Paths.relationships,
     summary="Delete a list of `Concept` relationships",
     dependencies=[Depends(verify_auth_token)],
     tags=["Concept"],
@@ -318,7 +318,7 @@ async def relationship_delete(
 
 
 @router.get(
-    Paths.correspondence,
+    Paths.correspondences,
     summary="Get a `Correspondence` object",
     response_model=response.Correspondence,
     tags=["Correspondence"],
@@ -336,7 +336,7 @@ async def correspondence_get(
 
 
 @router.post(
-    Paths.correspondence,
+    Paths.correspondences,
     summary="Create a `Correspondence` object",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
@@ -359,7 +359,7 @@ async def correspondence_create(
 
 
 @router.put(
-    Paths.correspondence,
+    Paths.correspondences,
     summary="Update a `Correspondence` object",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
@@ -382,7 +382,7 @@ async def correspondence_update(
 
 
 @router.delete(
-    Paths.correspondence,
+    Paths.correspondences,
     summary="Delete a `Correspondence` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
@@ -403,7 +403,7 @@ async def correspondence_delete(
 
 
 @router.get(
-    Paths.association,
+    Paths.associations,
     summary="Get an `Association` object",
     response_model=response.Association,
     tags=["ConceptAssociation"],
@@ -421,7 +421,7 @@ async def association_get(
 
 
 @router.post(
-    Paths.association,
+    Paths.associations,
     summary="Create an `Association` object",
     response_model=response.Association,
     dependencies=[Depends(verify_auth_token)],
@@ -442,7 +442,7 @@ async def association_create(
 
 
 @router.delete(
-    Paths.association,
+    Paths.associations,
     summary="Delete an `Association` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
