@@ -129,7 +129,15 @@ class GraphService:
     async def concept_scheme_get_all_iris(self) -> list[str]:
         return await self.graph.concept_scheme_get_all_iris()
 
-    async def concept_scheme_create(self, concept_scheme: ConceptScheme) -> ConceptScheme:
+    async def concept_scheme_list(self) -> list[ConceptScheme]:
+        """Get a list of all concept schemes."""
+        iris = await self.concept_scheme_get_all_iris()
+        schemes = [await self.concept_scheme_get(iri) for iri in iris]
+        return schemes
+
+    async def concept_scheme_create(
+        self, concept_scheme: ConceptScheme
+    ) -> ConceptScheme:
         return await self.graph.concept_scheme_create(concept_scheme=concept_scheme)
 
     async def concept_scheme_update(self, concept_scheme: ConceptScheme) -> ConceptScheme:
