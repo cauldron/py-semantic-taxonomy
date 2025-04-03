@@ -143,6 +143,41 @@ async def create_concepts_for_scheme(scheme_id: str):
             except Exception as e:
                 print(f"Failed to create concept {j} for scheme {scheme_id}: {str(e)}")
 
+async def create_all_data():
+    """Create all sample data - schemes and concepts for all schemes."""
+    configuration = pyst_client.Configuration(
+        host=API_URL,
+        api_key={"X-PyST-Auth-Token": API_TOKEN}
+    )
+
+    async with pyst_client.ApiClient(configuration) as api_client:
+        concept_scheme_api = pyst_client.ConceptSchemeApi(api_client)
+        concept_api = pyst_client.ConceptApi(api_client)
+
+        # Create schemes
+        for i in range(1, 11):
+            try:
+                scheme = create_concept_scheme(i)
+                response = await concept_scheme_api.concept_scheme_create_concept_scheme_post(
+                    concept_scheme_input=scheme,
+                    x_pyst_auth_token=API_TOKEN
+                )
+                print(f"Created concept scheme {i} successfully")
+
+                # Create concepts for this scheme
+                for j in range(1, 6):
+                    try:
+                        concept = create_concept(scheme.id, j)
+                        await concept_api.concept_create_concept_post(
+                            concept_create=concept,
+                            x_pyst_auth_token=API_TOKEN
+                        )
+                        print(f"Created concept {j} for scheme {i} successfully")
+                    except Exception as e:
+                        print(f"Failed to create concept {j} for scheme {i}: {str(e)}")
+            except Exception as e:
+                print(f"Failed to create concept scheme {i}: {str(e)}")
+
 async def main():
     """Create sample data - either schemes, concepts, or both."""
     import argparse
@@ -151,7 +186,12 @@ async def main():
     parser.add_argument('--schemes', action='store_true', help='Create concept schemes')
     parser.add_argument('--concepts', action='store_true', help='Create concepts')
     parser.add_argument('--scheme-id', type=str, help='Scheme ID to create concepts for (required if --concepts is used)')
+    parser.add_argument('--all', action='store_true', help='Create all sample data (schemes and concepts)')
     args = parser.parse_args()
+
+    if args.all:
+        await create_all_data()
+        return
 
     if args.schemes:
         await create_schemes()
