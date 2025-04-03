@@ -5,6 +5,7 @@ from py_semantic_taxonomy.adapters.persistence.database import (
     init_db,
 )
 from py_semantic_taxonomy.adapters.routers.router import router
+from py_semantic_taxonomy.adapters.routers.web_router import router as web_router
 from py_semantic_taxonomy.dependencies import get_search_service
 
 # from fastapi.middleware.cors import CORSMiddleware
@@ -32,12 +33,14 @@ def create_app() -> FastAPI:
     # )
 
     app.include_router(router)
+    app.include_router(web_router)
     return app
 
 
 def test_app() -> FastAPI:
     app = FastAPI()
     app.include_router(router)
+    app.include_router(web_router)
     return app
 
 
