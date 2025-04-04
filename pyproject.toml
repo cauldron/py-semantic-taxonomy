@@ -32,6 +32,7 @@ dependencies = [
     "fastapi_pagination",
     "jinja2",
     "langcodes",
+    "language-data",
     "orjson",
     "pydantic>=2",
     "pydantic_settings",

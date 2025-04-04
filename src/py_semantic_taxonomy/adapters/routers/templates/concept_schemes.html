@@ -24,13 +24,9 @@
                 <label for="language" class="text-sm font-medium text-gray-700">Display Language:</label>
             </div>
             <select id="language" class="mt-1 block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
-                <option value="en">English</option>
-                <option value="de">Deutsch</option>
-                <option value="es">Español</option>
-                <option value="da">Dansk</option>
-                <option value="fr">Français</option>
-                <option value="pt">Português</option>
-                <option value="it">Italiano</option>
+                {% for row in languages %}
+                <option value="{{ row.0 }}">{{ row.1 }}</option>
+                {% endfor %}
             </select>
         </div>
     </div>

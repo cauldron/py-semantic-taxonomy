@@ -6,9 +6,12 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from langcodes import Language
 
+from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service
 from py_semantic_taxonomy.domain import entities as de
+
 
 logger = structlog.get_logger("py-semantic-taxonomy")
 
@@ -29,6 +32,11 @@ def value_for_language(value: list[dict[str, str]], lang: str) -> str:
 templates.env.filters["lang"] = value_for_language
 
 
+def format_languages(languages: list[str]) -> list[tuple[str, str]]:
+    """Take a list of ISO 639 language codes and return (code, name)"""
+    return [(code, Language.get(code).display_name(code).title()) for code in languages]
+
+
 class WebPaths(StrEnum):
     concept_schemes = "/concept_schemes/"
     concept_scheme_view = "/concept_scheme/{iri:path}"
@@ -42,6 +50,7 @@ class WebPaths(StrEnum):
 async def web_concept_schemes(
     request: Request,
     service=Depends(get_graph_service),
+    settings=Depends(get_settings),
 ) -> HTMLResponse:
     """List all concept schemes."""
     concept_schemes = await service.concept_scheme_list()
@@ -50,6 +59,7 @@ async def web_concept_schemes(
         {
             "request": request,
             "concept_schemes": concept_schemes,
+            "languages": format_languages(settings.languages)
         },
     )
 
