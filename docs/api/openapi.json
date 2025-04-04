@@ -1269,6 +1269,7 @@
           },
           "http://rdf-vocabulary.ddialliance.org/xkos#sourceConcept": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -1282,6 +1283,7 @@
           },
           "http://rdf-vocabulary.ddialliance.org/xkos#targetConcept": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -1397,6 +1399,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#changeNote": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -1427,6 +1430,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#historyNote": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -1457,6 +1461,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#editorialNote": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -1487,6 +1492,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#inScheme": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -1536,6 +1542,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#topConceptOf": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -2157,6 +2164,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#changeNote": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -2187,6 +2195,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#historyNote": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -2217,6 +2226,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#editorialNote": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -2247,6 +2257,7 @@
           },
           "http://purl.org/dc/terms/created": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -2261,6 +2272,7 @@
           },
           "http://purl.org/dc/terms/creator": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -2274,6 +2286,7 @@
           },
           "http://www.w3.org/2002/07/owl#versionInfo": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -2884,6 +2897,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#changeNote": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -2914,6 +2928,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#historyNote": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -2944,6 +2959,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#editorialNote": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -2974,6 +2990,7 @@
           },
           "http://purl.org/dc/terms/created": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -2988,6 +3005,7 @@
           },
           "http://purl.org/dc/terms/creator": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -3001,6 +3019,7 @@
           },
           "http://www.w3.org/2002/07/owl#versionInfo": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -3014,6 +3033,7 @@
           },
           "http://rdf-vocabulary.ddialliance.org/xkos#compares": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -3030,6 +3050,7 @@
           },
           "http://rdf-vocabulary.ddialliance.org/xkos#madeOf": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -3351,6 +3372,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#broader": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -3365,6 +3387,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#narrower": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -3379,6 +3402,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#exactMatch": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -3393,6 +3417,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#closeMatch": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -3407,6 +3432,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#broadMatch": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -3421,6 +3447,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#narrowMatch": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -3435,6 +3462,7 @@
           },
           "http://www.w3.org/2004/02/skos/core#relatedMatch": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",

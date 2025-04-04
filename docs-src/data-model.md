@@ -106,7 +106,7 @@ The predicate verb is `http://purl.org/ontology/bibo/status`.
 We impose the following additional constraints on `ConceptScheme` objects:
 
 * At least one `skos:prefLabel` and one `skos:definition` are required
-* `bibo:status`, `dcterms:created`, `owl:versionInfo` are required
+* `bibo:status`, `dcterms:created`, `dcterms:creator`, and `owl:versionInfo` are required
 * Exactly one `owl:versionInfo` value is specified
 * At least one definition (`skos:definition`) is given
 * Instead of supplying a (very long) list of `skos:hasTopConcept` concept references, please instead specify `skos:topConceptOf` on the `Concept` instances.
@@ -175,7 +175,7 @@ We impose the following additional constraints on `Concept` objects:
 * At least one `skos:prefLabel` is required
 * A `bibo:status` is required
 * Each `Concept` must be in at least one known (i.e. in our database already) `ConceptScheme`. `Concepts` can belong to more than one `ConceptScheme`.
-* `Concepts` can be in a relationship with itself. Insert your own joke here.
+* `Concepts` can't be in a relationship with themselves. Insert your own joke here.
 * The use of `skos:note` is discouraged (but not prohibited) in favor of the specific `skos:note` subclasses: `skos:scopeNote`, `skos:definition`, `skos:example`, `skos:historyNote`, `skos:editorialNote`, and `skos:changeNote`. Their use should follow the intended use as documented in the [SKOS Primer](https://www.w3.org/TR/skos-primer/#secdocumentation).
 * `skos:notation` must be a [typed literal](https://www.w3.org/TR/2004/REC-rdf-concepts-20040210/#dfn-typed-literal) - not a string literal - and not include a `@language` tag. The default datatype should be `http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral`.
 * We **break from** [SKOS guidance](https://www.w3.org/TR/skos-reference/#L2613) to prohibit `skos:notation` having the same value as `skos:prefLabel`. A notation is ['a string of characters such as "T58.5" or "303.4833" used to uniquely identify a concept within the scope of a given concept scheme'](https://www.w3.org/TR/skos-reference/#L2064); this definition is inconsistent with [lexical labels](https://www.w3.org/TR/skos-reference/#L2831) like `skos:prefLabel`, which are human-readable and in a natural language. In our system, `skos:prefLabel` is required but `skos:notation` is optional.
@@ -224,9 +224,7 @@ Here is a minimal `Concept` example:
 
 The [XKOS](https://rdf-vocabulary.ddialliance.org/xkos.html) ontology provides the [Correspondence](https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences) class definition, which we use follow the [XKOS best practice guide](http://linked-statistics.github.io/xkos/xkos-best-practices.html). A `Correspondence` instance is very similar to a `ConceptScheme` - it provides metadata for a collection of child nodes.
 
-In addition to our [generic addition restrictions](#general-constraints-and-assumptions), `Correspondence` must have:
-
-* Exactly one `http://purl.org/dc/terms/issued` value.
+In addition to our [generic addition restrictions](#general-constraints-and-assumptions), `Correspondence` must have `bibo:status`, `dcterms:created`, `dcterms:creator`, and `owl:versionInfo`, just like `ConceptScheme`.
 
 Here is an example of a valid `Correspondence` in JSON-LD:
 
@@ -250,12 +248,30 @@ Here is an example of a valid `Correspondence` in JSON-LD:
       "@language": "en"
     }
   ],
-  "http://purl.org/dc/terms/issued": [
+  "http://purl.org/dc/terms/created": [
     {
       "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
-      "@value": "2024-07-02T08:41:55"
+      "@value": "2023-10-11T13:59:56"
     }
-  ]
+  ],
+  "http://purl.org/dc/terms/creator": [
+    {
+      "@id": "http://publications.europa.eu/resource/authority/corporate-body/ESTAT"
+    },
+    {
+      "@id": "http://publications.europa.eu/resource/authority/corporate-body/TAXUD"
+    }
+  ],
+  "http://www.w3.org/2002/07/owl#versionInfo": [
+    {
+      "@value": "2024"
+    }
+  ],
+  "http://purl.org/ontology/bibo/status": [
+    {
+      "@id": "http://purl.org/ontology/bibo/status/accepted"
+    }
+  ],
 }
 ```
 
