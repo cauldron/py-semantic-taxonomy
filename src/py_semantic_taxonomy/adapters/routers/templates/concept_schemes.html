@@ -50,36 +50,43 @@
                     {% for scheme in concept_schemes %}
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-primary" data-lang="en">
-                                {{ scheme['http://www.w3.org/2004/02/skos/core#prefLabel']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}
-                            </div>
-                            {% for label in scheme['http://www.w3.org/2004/02/skos/core#prefLabel'] %}
-                            <div class="text-sm font-medium text-primary hidden" data-lang="{{ label['@language'] }}">
-                                {{ label['@value'] }}
-                            </div>
-                            {% endfor %}
-                            {% if scheme['http://www.w3.org/2004/02/skos/core#notation'] %}
-                            <div class="text-xs text-gray-500 mt-1">
-                                <i class="fas fa-hashtag mr-1"></i>{{ scheme['http://www.w3.org/2004/02/skos/core#notation'][0]['@value'] }}
-                            </div>
-                            {% endif %}
+                            <a href="/web/concept_scheme/{{ scheme.id_|urlencode }}">
+                                <!-- This is the starting value -->
+                                <div class="text-sm font-medium text-primary" data-lang="en">
+                                    {{ scheme.pref_labels|lang('en') }}
+                                </div>
+                                {% for label in scheme.pref_labels %}
+                                    {% if label['@language'] != 'en' %}
+                                        <div class="text-sm font-medium text-primary hidden" data-lang="{{ label['@language'] }}">
+                                            {{ label['@value'] }}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if scheme.notations %}
+                                <div class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-hashtag mr-1"></i>{{ scheme.notations[0]['@value'] }}
+                                </div>
+                                {% endif %}
+                            </a>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="text-sm text-gray-500 line-clamp-2" data-lang="en">
-                                {% if scheme['http://www.w3.org/2004/02/skos/core#definition'] %}
-                                {{ scheme['http://www.w3.org/2004/02/skos/core#definition']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}
-                                {% else %}
-                                <span class="text-gray-400 italic">No definition available</span>
-                                {% endif %}
-                            </div>
-                            {% for def in scheme['http://www.w3.org/2004/02/skos/core#definition'] %}
-                            <div class="text-sm text-gray-500 line-clamp-2 hidden" data-lang="{{ def['@language'] }}">
-                                {{ def['@value'] }}
-                            </div>
-                            {% endfor %}
+                            <a href="/web/concept_scheme/{{ scheme.id_|urlencode }}">
+                                <div class="text-sm text-gray-500 line-clamp-2" data-lang="en">
+                                    {% if scheme.definitions %}
+                                        {{ scheme.definitions|lang('en') }}
+                                    {% else %}
+                                    <span class="text-gray-400 italic">No definition available</span>
+                                    {% endif %}
+                                </div>
+                                {% for def in scheme.definitions %}
+                                <div class="text-sm text-gray-500 line-clamp-2 hidden" data-lang="{{ def['@language'] }}">
+                                    {{ def['@value'] }}
+                                </div>
+                                {% endfor %}
+                            </a>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="/web/concept_scheme/{{ scheme['@id'] }}"
+                            <a href="/web/concept_scheme/{{ scheme.id_|urlencode }}"
                                class="text-primary text-primary-hover inline-flex items-center">
                                 <i class="fas fa-eye mr-1"></i>View
                             </a>

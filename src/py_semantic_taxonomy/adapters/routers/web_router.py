@@ -18,6 +18,17 @@ templates = Jinja2Templates(directory=str(PathLib(__file__).parent / "templates"
 templates.env.filters["split"] = lambda s, sep: s.split(sep)
 
 
+def value_for_language(value: list[dict[str, str]], lang: str) -> str:
+    """Get the `@value` for a list of multilingual strings with correct `@language` value"""
+    for dct in value:
+        if dct.get("@language") == lang:
+            return dct.get('@value', '')
+    return ''
+
+
+templates.env.filters["lang"] = value_for_language
+
+
 class WebPaths(StrEnum):
     concept_schemes = "/concept_schemes/"
     concept_scheme_view = "/concept_scheme/{iri:path}"
@@ -34,12 +45,11 @@ async def web_concept_schemes(
 ) -> HTMLResponse:
     """List all concept schemes."""
     concept_schemes = await service.concept_scheme_list()
-    concept_schemes_json = [cs.to_json_ld() for cs in concept_schemes]
     return templates.TemplateResponse(
         "concept_schemes.html",
         {
             "request": request,
-            "concept_schemes": concept_schemes_json,
+            "concept_schemes": concept_schemes,
         },
     )
 
