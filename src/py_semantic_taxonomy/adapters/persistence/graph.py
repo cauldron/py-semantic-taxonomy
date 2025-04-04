@@ -97,6 +97,24 @@ class PostgresKOSGraphDatabase:
             await conn.commit()
         return result.rowcount
 
+    async def concepts_get_for_scheme(
+        self, concept_scheme_iri: str, top_concepts_only: bool
+    ) -> list[Concept]:
+        """Get all concepts that belong to a given concept scheme."""
+        async with self.engine.connect() as conn:
+            stmt = select(concept_table).where(
+                # There must be a better way to do this with either `contains` (but that is just
+                # sugar around `@>`) or json_each or... something.
+                concept_table.c.schemes.op("@>")([{"@id": concept_scheme_iri}])
+            )
+            if top_concepts_only:
+                stmt = stmt.where(
+                    concept_table.c.top_concept_of.op("@>")([{"@id": concept_scheme_iri}])
+                )
+            result = (await conn.execute(stmt.order_by(concept_table.c.id_))).fetchall()
+            await conn.rollback()
+        return [Concept(**row._mapping) for row in result]
+
     # ConceptScheme
 
     async def concept_scheme_get(self, iri: str) -> ConceptScheme:
@@ -107,6 +125,13 @@ class PostgresKOSGraphDatabase:
                 raise ConceptSchemeNotFoundError
             await conn.rollback()
         return ConceptScheme(**result._mapping)
+
+    async def concept_scheme_list(self) -> list[ConceptScheme]:
+        async with self.engine.connect() as conn:
+            stmt = select(concept_scheme_table).order_by(concept_scheme_table.c.id_)
+            result = (await conn.execute(stmt)).fetchall()
+            await conn.rollback()
+        return [ConceptScheme(**obj._mapping) for obj in result]
 
     async def concept_scheme_get_all_iris(self) -> list[str]:
         async with self.engine.connect() as conn:

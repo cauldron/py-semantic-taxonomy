@@ -23,6 +23,11 @@ async def test_concept_scheme_get_all_iris(sqlite, entities, graph):
     assert sorted(cs) == [entities[4].id_, entities[2].id_]
 
 
+async def test_concept_scheme_list(sqlite, entities, graph):
+    cs = await graph.concept_scheme_list()
+    assert cs == sorted([entities[4], entities[2]], key=lambda x: x.id_)
+
+
 async def test_get_concept_scheme_not_found(sqlite, graph):
     with pytest.raises(ConceptSchemeNotFoundError):
         await graph.concept_scheme_get(iri="http://data.europa.eu/xsp/cn2024/woof")

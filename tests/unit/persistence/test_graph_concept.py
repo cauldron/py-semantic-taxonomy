@@ -74,3 +74,27 @@ async def test_delete_concept(sqlite, cn, entities, graph):
 
     response = await graph.concept_delete(iri=cn.concept_mid["@id"])
     assert response == 0, "Wrong number of deleted concepts"
+
+
+@pytest.mark.postgres
+async def test_concepts_get_for_scheme_order(postgres, cn, graph):
+    concepts = await graph.concepts_get_for_scheme(cn.scheme["@id"], False)
+    assert concepts
+    assert isinstance(concepts[0], Concept)
+    assert [concept.id_ for concept in concepts] == sorted(
+        [cn.concept_top["@id"], cn.concept_mid["@id"]]
+    )
+
+
+@pytest.mark.postgres
+async def test_concepts_get_for_scheme_top_concepts(postgres, cn, graph):
+    concepts = await graph.concepts_get_for_scheme(cn.scheme_2023["@id"], True)
+    assert len(concepts) == 1
+    assert isinstance(concepts[0], Concept)
+    assert concepts[0].id_ == cn.concept_2023_top["@id"]
+
+
+@pytest.mark.postgres
+async def test_concepts_get_for_scheme_empty(postgres, cn, graph):
+    concepts = await graph.concepts_get_for_scheme("http://missing.ninja/foo", False)
+    assert concepts == []
