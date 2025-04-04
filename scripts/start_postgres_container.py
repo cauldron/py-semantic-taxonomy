@@ -2,6 +2,9 @@ import time
 
 from testcontainers.postgres import PostgresContainer
 
+# See also https://www.docker.com/blog/how-to-use-the-postgres-docker-official-image/
+
+
 if __name__ == "__main__":
     postgres = PostgresContainer("postgres:16")
     postgres.start()

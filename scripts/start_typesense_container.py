@@ -3,6 +3,14 @@ import time
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
 
+# See also https://typesense.org/docs/guide/install-typesense.html
+# Can run without testcontainers, e.g.
+# docker container run -p 8108:8108 --env TYPESENSE_API_KEY="123abc" "typesense/typesense:28.0" --data-dir /home --enable-cors
+# Then would need:
+# export PyST_typesense_url="http://localhost:8108"
+# export PyST_typesense_api_key="123abc"
+
+
 if __name__ == "__main__":
     api_key = "123abc"
 
