@@ -97,6 +97,13 @@ class PostgresKOSGraphDatabase:
             await conn.commit()
         return result.rowcount
 
+    async def concept_get_all_iris(self) -> list[str]:
+        async with self.engine.connect() as conn:
+            stmt = select(concept_table.c.id_)
+            result = (await conn.execute(stmt)).scalars()
+            await conn.rollback()
+        return list(result)
+
     # ConceptScheme
 
     async def concept_scheme_get(self, iri: str) -> ConceptScheme:

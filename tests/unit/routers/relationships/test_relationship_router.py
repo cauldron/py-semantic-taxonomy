@@ -19,7 +19,7 @@ async def test_relationships_get(cn, anonymous_client, monkeypatch, relationship
     )
 
     response = await anonymous_client.get(
-        Paths.relationship, params={"iri": relationships[3].source}
+        Paths.relationships, params={"iri": relationships[3].source}
     )
     assert response.status_code == 200
     assert response.json() == [
@@ -41,7 +41,7 @@ async def test_relationships_get_args(cn, anonymous_client, monkeypatch, relatio
     )
 
     response = await anonymous_client.get(
-        Paths.relationship, params={"iri": relationships[3].source}
+        Paths.relationships, params={"iri": relationships[3].source}
     )
     assert response.status_code == 200
     GraphService.relationships_get.assert_called_with(
@@ -49,7 +49,7 @@ async def test_relationships_get_args(cn, anonymous_client, monkeypatch, relatio
     )
 
     response = await anonymous_client.get(
-        Paths.relationship, params={"iri": relationships[3].source, "target": 1}
+        Paths.relationships, params={"iri": relationships[3].source, "target": 1}
     )
     assert response.status_code == 200
     GraphService.relationships_get.assert_called_with(
@@ -57,7 +57,7 @@ async def test_relationships_get_args(cn, anonymous_client, monkeypatch, relatio
     )
 
     response = await anonymous_client.get(
-        Paths.relationship, params={"iri": relationships[3].source, "source": 0, "target": 1}
+        Paths.relationships, params={"iri": relationships[3].source, "source": 0, "target": 1}
     )
     assert response.status_code == 200
     GraphService.relationships_get.assert_called_with(
@@ -69,7 +69,7 @@ async def test_relationship_create(relationships, client, monkeypatch):
     monkeypatch.setattr(GraphService, "relationships_create", AsyncMock(return_value=relationships))
 
     response = await client.post(
-        Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
+        Paths.relationships, json=[obj.to_json_ld() for obj in relationships]
     )
     assert response.status_code == 200
     assert Relationship.from_json_ld_list(response.json()) == relationships
@@ -80,7 +80,7 @@ async def test_relationship_create(relationships, client, monkeypatch):
 
 
 async def test_relationship_create_unauthorized(anonymous_client):
-    response = await anonymous_client.post(Paths.relationship, json={})
+    response = await anonymous_client.post(Paths.relationships, json={})
     assert response.status_code == 400
 
 
@@ -92,7 +92,7 @@ async def test_relationship_create_already_exists(relationships, client, monkeyp
     )
 
     response = await client.post(
-        Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
+        Paths.relationships, json=[obj.to_json_ld() for obj in relationships]
     )
     assert response.status_code == 409
     assert response.json() == {"detail": "Already exists"}
@@ -106,7 +106,7 @@ async def test_relationship_create_across_schemes(relationships, client, monkeyp
     )
 
     response = await client.post(
-        Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
+        Paths.relationships, json=[obj.to_json_ld() for obj in relationships]
     )
     assert response.status_code == 422
     assert response.json() == {"detail": "Nope"}
@@ -120,7 +120,7 @@ async def test_relationship_create_cs_reference(relationships, client, monkeypat
     )
 
     response = await client.post(
-        Paths.relationship, json=[obj.to_json_ld() for obj in relationships]
+        Paths.relationships, json=[obj.to_json_ld() for obj in relationships]
     )
     assert response.status_code == 422
     assert response.json() == {"detail": "Nope"}
@@ -137,7 +137,7 @@ async def test_relationships_create_error_validation_errors_zero_relatioships(
         }
     ]
 
-    response = await client.post(Paths.relationship, json=given)
+    response = await client.post(Paths.relationships, json=given)
     assert response.status_code == 422
     assert response.json()["detail"][0]["type"] == "value_error"
     assert response.json()["detail"][0]["msg"] == "Value error, Found zero relationships"
@@ -158,7 +158,7 @@ async def test_relationships_create_error_validation_errors_multiple_same_kind(
         }
     ]
 
-    response = await client.post(Paths.relationship, json=given)
+    response = await client.post(Paths.relationships, json=given)
     assert response.status_code == 422
     assert response.json()["detail"][0]["type"] == "value_error"
     assert (
@@ -180,7 +180,7 @@ async def test_relationships_create_error_validation_errors_multiple_different_k
         }
     ]
 
-    response = await client.post(Paths.relationship, json=given)
+    response = await client.post(Paths.relationships, json=given)
     assert response.status_code == 422
     assert response.json()["detail"][0]["type"] == "value_error"
     assert (
@@ -203,7 +203,7 @@ async def test_relationships_create_error_validation_errors_self_reference(
         }
     ]
 
-    response = await client.post(Paths.relationship, json=given)
+    response = await client.post(Paths.relationships, json=given)
     assert response.status_code == 422
     assert response.json()["detail"][0]["type"] == "value_error"
     assert (
@@ -218,7 +218,7 @@ async def test_relationship_delete(relationships, client, monkeypatch):
     # https://www.python-httpx.org/compatibility/#request-body-on-http-methods
     response = await client.request(
         method="DELETE",
-        url=Paths.relationship,
+        url=Paths.relationships,
         content=orjson.dumps([relationships[3].to_json_ld()]),
     )
     assert response.status_code == 200
@@ -235,7 +235,7 @@ async def test_relationship_delete_unauthorized(anonymous_client):
     # https://www.python-httpx.org/compatibility/#request-body-on-http-methods
     response = await anonymous_client.request(
         method="DELETE",
-        url=Paths.relationship,
+        url=Paths.relationships,
         content=orjson.dumps([]),
     )
     assert response.status_code == 400

@@ -21,7 +21,7 @@ async def test_correspondence(cn, anonymous_client, monkeypatch):
     )
 
     response = await anonymous_client.get(
-        Paths.correspondence, params={"iri": cn.correspondence["@id"]}
+        Paths.correspondences, params={"iri": cn.correspondence["@id"]}
     )
     assert response.status_code == 200
     correspondence = response.json()
@@ -38,7 +38,7 @@ async def test_correspondence_get_not_found(cn, anonymous_client, monkeypatch):
         GraphService, "correspondence_get", AsyncMock(side_effect=CorrespondenceNotFoundError())
     )
 
-    response = await anonymous_client.get(Paths.correspondence, params={"iri": "foo"})
+    response = await anonymous_client.get(Paths.correspondences, params={"iri": "foo"})
     correspondence = response.json()
     assert response.status_code == 404
     assert correspondence == {
@@ -53,7 +53,7 @@ async def test_correspondence_create(cn, client, monkeypatch):
         AsyncMock(return_value=Correspondence.from_json_ld(cn.correspondence)),
     )
 
-    response = await client.post(Paths.correspondence, json=cn.correspondence)
+    response = await client.post(Paths.correspondences, json=cn.correspondence)
     assert response.status_code == 200
 
     GraphService.correspondence_create.assert_called_once()
@@ -61,7 +61,7 @@ async def test_correspondence_create(cn, client, monkeypatch):
 
 
 async def test_correspondence_create_unauthorized(anonymous_client):
-    response = await anonymous_client.post(Paths.correspondence, json={})
+    response = await anonymous_client.post(Paths.correspondences, json={})
     assert response.status_code == 400
 
 
@@ -71,7 +71,7 @@ async def test_correspondence_create_error_validation_errors(cn, client, monkeyp
     obj = cn.correspondence
     obj[f"{XKOS}madeOf"] = []
 
-    response = await client.post(Paths.correspondence, json=obj)
+    response = await client.post(Paths.correspondences, json=obj)
     assert response.json()["detail"][0]["type"] == "value_error"
     assert (
         response.json()["detail"][0]["msg"]
@@ -83,7 +83,7 @@ async def test_correspondence_create_error_validation_errors(cn, client, monkeyp
 async def test_correspondence_create_error_already_exists(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "correspondence_create", AsyncMock(side_effect=DuplicateIRI))
 
-    response = await client.post(Paths.correspondence, json=cn.correspondence)
+    response = await client.post(Paths.correspondences, json=cn.correspondence)
     assert response.json() == {
         "detail": f"Correspondence with IRI `{cn.correspondence['@id']}` already exists",
     }
@@ -98,7 +98,7 @@ async def test_correspondence_update(cn, client, monkeypatch):
     )
 
     updated = cn.correspondence
-    response = await client.put(Paths.correspondence, json=updated)
+    response = await client.put(Paths.correspondences, json=updated)
     assert response.status_code == 200
 
     GraphService.correspondence_update.assert_called_once()
@@ -106,7 +106,7 @@ async def test_correspondence_update(cn, client, monkeypatch):
 
 
 async def test_correspondence_update_unauthorized(anonymous_client):
-    response = await anonymous_client.put(Paths.correspondence, json={})
+    response = await anonymous_client.put(Paths.correspondences, json={})
     assert response.status_code == 400
 
 
@@ -116,7 +116,7 @@ async def test_correspondence_update_error_validation_errors(cn, client, monkeyp
     obj = cn.correspondence
     obj[f"{XKOS}madeOf"] = ["a"]
 
-    response = await client.put(Paths.correspondence, json=obj)
+    response = await client.put(Paths.correspondences, json=obj)
     assert response.json()["detail"][0]["type"] == "value_error"
     assert (
         response.json()["detail"][0]["msg"]
@@ -133,7 +133,7 @@ async def test_correspondence_update_error_missing(cn, client, monkeypatch):
     obj = cn.correspondence
     obj["@id"] = "http://pyst-tests.ninja/correspondence/missing"
 
-    response = await client.put(Paths.correspondence, json=obj)
+    response = await client.put(Paths.correspondences, json=obj)
     assert response.json() == {"detail": f"Correspondence with IRI `{obj['@id']}` not found"}
     assert response.status_code == 404
 
@@ -141,7 +141,7 @@ async def test_correspondence_update_error_missing(cn, client, monkeypatch):
 async def test_correspondence_delete(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "correspondence_delete", AsyncMock(return_value=1))
 
-    response = await client.delete(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
+    response = await client.delete(Paths.correspondences, params={"iri": cn.correspondence["@id"]})
     assert response.status_code == 204
 
     GraphService.correspondence_delete.assert_called_once()
@@ -149,7 +149,7 @@ async def test_correspondence_delete(cn, client, monkeypatch):
 
 
 async def test_correspondence_delete_unauthorized(anonymous_client):
-    response = await anonymous_client.delete(Paths.correspondence, params={"iri": ""})
+    response = await anonymous_client.delete(Paths.correspondences, params={"iri": ""})
     assert response.status_code == 400
 
 
@@ -160,7 +160,7 @@ async def test_correspondence_delete_not_found(cn, client, monkeypatch):
         AsyncMock(side_effect=CorrespondenceNotFoundError("Test")),
     )
 
-    response = await client.delete(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
+    response = await client.delete(Paths.correspondences, params={"iri": cn.correspondence["@id"]})
     assert response.status_code == 404
     assert response.json() == {"detail": "Test"}
 

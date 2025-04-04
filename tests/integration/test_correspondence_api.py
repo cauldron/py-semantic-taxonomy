@@ -9,7 +9,7 @@ from py_semantic_taxonomy.domain.entities import MadeOf
 
 @pytest.mark.postgres
 async def test_get_correspondence(postgres, cn_db_engine, cn, client):
-    response = await client.get(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
+    response = await client.get(Paths.correspondences, params={"iri": cn.correspondence["@id"]})
     assert response.status_code == 200
     given = response.json()
 
@@ -20,7 +20,7 @@ async def test_get_correspondence(postgres, cn_db_engine, cn, client):
 @pytest.mark.postgres
 async def test_get_correspondence_404(postgres, cn_db_engine, client):
     response = await client.get(
-        Paths.correspondence, params={"iri": "http://pyst-tests.ninja/correspondence/missing"}
+        Paths.correspondences, params={"iri": "http://pyst-tests.ninja/correspondence/missing"}
     )
     assert response.status_code == 404
 
@@ -30,20 +30,20 @@ async def test_create_correspondence(postgres, cn_db_engine, cn, client):
     new = cn.correspondence
     new["@id"] = "http://pyst-tests.ninja/correspondence/new"
 
-    response = await client.post(Paths.correspondence, json=new)
+    response = await client.post(Paths.correspondences, json=new)
     assert response.status_code == 200
     given = response.json()
     for key, value in new.items():
         assert given[key] == value
 
-    given = (await client.get(Paths.correspondence, params={"iri": new["@id"]})).json()
+    given = (await client.get(Paths.correspondences, params={"iri": new["@id"]})).json()
     for key, value in new.items():
         assert given[key] == value
 
 
 @pytest.mark.postgres
 async def test_create_correspondence_duplicate(postgres, cn_db_engine, cn, client):
-    response = await client.post(Paths.correspondence, json=cn.correspondence)
+    response = await client.post(Paths.correspondences, json=cn.correspondence)
     assert response.status_code == 409
 
 
@@ -52,13 +52,13 @@ async def test_update_correspondence(postgres, cn_db_engine, cn, client):
     updated = cn.correspondence
     updated[f"{SKOS}prefLabel"] = [{"@value": "Don't read my correspondence", "@language": "en"}]
 
-    response = await client.put(Paths.correspondence, json=updated)
+    response = await client.put(Paths.correspondences, json=updated)
     assert response.status_code == 200
     given = response.json()
     for key, value in updated.items():
         assert given[key] == value
 
-    given = (await client.get(Paths.correspondence, params={"iri": updated["@id"]})).json()
+    given = (await client.get(Paths.correspondences, params={"iri": updated["@id"]})).json()
     for key, value in updated.items():
         assert given[key] == value
 
@@ -68,23 +68,23 @@ async def test_update_correspondence_not_found(postgres, cn_db_engine, cn, clien
     obj = cn.correspondence
     obj["@id"] = "http://pyst-tests.ninja/correspondence/missing"
 
-    response = await client.put(Paths.correspondence, json=obj)
+    response = await client.put(Paths.correspondences, json=obj)
     assert response.status_code == 404
 
 
 @pytest.mark.postgres
 async def test_delete_correspondence(postgres, cn_db_engine, cn, client):
-    response = await client.get(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
+    response = await client.get(Paths.correspondences, params={"iri": cn.correspondence["@id"]})
     assert response.status_code == 200
     assert response.json()
 
-    response = await client.delete(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
+    response = await client.delete(Paths.correspondences, params={"iri": cn.correspondence["@id"]})
     assert response.status_code == 204
 
-    response = await client.delete(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
+    response = await client.delete(Paths.correspondences, params={"iri": cn.correspondence["@id"]})
     assert response.status_code == 404
 
-    response = await client.get(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
+    response = await client.get(Paths.correspondences, params={"iri": cn.correspondence["@id"]})
     assert response.status_code == 404
 
 
@@ -100,7 +100,7 @@ async def test_made_of_add(postgres, cn_db_engine, cn, made_of, client):
         assert given[key] == value
 
     given = (
-        await client.get(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
+        await client.get(Paths.correspondences, params={"iri": cn.correspondence["@id"]})
     ).json()
     for key, value in cn.correspondence.items():
         assert given[key] == value
@@ -131,7 +131,7 @@ async def test_made_of_remove(postgres, cn_db_engine, cn, made_of, client):
     assert given[RDF["made_ofs"]] == [{"@id": "http://data.europa.eu/xsp/cn2023/lower_association"}]
 
     given = (
-        await client.get(Paths.correspondence, params={"iri": cn.correspondence["@id"]})
+        await client.get(Paths.correspondences, params={"iri": cn.correspondence["@id"]})
     ).json()
     assert given[RDF["made_ofs"]] == [{"@id": "http://data.europa.eu/xsp/cn2023/lower_association"}]
 

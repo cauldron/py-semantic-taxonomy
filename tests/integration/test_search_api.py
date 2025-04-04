@@ -52,7 +52,7 @@ async def test_typesense_concepts_create_delete(postgres, typesense, client, cn_
     assert response.status_code == 200
     assert response.json()[0]["id_"] != CONCEPT["@id"]
 
-    response = await client.post(Paths.concept, json=CONCEPT)
+    response = await client.post(Paths.concepts, json=CONCEPT)
     assert response.status_code == 200
 
     response = await client.get(Paths.search, params={"query": "kodak", "language": "en"})
@@ -65,7 +65,7 @@ async def test_typesense_concepts_create_delete(postgres, typesense, client, cn_
             "@value": "Salami Sausage",
         }
     ]
-    response = await client.put(Paths.concept, json=CONCEPT)
+    response = await client.put(Paths.concepts, json=CONCEPT)
     assert response.status_code == 200
 
     response = await client.get(Paths.search, params={"query": "kodak", "language": "en"})
@@ -81,14 +81,14 @@ async def test_typesense_concepts_create_delete(postgres, typesense, client, cn_
             "@value": "Photographic plates, film, paper, paperboard and textiles, exposed but not developed",
         }
     ]
-    response = await client.put(Paths.concept, json=CONCEPT)
+    response = await client.put(Paths.concepts, json=CONCEPT)
     assert response.status_code == 200
 
     response = await client.get(Paths.search, params={"query": "kodak", "language": "en"})
     assert response.status_code == 200
     assert response.json()[0]["id_"] == CONCEPT["@id"]
 
-    response = await client.delete(Paths.concept, params={"iri": CONCEPT["@id"]})
+    response = await client.delete(Paths.concepts, params={"iri": CONCEPT["@id"]})
     assert response.status_code == 204
 
     response = await client.get(Paths.search, params={"query": "kodak", "language": "en"})

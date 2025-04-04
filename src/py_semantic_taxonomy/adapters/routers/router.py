@@ -12,19 +12,24 @@ from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
 
-router = APIRouter()
+router = APIRouter(prefix="/v1")
 
 
 class Paths(StrEnum):
-    concept = "/concept/"
-    concept_scheme = "/concept_scheme/"
-    catchall = "/{_:path}"
-    relationship = "/relationships/"
-    correspondence = "/correspondence/"
-    association = "/association/"
-    made_of = "/made_of/"
-    search = "/concept/search/"
-    suggest = "/concept/suggest/"
+    concepts = "/concepts"
+    concept = "/concepts/{iri:path}"
+    concept_schemes = "/concept_schemes"
+    concept_scheme = "/concept_schemes/{iri:path}"
+    catchall = "{_:path}"
+    relationships = "/relationships"
+    relationship = "/relationships/{iri:path}"
+    correspondences = "/correspondences"
+    correspondence = "/correspondences/{iri:path}"
+    associations = "/associations"
+    association = "/associations/{iri:path}"
+    made_of = "/made_of"
+    search = "/concepts/search"
+    suggest = "/concepts/suggest"
 
 
 """
@@ -62,6 +67,19 @@ async def verify_auth_token(
 
 
 @router.get(
+    Paths.concepts,
+    summary="List all concepts",
+    response_model=list[response.Concept],
+    tags=["Concept"],
+)
+async def concept_list(
+    service=Depends(get_graph_service),
+) -> list[response.Concept]:
+    concepts = await service.concept_list()
+    return [response.Concept(**c.to_json_ld()) for c in concepts]
+
+
+@router.get(
     Paths.concept,
     summary="Get a `Concept` object",
     response_model=response.Concept,
@@ -80,7 +98,7 @@ async def concept_get(
 
 
 @router.post(
-    Paths.concept,
+    Paths.concepts,
     summary="Create a `Concept` object",
     response_model=response.Concept,
     dependencies=[Depends(verify_auth_token)],
@@ -112,7 +130,7 @@ async def concept_create(
 
 
 @router.put(
-    Paths.concept,
+    Paths.concepts,
     summary="Update a `Concept` object",
     response_model=response.Concept,
     dependencies=[Depends(verify_auth_token)],
@@ -141,7 +159,7 @@ async def concept_update(
 
 
 @router.delete(
-    Paths.concept,
+    Paths.concepts,
     summary="Delete a `Concept` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
@@ -159,6 +177,19 @@ async def concept_delete(
 
 
 # Concept Scheme
+
+
+@router.get(
+    Paths.concept_schemes,
+    summary="List all concept schemes",
+    response_model=list[response.ConceptScheme],
+    tags=["ConceptScheme"],
+)
+async def concept_scheme_list(
+    service=Depends(get_graph_service),
+) -> list[response.ConceptScheme]:
+    concept_schemes = await service.concept_scheme_list()
+    return [response.ConceptScheme(**cs.to_json_ld()) for cs in concept_schemes]
 
 
 @router.get(
@@ -180,7 +211,7 @@ async def concept_scheme_get(
 
 
 @router.post(
-    Paths.concept_scheme,
+    Paths.concept_schemes,
     summary="Create a `ConceptScheme` object",
     response_model=response.ConceptScheme,
     dependencies=[Depends(verify_auth_token)],
@@ -203,7 +234,7 @@ async def concept_scheme_create(
 
 
 @router.put(
-    Paths.concept_scheme,
+    Paths.concept_schemes,
     summary="Update a `ConceptScheme` object",
     response_model=response.ConceptScheme,
     dependencies=[Depends(verify_auth_token)],
@@ -224,7 +255,7 @@ async def concept_scheme_update(
 
 
 @router.delete(
-    Paths.concept_scheme,
+    Paths.concept_schemes,
     summary="Delete a `ConceptScheme` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
@@ -245,8 +276,22 @@ async def concept_scheme_delete(
 
 
 @router.get(
+    Paths.relationships,
+    summary="List all relationships",
+    response_model=list[response.Relationship],
+    response_model_exclude_unset=True,
+    tags=["Concept"],
+)
+async def relationships_list(
+    service=Depends(get_graph_service),
+) -> list[response.Relationship]:
+    lst = await service.relationships_get(source=True, target=True)
+    return [response.Relationship(**obj.to_json_ld()) for obj in lst]
+
+
+@router.get(
     Paths.relationship,
-    summary="Get a list of `Concept` relationships",
+    summary="Get relationships for a concept",
     response_model=list[response.Relationship],
     response_model_exclude_unset=True,
     tags=["Concept"],
@@ -262,7 +307,7 @@ async def relationships_get(
 
 
 @router.post(
-    Paths.relationship,
+    Paths.relationships,
     summary="Create a list of `Concept` relationships",
     response_model=list[response.Relationship],
     response_model_exclude_unset=True,
@@ -289,7 +334,7 @@ async def relationships_create(
 
 
 @router.delete(
-    Paths.relationship,
+    Paths.relationships,
     summary="Delete a list of `Concept` relationships",
     dependencies=[Depends(verify_auth_token)],
     tags=["Concept"],
@@ -314,6 +359,19 @@ async def relationship_delete(
 
 
 @router.get(
+    Paths.correspondences,
+    summary="List all correspondences",
+    response_model=list[response.Correspondence],
+    tags=["Correspondence"],
+)
+async def correspondence_list(
+    service=Depends(get_graph_service),
+) -> list[response.Correspondence]:
+    correspondences = await service.correspondence_list()
+    return [response.Correspondence(**c.to_json_ld()) for c in correspondences]
+
+
+@router.get(
     Paths.correspondence,
     summary="Get a `Correspondence` object",
     response_model=response.Correspondence,
@@ -332,7 +390,7 @@ async def correspondence_get(
 
 
 @router.post(
-    Paths.correspondence,
+    Paths.correspondences,
     summary="Create a `Correspondence` object",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
@@ -355,7 +413,7 @@ async def correspondence_create(
 
 
 @router.put(
-    Paths.correspondence,
+    Paths.correspondences,
     summary="Update a `Correspondence` object",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
@@ -378,7 +436,7 @@ async def correspondence_update(
 
 
 @router.delete(
-    Paths.correspondence,
+    Paths.correspondences,
     summary="Delete a `Correspondence` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
@@ -396,6 +454,19 @@ async def correspondence_delete(
 
 
 # Association
+
+
+@router.get(
+    Paths.associations,
+    summary="List all associations",
+    response_model=list[response.Association],
+    tags=["ConceptAssociation"],
+)
+async def association_list(
+    service=Depends(get_graph_service),
+) -> list[response.Association]:
+    associations = await service.association_list()
+    return [response.Association(**a.to_json_ld()) for a in associations]
 
 
 @router.get(
@@ -417,7 +488,7 @@ async def association_get(
 
 
 @router.post(
-    Paths.association,
+    Paths.associations,
     summary="Create an `Association` object",
     response_model=response.Association,
     dependencies=[Depends(verify_auth_token)],
@@ -438,7 +509,7 @@ async def association_create(
 
 
 @router.delete(
-    Paths.association,
+    Paths.associations,
     summary="Delete an `Association` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
