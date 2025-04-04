@@ -814,6 +814,7 @@ components:
           - http://rdf-vocabulary.ddialliance.org/xkos#ConceptAssociation
         http://rdf-vocabulary.ddialliance.org/xkos#sourceConcept:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: List of source `Concept` objects
@@ -822,6 +823,7 @@ components:
           - '@id': http://data.europa.eu/xsp/cn2023/010011000090
         http://rdf-vocabulary.ddialliance.org/xkos#targetConcept:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: List of target `Concept` objects
@@ -903,6 +905,7 @@ components:
             '@value': '01'
         http://www.w3.org/2004/02/skos/core#changeNote:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS change note with additional required fields
@@ -919,6 +922,7 @@ components:
           definition: https://www.w3.org/TR/skos-primer/#secdocumentation
         http://www.w3.org/2004/02/skos/core#historyNote:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS history note with additional required fields
@@ -935,6 +939,7 @@ components:
           definition: https://www.w3.org/TR/skos-primer/#secdocumentation
         http://www.w3.org/2004/02/skos/core#editorialNote:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS editorial note with additional required fields
@@ -951,6 +956,7 @@ components:
           definition: https://www.w3.org/TR/skos-primer/#secdocumentation
         http://www.w3.org/2004/02/skos/core#inScheme:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS concept scheme
@@ -983,6 +989,7 @@ components:
             '@value': "\xE9kwos"
         http://www.w3.org/2004/02/skos/core#topConceptOf:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS concept scheme if this concept is at top of hierarchy (maximum
@@ -1396,6 +1403,7 @@ components:
             '@value': '01'
         http://www.w3.org/2004/02/skos/core#changeNote:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS change note with additional required fields
@@ -1412,6 +1420,7 @@ components:
           definition: https://www.w3.org/TR/skos-primer/#secdocumentation
         http://www.w3.org/2004/02/skos/core#historyNote:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS history note with additional required fields
@@ -1428,6 +1437,7 @@ components:
           definition: https://www.w3.org/TR/skos-primer/#secdocumentation
         http://www.w3.org/2004/02/skos/core#editorialNote:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS editorial note with additional required fields
@@ -1444,6 +1454,7 @@ components:
           definition: https://www.w3.org/TR/skos-primer/#secdocumentation
         http://purl.org/dc/terms/created:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: DCTerms created timestamp
@@ -1453,6 +1464,7 @@ components:
             '@value': '2023-10-11T13:59:56'
         http://purl.org/dc/terms/creator:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: DCTerms creators list
@@ -1461,6 +1473,7 @@ components:
           - '@id': http://publications.europa.eu/resource/authority/corporate-body/ESTAT
         http://www.w3.org/2002/07/owl#versionInfo:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: OWL version info
@@ -1862,6 +1875,7 @@ components:
             '@value': '01'
         http://www.w3.org/2004/02/skos/core#changeNote:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS change note with additional required fields
@@ -1878,6 +1892,7 @@ components:
           definition: https://www.w3.org/TR/skos-primer/#secdocumentation
         http://www.w3.org/2004/02/skos/core#historyNote:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS history note with additional required fields
@@ -1894,6 +1909,7 @@ components:
           definition: https://www.w3.org/TR/skos-primer/#secdocumentation
         http://www.w3.org/2004/02/skos/core#editorialNote:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS editorial note with additional required fields
@@ -1910,6 +1926,7 @@ components:
           definition: https://www.w3.org/TR/skos-primer/#secdocumentation
         http://purl.org/dc/terms/created:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: DCTerms created timestamp
@@ -1919,6 +1936,7 @@ components:
             '@value': '2023-10-11T13:59:56'
         http://purl.org/dc/terms/creator:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: DCTerms creators list
@@ -1927,6 +1945,7 @@ components:
           - '@id': http://publications.europa.eu/resource/authority/corporate-body/ESTAT
         http://www.w3.org/2002/07/owl#versionInfo:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: OWL version info
@@ -1935,6 +1954,7 @@ components:
           - '@value': '2024'
         http://rdf-vocabulary.ddialliance.org/xkos#compares:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: List of `ConceptScheme` objects being compared
@@ -1944,6 +1964,7 @@ components:
           - '@id': http://data.europa.eu/xsp/cn2024/cn2024
         http://rdf-vocabulary.ddialliance.org/xkos#madeOf:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS definition (one per language)
@@ -2206,6 +2227,7 @@ components:
           example: http://data.europa.eu/xsp/cn2024/010021000090
         http://www.w3.org/2004/02/skos/core#broader:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS broader
@@ -2215,6 +2237,7 @@ components:
           - '@id': http://data.europa.eu/xsp/cn2024/010021000090
         http://www.w3.org/2004/02/skos/core#narrower:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS narrower
@@ -2224,6 +2247,7 @@ components:
           - '@id': http://data.europa.eu/xsp/cn2024/010100000080
         http://www.w3.org/2004/02/skos/core#exactMatch:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS exact match
@@ -2233,6 +2257,7 @@ components:
           - '@id': http://data.europa.eu/xsp/cn2023/010100000080
         http://www.w3.org/2004/02/skos/core#closeMatch:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS close match
@@ -2242,6 +2267,7 @@ components:
           - '@id': http://data.europa.eu/xsp/cn2023/010100000080
         http://www.w3.org/2004/02/skos/core#broadMatch:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS broad match
@@ -2251,6 +2277,7 @@ components:
           - '@id': http://data.europa.eu/xsp/cn2023/010021000090
         http://www.w3.org/2004/02/skos/core#narrowMatch:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS narrow match
@@ -2260,6 +2287,7 @@ components:
           - '@id': http://data.europa.eu/xsp/cn2023/010100000080
         http://www.w3.org/2004/02/skos/core#relatedMatch:
           items:
+            additionalProperties: true
             type: object
           type: array
           title: SKOS related match

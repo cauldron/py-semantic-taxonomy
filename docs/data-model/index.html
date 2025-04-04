@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../img/favicon-96x96.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.9">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.11">
     
     
       
@@ -119,11 +119,13 @@
     
     
     
-      <label class="md-header__button md-icon" for="__search">
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
-      </label>
-      <div class="md-search" data-md-component="search" role="dialog">
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
@@ -155,6 +157,7 @@
     </div>
   </div>
 </div>
+      
     
     
       <div class="md-header__source">
@@ -226,6 +229,7 @@
       <a href=".." class="md-nav__link">
         
   
+  
   <span class="md-ellipsis">
     Home
     
@@ -256,6 +260,7 @@
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
   
+  
   <span class="md-ellipsis">
     Data model
     
@@ -267,6 +272,7 @@
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
+  
   
   <span class="md-ellipsis">
     Data model
@@ -423,6 +429,7 @@
       <a href="../architecture/" class="md-nav__link">
         
   
+  
   <span class="md-ellipsis">
     Architecture
     
@@ -444,6 +451,7 @@
       <a href="https://docs.pyst.dev/api/" class="md-nav__link">
         
   
+  
   <span class="md-ellipsis">
     API docs
     
@@ -464,6 +472,7 @@
     <li class="md-nav__item">
       <a href="../development/" class="md-nav__link">
         
+  
   
   <span class="md-ellipsis">
     Development and testing
@@ -710,7 +719,7 @@
 <p>We impose the following additional constraints on <code>ConceptScheme</code> objects:</p>
 <ul>
 <li>At least one <code>skos:prefLabel</code> and one <code>skos:definition</code> are required</li>
-<li><code>bibo:status</code>, <code>dcterms:created</code>, <code>owl:versionInfo</code> are required</li>
+<li><code>bibo:status</code>, <code>dcterms:created</code>, <code>dcterms:creator</code>, and <code>owl:versionInfo</code> are required</li>
 <li>Exactly one <code>owl:versionInfo</code> value is specified</li>
 <li>At least one definition (<code>skos:definition</code>) is given</li>
 <li>Instead of supplying a (very long) list of <code>skos:hasTopConcept</code> concept references, please instead specify <code>skos:topConceptOf</code> on the <code>Concept</code> instances.</li>
@@ -775,7 +784,7 @@
 <li>At least one <code>skos:prefLabel</code> is required</li>
 <li>A <code>bibo:status</code> is required</li>
 <li>Each <code>Concept</code> must be in at least one known (i.e. in our database already) <code>ConceptScheme</code>. <code>Concepts</code> can belong to more than one <code>ConceptScheme</code>.</li>
-<li><code>Concepts</code> can be in a relationship with itself. Insert your own joke here.</li>
+<li><code>Concepts</code> can't be in a relationship with themselves. Insert your own joke here.</li>
 <li>The use of <code>skos:note</code> is discouraged (but not prohibited) in favor of the specific <code>skos:note</code> subclasses: <code>skos:scopeNote</code>, <code>skos:definition</code>, <code>skos:example</code>, <code>skos:historyNote</code>, <code>skos:editorialNote</code>, and <code>skos:changeNote</code>. Their use should follow the intended use as documented in the <a href="https://www.w3.org/TR/skos-primer/#secdocumentation">SKOS Primer</a>.</li>
 <li><code>skos:notation</code> must be a <a href="https://www.w3.org/TR/2004/REC-rdf-concepts-20040210/#dfn-typed-literal">typed literal</a> - not a string literal - and not include a <code>@language</code> tag. The default datatype should be <code>http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral</code>.</li>
 <li>We <strong>break from</strong> <a href="https://www.w3.org/TR/skos-reference/#L2613">SKOS guidance</a> to prohibit <code>skos:notation</code> having the same value as <code>skos:prefLabel</code>. A notation is <a href="https://www.w3.org/TR/skos-reference/#L2064">'a string of characters such as "T58.5" or "303.4833" used to uniquely identify a concept within the scope of a given concept scheme'</a>; this definition is inconsistent with <a href="https://www.w3.org/TR/skos-reference/#L2831">lexical labels</a> like <code>skos:prefLabel</code>, which are human-readable and in a natural language. In our system, <code>skos:prefLabel</code> is required but <code>skos:notation</code> is optional.</li>
@@ -819,10 +828,7 @@
 </code></pre></div>
 <h2 id="correspondence">Correspondence<a class="headerlink" href="#correspondence" title="Permanent link">#</a></h2>
 <p>The <a href="https://rdf-vocabulary.ddialliance.org/xkos.html">XKOS</a> ontology provides the <a href="https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences">Correspondence</a> class definition, which we use follow the <a href="http://linked-statistics.github.io/xkos/xkos-best-practices.html">XKOS best practice guide</a>. A <code>Correspondence</code> instance is very similar to a <code>ConceptScheme</code> - it provides metadata for a collection of child nodes.</p>
-<p>In addition to our <a href="#general-constraints-and-assumptions">generic addition restrictions</a>, <code>Correspondence</code> must have:</p>
-<ul>
-<li>Exactly one <code>http://purl.org/dc/terms/issued</code> value.</li>
-</ul>
+<p>In addition to our <a href="#general-constraints-and-assumptions">generic addition restrictions</a>, <code>Correspondence</code> must have <code>bibo:status</code>, <code>dcterms:created</code>, <code>dcterms:creator</code>, and <code>owl:versionInfo</code>, just like <code>ConceptScheme</code>.</p>
 <p>Here is an example of a valid <code>Correspondence</code> in JSON-LD:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://data.europa.eu/xsp/cn2024/CN2024_CN2023&quot;</span><span class="p">,</span>
@@ -843,12 +849,30 @@
 <span class="w">      </span><span class="nt">&quot;@language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">],</span>
-<span class="w">  </span><span class="nt">&quot;http://purl.org/dc/terms/issued&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="nt">&quot;http://purl.org/dc/terms/created&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">      </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://www.w3.org/2001/XMLSchema#dateTime&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024-07-02T08:41:55&quot;</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2023-10-11T13:59:56&quot;</span>
 <span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">]</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://purl.org/dc/terms/creator&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://publications.europa.eu/resource/authority/corporate-body/ESTAT&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://publications.europa.eu/resource/authority/corporate-body/TAXUD&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://www.w3.org/2002/07/owl#versionInfo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2024&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;http://purl.org/ontology/bibo/status&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://purl.org/ontology/bibo/status/accepted&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
 <span class="p">}</span>
 </code></pre></div>
 <h2 id="conceptassociation"><code>ConceptAssociation</code><a class="headerlink" href="#conceptassociation" title="Permanent link">#</a></h2>
@@ -944,7 +968,9 @@
       <div class="md-progress" data-md-component="progress" role="progressbar"></div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.expand", "navigation.path", "navigation.indexes", "navigation.top", "content.footnote.tooltips", "content.code.copy"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.expand", "navigation.path", "navigation.indexes", "navigation.top", "content.footnote.tooltips", "content.code.copy"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../assets/javascripts/bundle.c8b220af.min.js"></script>
