@@ -74,10 +74,16 @@
                                     <span class="text-gray-400 italic">No definition available</span>
                                     {% endif %}
                                 </div>
-                                {% for def in scheme.definitions %}
-                                <div class="text-sm text-gray-500 line-clamp-2 hidden" data-lang="{{ def['@language'] }}">
-                                    {{ def['@value'] }}
-                                </div>
+                                {% for row in languages %}
+                                    {% if row.0 != "en" %}
+                                        <div class="text-sm text-gray-500 line-clamp-2 hidden" data-lang="{{ row.0 }}">
+                                        {% if scheme.definitions|lang(row[0]) %}
+                                            {{ scheme.definitions|lang(row[0])}}
+                                        {% else %}
+                                            <span class="text-gray-400 italic">No definition available</span>
+                                        {% endif %}
+                                        </div>
+                                    {% endif %}
                                 {% endfor %}
                             </a>
                         </td>
