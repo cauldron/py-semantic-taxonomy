@@ -247,3 +247,20 @@ async def concept_delete_not_found(graph_service, entities):
 
     with pytest.raises(ConceptNotFoundError):
         await graph_service.concept_delete(entities[0].id_)
+
+
+async def test_concepts_get_for_scheme(graph_service, entities):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.concepts_get_for_scheme.return_value = entities[0]
+
+    result = await graph_service.concepts_get_for_scheme(entities[3].id_)
+    assert result == entities[0]
+    mock_kos_graph.concepts_get_for_scheme.assert_called_with(
+        concept_scheme_iri=entities[3].id_, top_concepts_only=False
+    )
+
+    result = await graph_service.concepts_get_for_scheme(entities[3].id_, True)
+    assert result == entities[0]
+    mock_kos_graph.concepts_get_for_scheme.assert_called_with(
+        concept_scheme_iri=entities[3].id_, top_concepts_only=True
+    )

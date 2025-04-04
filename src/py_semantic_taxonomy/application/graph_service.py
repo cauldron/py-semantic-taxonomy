@@ -121,6 +121,15 @@ class GraphService:
 
         return
 
+    async def concepts_get_for_scheme(
+        self, concept_scheme_iri: str, top_concepts_only: bool = False
+    ) -> list[Concept]:
+        """Get all concepts that belong to a given concept scheme."""
+        return await self.graph.concepts_get_for_scheme(
+            concept_scheme_iri=concept_scheme_iri,
+            top_concepts_only=top_concepts_only,
+        )
+
     # Concept Scheme
 
     async def concept_scheme_get(self, iri: str) -> ConceptScheme:
@@ -128,6 +137,9 @@ class GraphService:
 
     async def concept_scheme_get_all_iris(self) -> list[str]:
         return await self.graph.concept_scheme_get_all_iris()
+
+    async def concept_scheme_list(self) -> list[ConceptScheme]:
+        return await self.graph.concept_scheme_list()
 
     async def concept_scheme_create(self, concept_scheme: ConceptScheme) -> ConceptScheme:
         return await self.graph.concept_scheme_create(concept_scheme=concept_scheme)

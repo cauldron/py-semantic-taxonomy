@@ -25,7 +25,9 @@ class Settings(BaseSettings):
     #     "https://brightway-lca.cloud",
     #     "https://brightway-lca.com",
     # }
-    model_config = SettingsConfigDict(env_prefix="PyST_", env_file="pyst-config.env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_prefix="PyST_", env_file="pyst-config.env", env_file_encoding="utf-8"
+    )
 
 
 @lru_cache(maxsize=1)
