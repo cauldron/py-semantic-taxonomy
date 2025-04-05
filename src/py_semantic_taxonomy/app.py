@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from py_semantic_taxonomy.adapters.persistence.database import (
     create_engine,
@@ -34,6 +37,7 @@ def create_app() -> FastAPI:
 
     app.include_router(router)
     app.include_router(web_router)
+    app.mount("/static", StaticFiles(directory=Path(__file__).parent / "adapters" / "routers" / "static"), name="static")
     return app
 
 
