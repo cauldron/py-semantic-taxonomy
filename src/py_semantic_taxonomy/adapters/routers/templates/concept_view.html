@@ -214,12 +214,10 @@
                 {% if concept['http://www.w3.org/2004/02/skos/core#altLabel'] %}
                 <div>
                     <h3 class="text-sm font-medium text-gray-500">Alternative Labels</h3>
-                    <div class="mt-1 text-sm text-gray-900">
+                    <div class="mt-1 text-sm text-gray-900 grid grid-cols-[40px_1fr] gap-y-1">
                         {% for label in concept['http://www.w3.org/2004/02/skos/core#altLabel'] %}
-                        <div class="flex items-center">
-                            <span class="text-gray-400 mr-2">{{ label['@language'] }}:</span>
+                            <span class="text-gray-500 font-medium">{{ label['@language'] }}:</span>
                             <span>{{ label['@value'] }}</span>
-                        </div>
                         {% endfor %}
                     </div>
                 </div>
