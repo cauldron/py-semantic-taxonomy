@@ -64,89 +64,126 @@
         {% if relationships %}
         <div class="card">
             <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h2 class="text-lg font-medium text-gray-900">Relationships</h2>
+                <h2 class="text-lg font-medium text-gray-900 flex items-center">
+                    <i class="fas fa-sitemap text-primary mr-2"></i>
+                    Concept Hierarchy
+                </h2>
             </div>
             <div class="px-4 py-5 sm:p-6">
-                {% for rel in relationships %}
-                    {% if rel.source == concept['@id'] %}
-                        {% set link_url = '/web/concept/' ~ rel.target|urlencode %}
-                        {% set related_iri = rel.target %}
-                        {% set is_source = true %}
-                    {% else %}
-                        {% set link_url = '/web/concept/' ~ rel.source|urlencode %}
-                        {% set related_iri = rel.source %}
-                        {% set is_source = false %}
-                    {% endif %}
-                    <a href="{{ link_url }}" class="block mb-3 group">
-                        <div class="flex items-center text-sm bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors duration-150">
-                            {% if is_source %}
-                                {% if rel.predicate.endswith('broader') %}
-                                <i class="fas fa-arrow-left text-gray-400 mr-2 group-hover:text-gray-600"></i>
-                                {% endif %}
-                                <div class="flex-1">
-                                    <div class="flex items-center">
-                                        <span class="font-medium text-primary group-hover:text-primary-hover">
-                                            {% if related_iri in related_concepts %}
-                                                {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#prefLabel']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}
-                                            {% else %}
-                                                {{ related_iri|replace('http://data.europa.eu/xsp/cn2024/', '')|replace('http://data.europa.eu/xsp/cn2023/', '') }}
-                                            {% endif %}
-                                        </span>
-                                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-indigo-100 text-indigo-800' if rel.predicate.endswith('broader') else 'bg-orange-100 text-orange-800' if rel.predicate.endswith('narrower') else 'bg-green-100 text-green-800' }}">
-                                            {% if rel.predicate.endswith('broader') %}
-                                                Broader
-                                            {% elif rel.predicate.endswith('narrower') %}
-                                                Narrower
-                                            {% else %}
-                                                {{ rel.predicate|replace('http://www.w3.org/2004/02/skos/core#', '')|title }}
-                                            {% endif %}
-                                        </span>
+                <div class="space-y-8">
+                    <!-- Broader Concepts -->
+                    {% set broader_concepts = [] %}
+                    {% for rel in relationships %}
+                        {% if (rel.predicate == 'http://www.w3.org/2004/02/skos/core#broader' and rel.source == concept['@id']) or
+                              (rel.predicate == 'http://www.w3.org/2004/02/skos/core#narrower' and rel.target == concept['@id']) %}
+                            {% set _ = broader_concepts.append(rel) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if broader_concepts|length > 0 %}
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 mb-3 flex items-center">
+                            <i class="fas fa-arrow-up text-gray-400 mr-2"></i>
+                            Broader Concepts
+                            <span class="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ broader_concepts|length }}</span>
+                        </h3>
+                        <div class="space-y-2">
+                            {% for rel in broader_concepts %}
+                                {% set related_iri = rel.target if rel.source == concept['@id'] else rel.source %}
+                                <a href="/web/concept/{{ related_iri|urlencode }}" class="block group">
+                                    <div class="bg-white border border-gray-200 rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative">
+                                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg"></div>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <div class="font-medium text-gray-900 group-hover:text-primary transition-colors duration-150">
+                                                    {% if related_iri in related_concepts %}
+                                                        {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#prefLabel']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}
+                                                    {% else %}
+                                                        {{ related_iri|replace('http://data.europa.eu/xsp/cn2024/', '')|replace('http://data.europa.eu/xsp/cn2023/', '') }}
+                                                    {% endif %}
+                                                </div>
+                                                {% if related_iri in related_concepts and related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'] %}
+                                                <div class="text-xs text-gray-500 mt-1 flex items-center">
+                                                    <i class="fas fa-hashtag text-gray-400 mr-1"></i>
+                                                    {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'][0]['@value'] }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs text-gray-400 group-hover:text-gray-600">View details</span>
+                                                <i class="fas fa-chevron-right text-gray-400 group-hover:text-primary transition-colors duration-150"></i>
+                                            </div>
+                                        </div>
                                     </div>
-                                    {% if related_iri in related_concepts and related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'] %}
-                                    <div class="text-xs text-gray-500 mt-1">
-                                        {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'][0]['@value'] }}
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                {% if rel.predicate.endswith('narrower') %}
-                                <i class="fas fa-arrow-right text-gray-400 ml-2 group-hover:text-gray-600"></i>
-                                {% endif %}
-                            {% else %}
-                                {% if rel.predicate.endswith('narrower') %}
-                                <i class="fas fa-arrow-left text-gray-400 mr-2 group-hover:text-gray-600"></i>
-                                {% endif %}
-                                <div class="flex-1">
-                                    <div class="flex items-center">
-                                        <span class="font-medium text-primary group-hover:text-primary-hover">
-                                            {% if related_iri in related_concepts %}
-                                                {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#prefLabel']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}
-                                            {% else %}
-                                                {{ related_iri|replace('http://data.europa.eu/xsp/cn2024/', '')|replace('http://data.europa.eu/xsp/cn2023/', '') }}
-                                            {% endif %}
-                                        </span>
-                                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-orange-100 text-orange-800' if rel.predicate.endswith('broader') else 'bg-indigo-100 text-indigo-800' if rel.predicate.endswith('narrower') else 'bg-green-100 text-green-800' }}">
-                                            {% if rel.predicate.endswith('broader') %}
-                                                Narrower
-                                            {% elif rel.predicate.endswith('narrower') %}
-                                                Broader
-                                            {% else %}
-                                                {{ rel.predicate|replace('http://www.w3.org/2004/02/skos/core#', '')|title }}
-                                            {% endif %}
-                                        </span>
-                                    </div>
-                                    {% if related_iri in related_concepts and related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'] %}
-                                    <div class="text-xs text-gray-500 mt-1">
-                                        {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'][0]['@value'] }}
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                {% if rel.predicate.endswith('broader') %}
-                                <i class="fas fa-arrow-right text-gray-400 ml-2 group-hover:text-gray-600"></i>
-                                {% endif %}
-                            {% endif %}
+                                </a>
+                            {% endfor %}
                         </div>
-                    </a>
-                {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Current Concept -->
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div class="w-full border-t border-gray-200"></div>
+                        </div>
+                        <div class="relative flex justify-center">
+                            <div class="px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-circle text-primary text-xs"></i>
+                                    <span class="text-sm font-medium text-gray-700">Current Concept</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Narrower Concepts -->
+                    {% set narrower_concepts = [] %}
+                    {% for rel in relationships %}
+                        {% if (rel.predicate == 'http://www.w3.org/2004/02/skos/core#narrower' and rel.source == concept['@id']) or
+                              (rel.predicate == 'http://www.w3.org/2004/02/skos/core#broader' and rel.target == concept['@id']) %}
+                            {% set _ = narrower_concepts.append(rel) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if narrower_concepts|length > 0 %}
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 mb-3 flex items-center">
+                            <i class="fas fa-arrow-down text-gray-400 mr-2"></i>
+                            Narrower Concepts
+                            <span class="ml-2 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ narrower_concepts|length }}</span>
+                        </h3>
+                        <div class="space-y-2">
+                            {% for rel in narrower_concepts %}
+                                {% set related_iri = rel.target if rel.source == concept['@id'] else rel.source %}
+                                <a href="/web/concept/{{ related_iri|urlencode }}" class="block group">
+                                    <div class="bg-white border border-gray-200 rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative">
+                                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg"></div>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <div class="font-medium text-gray-900 group-hover:text-primary transition-colors duration-150">
+                                                    {% if related_iri in related_concepts %}
+                                                        {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#prefLabel']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}
+                                                    {% else %}
+                                                        {{ related_iri|replace('http://data.europa.eu/xsp/cn2024/', '')|replace('http://data.europa.eu/xsp/cn2023/', '') }}
+                                                    {% endif %}
+                                                </div>
+                                                {% if related_iri in related_concepts and related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'] %}
+                                                <div class="text-xs text-gray-500 mt-1 flex items-center">
+                                                    <i class="fas fa-hashtag text-gray-400 mr-1"></i>
+                                                    {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'][0]['@value'] }}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs text-gray-400 group-hover:text-gray-600">View details</span>
+                                                <i class="fas fa-chevron-right text-gray-400 group-hover:text-primary transition-colors duration-150"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% endif %}
