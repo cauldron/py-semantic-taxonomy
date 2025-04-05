@@ -47,16 +47,14 @@
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4">
                             <a href="/web/concept_scheme/{{ scheme.id_|urlencode }}">
-                                <!-- This is the starting value -->
-                                <div class="text-sm font-medium text-primary" data-lang="en">
-                                    {{ scheme.pref_labels|lang('en') }}
-                                </div>
-                                {% for label in scheme.pref_labels %}
-                                    {% if label['@language'] != 'en' %}
-                                        <div class="text-sm font-medium text-primary hidden" data-lang="{{ label['@language'] }}">
-                                            {{ label['@value'] }}
-                                        </div>
+                                {% for row in languages %}
+                                <div class="text-sm font-medium text-primary{% if row[0] != 'en' %} hidden{% endif %}" data-lang="{{ row[0] }}">
+                                    {% if scheme.pref_labels|lang(row[0]) %}
+                                        {{ scheme.pref_labels|lang(row[0]) }}
+                                    {% else %}
+                                    <span class="text-gray-400 italic">No Concept Scheme label available</span>
                                     {% endif %}
+                                </div>
                                 {% endfor %}
                                 {% if scheme.notations %}
                                 <div class="text-xs text-gray-500 mt-1">
@@ -67,23 +65,14 @@
                         </td>
                         <td class="px-6 py-4">
                             <a href="/web/concept_scheme/{{ scheme.id_|urlencode }}">
-                                <div class="text-sm text-gray-500 line-clamp-2" data-lang="en">
-                                    {% if scheme.definitions %}
-                                        {{ scheme.definitions|lang('en') }}
-                                    {% else %}
-                                    <span class="text-gray-400 italic">No definition available</span>
-                                    {% endif %}
-                                </div>
                                 {% for row in languages %}
-                                    {% if row.0 != "en" %}
-                                        <div class="text-sm text-gray-500 line-clamp-2 hidden" data-lang="{{ row.0 }}">
+                                    <div class="text-sm text-gray-500 line-clamp-2{% if row[0] != 'en' %} hidden{% endif %}" data-lang="{{ row[0] }}">
                                         {% if scheme.definitions|lang(row[0]) %}
                                             {{ scheme.definitions|lang(row[0])}}
                                         {% else %}
                                             <span class="text-gray-400 italic">No definition available</span>
                                         {% endif %}
                                         </div>
-                                    {% endif %}
                                 {% endfor %}
                             </a>
                         </td>
