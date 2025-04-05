@@ -242,7 +242,12 @@
                 {% if concept['http://purl.org/ontology/bibo/status'] %}
                 <div>
                     <h3 class="text-sm font-medium text-gray-500">Status</h3>
-                    <p class="mt-1 text-sm text-gray-900">{{ concept['http://purl.org/ontology/bibo/status'][0]['@id']|split('/')|last|title }}</p>
+                    <div class="mt-1">
+                        {% set status = concept['http://purl.org/ontology/bibo/status'][0]['@id']|split('/')|last|title %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if status == 'Accepted' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ status }}
+                        </span>
+                    </div>
                 </div>
                 {% endif %}
 
