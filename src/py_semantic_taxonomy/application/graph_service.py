@@ -157,12 +157,6 @@ class GraphService:
             )
         return
 
-    async def concepts_get_for_scheme(self, concept_scheme_id: str) -> list[Concept]:
-        """Get all concepts that belong to a given concept scheme."""
-        return await self.graph.concepts_get_for_scheme(
-            concept_scheme_id=concept_scheme_id
-        )
-
     # Relationships
 
     async def relationships_get(
