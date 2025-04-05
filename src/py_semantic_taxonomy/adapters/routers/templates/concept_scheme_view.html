@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}{{ concept_scheme['http://www.w3.org/2004/02/skos/core#prefLabel']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }} - PyST{% endblock %}
+{% block title %}{{ concept_scheme.pref_labels|lang("en") }} - PyST{% endblock %}
 
 {% block page_header %}
 <div class="flex justify-between items-center">
     <div>
-        <h1>{{ concept_scheme['http://www.w3.org/2004/02/skos/core#prefLabel']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}</h1>
+        <h1>{{ concept_scheme.pref_labels|lang("en") }}</h1>
         <p>Concept Scheme Details</p>
     </div>
     <div class="flex space-x-3">
@@ -31,13 +31,9 @@
                     <label for="language" class="text-sm font-medium text-gray-700">Display Language:</label>
                 </div>
                 <select id="language" class="mt-1 block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
-                    <option value="en">English</option>
-                    <option value="de">Deutsch</option>
-                    <option value="es">Español</option>
-                    <option value="da">Dansk</option>
-                    <option value="fr">Français</option>
-                    <option value="pt">Português</option>
-                    <option value="it">Italiano</option>
+                    {% for row in languages %}
+                    <option value="{{ row.0 }}">{{ row.1 }}</option>
+                    {% endfor %}
                 </select>
             </div>
         </div>
@@ -60,36 +56,38 @@
                         {% for concept in concepts %}
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-primary" data-lang="en">
-                                    {{ concept['http://www.w3.org/2004/02/skos/core#prefLabel']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}
-                                </div>
-                                {% for label in concept['http://www.w3.org/2004/02/skos/core#prefLabel'] %}
-                                <div class="text-sm font-medium text-primary hidden" data-lang="{{ label['@language'] }}">
-                                    {{ label['@value'] }}
-                                </div>
-                                {% endfor %}
-                                {% if concept['http://www.w3.org/2004/02/skos/core#notation'] %}
-                                <div class="text-xs text-gray-500 mt-1">
-                                    <i class="fas fa-hashtag mr-1"></i>{{ concept['http://www.w3.org/2004/02/skos/core#notation'][0]['@value'] }}
-                                </div>
-                                {% endif %}
+                                <a href="/web/concept/{{ concept.id_|urlencode }}">
+                                    {% for row in languages %}
+                                    <div class="text-sm font-medium text-primary{% if row[0] != 'en' %} hidden{% endif %}" data-lang="{{ row[0] }}">
+                                        {% if concept.pref_labels|lang(row[0]) %}
+                                            {{ concept.pref_labels|lang(row[0]) }}
+                                        {% else %}
+                                            <span class="text-gray-400 italic">No concept label available</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                    {% if concept.notations %}
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        <i class="fas fa-hashtag mr-1"></i>{{ concept.notations[0]['@value'] }}
+                                    </div>
+                                    {% endif %}
+                                </a>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm text-gray-500 line-clamp-2" data-lang="en">
-                                    {% if concept['http://www.w3.org/2004/02/skos/core#definition'] %}
-                                    {{ concept['http://www.w3.org/2004/02/skos/core#definition']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}
-                                    {% else %}
-                                    <span class="text-gray-400 italic">No definition available</span>
-                                    {% endif %}
-                                </div>
-                                {% for def in concept['http://www.w3.org/2004/02/skos/core#definition'] %}
-                                <div class="text-sm text-gray-500 line-clamp-2 hidden" data-lang="{{ def['@language'] }}">
-                                    {{ def['@value'] }}
-                                </div>
-                                {% endfor %}
+                                <a href="/web/concept/{{ concept.id_|urlencode }}">
+                                    {% for row in languages %}
+                                    <div class="text-sm text-gray-500 line-clamp-2{% if row[0] != 'en' %} hidden{% endif %}" data-lang="{{ row[0] }}">
+                                        {% if concept.definitions|lang(row[0]) %}
+                                            {{ concept.definitions|lang(row[0])}}
+                                        {% else %}
+                                            <span class="text-gray-400 italic">No definition available</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </a>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="/web/concept/{{ concept['@id'] }}"
+                                <a href="/web/concept/{{ concept.id_|urlencode }}"
                                    class="text-primary text-primary-hover inline-flex items-center">
                                     <i class="fas fa-eye mr-1"></i>View
                                 </a>
@@ -121,61 +119,58 @@
                 <!-- Description -->
                 <div>
                     <h3 class="text-sm font-medium text-gray-500">Description</h3>
-                    <div class="mt-1 text-sm text-gray-900" data-lang="en">
-                        {% if concept_scheme['http://www.w3.org/2004/02/skos/core#definition'] %}
-                        {{ concept_scheme['http://www.w3.org/2004/02/skos/core#definition']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}
-                        {% else %}
-                        <span class="text-gray-400 italic">No description available</span>
-                        {% endif %}
-                    </div>
-                    {% for def in concept_scheme['http://www.w3.org/2004/02/skos/core#definition'] %}
-                    <div class="mt-1 text-sm text-gray-900 hidden" data-lang="{{ def['@language'] }}">
-                        {{ def['@value'] }}
-                    </div>
-                    {% endfor %}
+                        {% for row in languages %}
+                        <div class="mt-1 text-sm text-gray-900{% if row[0] != 'en' %} hidden{% endif %}" data-lang="{{ row[0] }}">
+                            {% if concept_scheme.definitions|lang(row[0]) %}
+                                {{ concept_scheme.definitions|lang(row[0])}}
+                            {% else %}
+                                <span class="text-gray-400 italic">No description available</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                 </div>
 
                 <!-- Creator -->
-                {% if concept_scheme['http://purl.org/dc/terms/creator'] %}
+                {% if concept_scheme.creators %}
                 <div>
                     <h3 class="text-sm font-medium text-gray-500">Creator</h3>
-                    <div class="mt-1 text-sm text-gray-900">
-                        {% for creator in concept_scheme['http://purl.org/dc/terms/creator'] %}
-                        <div>{{ creator['@id'] }}</div>
+                    <div class="mt-1 text-sm primary">
+                        {% for creator in concept_scheme.creators %}
+                        <div class="hover:bg-gray-50"><a href="{{ creator['@id'] }}">{{ creator['@id'] }}</a></div>
                         {% endfor %}
                     </div>
                 </div>
                 {% endif %}
 
                 <!-- Version -->
-                {% if concept_scheme['http://www.w3.org/2002/07/owl#versionInfo'] %}
+                {% if concept_scheme.version %}
                 <div>
                     <h3 class="text-sm font-medium text-gray-500">Version</h3>
-                    <p class="mt-1 text-sm text-gray-900">{{ concept_scheme['http://www.w3.org/2002/07/owl#versionInfo'][0]['@value'] }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ concept_scheme.version[0]['@value'] }}</p>
                 </div>
                 {% endif %}
 
                 <!-- Created Date -->
-                {% if concept_scheme['http://purl.org/dc/terms/created'] %}
+                {% if concept_scheme.created %}
                 <div>
                     <h3 class="text-sm font-medium text-gray-500">Created</h3>
-                    <p class="mt-1 text-sm text-gray-900">{{ concept_scheme['http://purl.org/dc/terms/created'][0]['@value'] }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ concept_scheme.created[0]['@value'] }}</p>
                 </div>
                 {% endif %}
 
                 <!-- Last Modified Date -->
-                {% if concept_scheme['http://purl.org/dc/terms/modified'] %}
+                {% if concept_scheme.extra['http://purl.org/dc/terms/modified'] %}
                 <div>
                     <h3 class="text-sm font-medium text-gray-500">Last Modified</h3>
-                    <p class="mt-1 text-sm text-gray-900">{{ concept_scheme['http://purl.org/dc/terms/modified'][0]['@value'] }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ concept_scheme.extra['http://purl.org/dc/terms/modified'][0]['@value'] }}</p>
                 </div>
                 {% endif %}
 
                 <!-- Notation -->
-                {% if concept_scheme['http://www.w3.org/2004/02/skos/core#notation'] %}
+                {% if concept_scheme.notations %}
                 <div>
                     <h3 class="text-sm font-medium text-gray-500">Notation</h3>
-                    <p class="mt-1 text-sm text-gray-900">{{ concept_scheme['http://www.w3.org/2004/02/skos/core#notation'][0]['@value'] }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ concept_scheme.notations[0]['@value'] }}</p>
                 </div>
                 {% endif %}
             </div>

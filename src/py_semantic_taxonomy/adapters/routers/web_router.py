@@ -71,6 +71,7 @@ async def web_concept_scheme_view(
     request: Request,
     iri: str = Path(..., description="The IRI of the concept scheme"),
     service=Depends(get_graph_service),
+    settings=Depends(get_settings),
 ) -> HTMLResponse:
     """View a specific concept scheme."""
     try:
@@ -79,14 +80,13 @@ async def web_concept_scheme_view(
         concepts = await service.concepts_get_for_scheme(
             concept_scheme_iri=decoded_iri, top_concepts_only=True
         )
-        concept_scheme_json = concept_scheme.to_json_ld()
-        concepts_json = [c.to_json_ld() for c in concepts]
         return templates.TemplateResponse(
             "concept_scheme_view.html",
             {
                 "request": request,
-                "concept_scheme": concept_scheme_json,
-                "concepts": concepts_json,
+                "concept_scheme": concept_scheme,
+                "concepts": concepts,
+                "languages": format_languages(settings.languages),
             },
         )
     except de.ConceptSchemeNotFoundError:
