@@ -92,7 +92,7 @@
                                                 {{ related_iri|replace('http://data.europa.eu/xsp/cn2024/', '')|replace('http://data.europa.eu/xsp/cn2023/', '') }}
                                             {% endif %}
                                         </span>
-                                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-blue-100 text-blue-800' if rel.predicate.endswith('broader') or rel.predicate.endswith('narrower') else 'bg-green-100 text-green-800' }}">
+                                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-indigo-100 text-indigo-800' if rel.predicate.endswith('broader') else 'bg-orange-100 text-orange-800' if rel.predicate.endswith('narrower') else 'bg-green-100 text-green-800' }}">
                                             {% if rel.predicate.endswith('broader') %}
                                                 Broader
                                             {% elif rel.predicate.endswith('narrower') %}
@@ -124,7 +124,7 @@
                                                 {{ related_iri|replace('http://data.europa.eu/xsp/cn2024/', '')|replace('http://data.europa.eu/xsp/cn2023/', '') }}
                                             {% endif %}
                                         </span>
-                                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-blue-100 text-blue-800' if rel.predicate.endswith('broader') or rel.predicate.endswith('narrower') else 'bg-green-100 text-green-800' }}">
+                                        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-orange-100 text-orange-800' if rel.predicate.endswith('broader') else 'bg-indigo-100 text-indigo-800' if rel.predicate.endswith('narrower') else 'bg-green-100 text-green-800' }}">
                                             {% if rel.predicate.endswith('broader') %}
                                                 Narrower
                                             {% elif rel.predicate.endswith('narrower') %}
