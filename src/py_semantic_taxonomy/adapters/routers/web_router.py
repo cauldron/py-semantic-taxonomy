@@ -12,7 +12,6 @@ from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service
 from py_semantic_taxonomy.domain import entities as de
 
-
 logger = structlog.get_logger("py-semantic-taxonomy")
 
 router = APIRouter(prefix="/web", include_in_schema=False)
@@ -25,8 +24,8 @@ def value_for_language(value: list[dict[str, str]], lang: str) -> str:
     """Get the `@value` for a list of multilingual strings with correct `@language` value"""
     for dct in value:
         if dct.get("@language") == lang:
-            return dct.get('@value', '')
-    return ''
+            return dct.get("@value", "")
+    return ""
 
 
 templates.env.filters["lang"] = value_for_language
@@ -59,7 +58,7 @@ async def web_concept_schemes(
         {
             "request": request,
             "concept_schemes": concept_schemes,
-            "languages": format_languages(settings.languages)
+            "languages": format_languages(settings.languages),
         },
     )
 
@@ -77,7 +76,9 @@ async def web_concept_scheme_view(
     try:
         decoded_iri = unquote(iri)
         concept_scheme = await service.concept_scheme_get(iri=decoded_iri)
-        concepts = await service.concepts_get_for_scheme(concept_scheme_id=decoded_iri)
+        concepts = await service.concepts_get_for_scheme(
+            concept_scheme_iri=decoded_iri, top_concepts_only=True
+        )
         concept_scheme_json = concept_scheme.to_json_ld()
         concepts_json = [c.to_json_ld() for c in concepts]
         return templates.TemplateResponse(
@@ -89,16 +90,10 @@ async def web_concept_scheme_view(
             },
         )
     except de.ConceptSchemeNotFoundError:
-        raise HTTPException(
-            status_code=404, detail=f"Concept Scheme with IRI `{iri}` not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Concept Scheme with IRI `{iri}` not found")
     except de.ConceptSchemesNotInDatabase as e:
-        logger.error(
-            "Database error while fetching concept scheme", iri=iri, error=str(e)
-        )
-        raise HTTPException(
-            status_code=500, detail="Database error while fetching concept scheme"
-        )
+        logger.error("Database error while fetching concept scheme", iri=iri, error=str(e))
+        raise HTTPException(status_code=500, detail="Database error while fetching concept scheme")
 
 
 @router.get(
@@ -114,9 +109,7 @@ async def web_concept_view(
     try:
         decoded_iri = unquote(iri)
         concept = await service.concept_get(iri=decoded_iri)
-        relationships = await service.relationships_get(
-            iri=decoded_iri, source=True, target=True
-        )
+        relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
 
         relationships_data = []
         for rel in relationships:
@@ -148,13 +141,7 @@ async def web_concept_view(
             },
         )
     except de.ConceptNotFoundError:
-        raise HTTPException(
-            status_code=404, detail=f"Concept with IRI `{iri}` not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Concept with IRI `{iri}` not found")
     except de.ConceptSchemesNotInDatabase as e:
-        logger.error(
-            "Database error while fetching concept", iri=decoded_iri, error=str(e)
-        )
-        raise HTTPException(
-            status_code=500, detail="Database error while fetching concept"
-        )
+        logger.error("Database error while fetching concept", iri=decoded_iri, error=str(e))
+        raise HTTPException(status_code=500, detail="Database error while fetching concept")

@@ -37,7 +37,11 @@ def create_app() -> FastAPI:
 
     app.include_router(router)
     app.include_router(web_router)
-    app.mount("/static", StaticFiles(directory=Path(__file__).parent / "adapters" / "routers" / "static"), name="static")
+    app.mount(
+        "/static",
+        StaticFiles(directory=Path(__file__).parent / "adapters" / "routers" / "static"),
+        name="static",
+    )
     return app
 
 
