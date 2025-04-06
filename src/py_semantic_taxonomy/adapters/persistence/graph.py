@@ -1,4 +1,5 @@
-from sqlalchemy import Table, delete, func, insert, join, select, update
+from sqlalchemy import Table, cast, delete, func, insert, join, select, update
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -101,15 +102,31 @@ class PostgresKOSGraphDatabase:
         self, concept_scheme_iri: str, top_concepts_only: bool
     ) -> list[Concept]:
         """Get all concepts that belong to a given concept scheme."""
+        schemes = func.jsonb_array_elements(concept_table.c.schemes).table_valued(
+            "value", joins_implicitly=True
+        )
+        top_concepts_of = func.jsonb_array_elements(concept_table.c.top_concept_of).table_valued(
+            "value", joins_implicitly=True
+        )
+
         async with self.engine.connect() as conn:
+            # This approach seems to be faster (1 msec versus 4 msec; not sure this is correct or
+            # significant) and feels more correct than using `@>` (contains); it would also allow
+            # to get the concept scheme row which matches, though we already know its IRI so I'm
+            # not sure how important that is. The previous approach was:
+            # stmt = select(concept_table).where(
+            #     concept_table.c.schemes.op("@>")([{"@id": concept_scheme_iri}])
+            # )
             stmt = select(concept_table).where(
-                # There must be a better way to do this with either `contains` (but that is just
-                # sugar around `@>`) or json_each or... something.
-                concept_table.c.schemes.op("@>")([{"@id": concept_scheme_iri}])
+                schemes.c.value.op("->")("@id") == cast(concept_scheme_iri, JSONB)
             )
             if top_concepts_only:
+                # Same as above; previous query:
+                # stmt = stmt.where(
+                #     concept_table.c.top_concept_of.op("@>")([{"@id": concept_scheme_iri}])
+                # )
                 stmt = stmt.where(
-                    concept_table.c.top_concept_of.op("@>")([{"@id": concept_scheme_iri}])
+                    top_concepts_of.c.value.op("->")("@id") == cast(concept_scheme_iri, JSONB)
                 )
             result = (await conn.execute(stmt.order_by(concept_table.c.id_))).fetchall()
             await conn.rollback()
