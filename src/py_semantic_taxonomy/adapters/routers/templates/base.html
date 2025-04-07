@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/pyst.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <img src="/static/img/logo.png" alt="PyST Logo" class="logo mr-3">
+                        <span class="text-xl font-semibold text-gray-900">PyST</span>
+                    </a>
+                </div>
+                <nav class="flex items-center space-x-4">
+                    <a href="/web/concept_schemes/" class="nav-link {% if request.url.path == '/web/concept_schemes/' %}active{% endif %}">
+                        <i class="fas fa-list mr-2"></i>Concept Schemes
+                    </a>
+                    <a href="/web/concept_scheme/create/" class="nav-link disabled opacity-50 cursor-not-allowed" aria-disabled="true">
+                        <i class="fas fa-plus mr-2"></i>Create Scheme
+                    </a>
+                    <a href="https://docs.pyst.dev/" class="nav-link" target="_blank">
+                        <i class="fas fa-book mr-2"></i>Documentation
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {% block page_header %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-50 border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-sm text-gray-500">
+                <p><a href="https://www.cauldron.ch/">Made by Cauldron Solutions</a> | <a href="https://github.com/cauldron/py-semantic-taxonomy/">Code under MIT License</a></p>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // Prevent clicks on disabled links
+        document.querySelectorAll('a[aria-disabled="true"]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+    </script>
+</body>
+</html>
