@@ -1,7 +1,10 @@
+from pathlib import Path
+
 from sqlalchemy import Table, cast, delete, func, insert, join, select, update
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from sqlalchemy.sql import text
 
 from py_semantic_taxonomy.adapters.persistence.database import create_engine
 from py_semantic_taxonomy.adapters.persistence.tables import (
@@ -20,6 +23,7 @@ from py_semantic_taxonomy.domain.entities import (
     AssociationNotFoundError,
     Concept,
     ConceptNotFoundError,
+    ConceptRelationships,
     ConceptScheme,
     ConceptSchemeNotFoundError,
     Correspondence,
@@ -31,6 +35,8 @@ from py_semantic_taxonomy.domain.entities import (
     NotFoundError,
     Relationship,
 )
+
+SQL_TEMPLATES = Path(__file__).parent / "sql"
 
 
 class PostgresKOSGraphDatabase:
@@ -131,6 +137,37 @@ class PostgresKOSGraphDatabase:
             result = (await conn.execute(stmt.order_by(concept_table.c.id_))).fetchall()
             await conn.rollback()
         return [Concept(**row._mapping) for row in result]
+
+    async def concept_broader_in_ascending_order(
+        self, concept_iri: str, concept_scheme_iri: str
+    ) -> list[Concept]:
+        columns = [
+            "id_",
+            "types",
+            "pref_labels",
+            "status",
+            "notations",
+            "definitions",
+            "change_notes",
+            "history_notes",
+            "editorial_notes",
+            "schemes",
+            "alt_labels",
+            "hidden_labels",
+            "top_concept_of",
+            "extra",
+        ]
+        async with self.engine.connect() as conn:
+            results = (await conn.execute(
+                text(open(SQL_TEMPLATES / "broader_concept_hierarchy.sql").read()),
+                {
+                    "broader": str(RelationshipVerbs.broader),
+                    "source_concept": concept_iri,
+                    "concept_scheme": concept_scheme_iri,
+                },
+            )).fetchall()
+        results.sort(key=lambda x: (x[-1], x[0]))
+        return [Concept(**{key: value for key, value in zip(columns, row)}) for row in results]
 
     # ConceptScheme
 
