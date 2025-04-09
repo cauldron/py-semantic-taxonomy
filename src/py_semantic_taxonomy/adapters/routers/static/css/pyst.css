@@ -2,14 +2,29 @@
     --primary-color: #ef5552;
     --primary-hover: #dc2626;
     --text-color: #1f2937;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
     --bg-color: #ffffff;
     --header-bg: #ffffff;
     --nav-bg: #f8fafc;
+    --border-color: #e5e7eb;
+}
+[data-theme="dark"] {
+    --primary-color: #ef5552;
+    --primary-hover: #dc2626;
+    --text-color: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-tertiary: #6b7280;
+    --bg-color: #111827;
+    --header-bg: #1f2937;
+    --nav-bg: #374151;
+    --border-color: #4b5563;
 }
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: var(--text-color);
     background-color: var(--bg-color);
+    transition: background-color 0.3s, color 0.3s;
 }
 .header {
     background-color: var(--header-bg);
@@ -17,6 +32,10 @@ body {
     position: sticky;
     top: 0;
     z-index: 50;
+    transition: background-color 0.3s;
+}
+[data-theme="dark"] .header {
+    border-bottom-color: #374151;
 }
 .logo {
     height: 32px;
@@ -67,6 +86,10 @@ body {
     background-color: var(--nav-bg);
     border-bottom: 1px solid #e5e7eb;
     padding: 2rem 0;
+    transition: background-color 0.3s;
+}
+[data-theme="dark"] .page-header {
+    border-bottom-color: #374151;
 }
 .page-header h1 {
     font-size: 2.25rem;
@@ -78,12 +101,45 @@ body {
     color: #6b7280;
     font-size: 1.125rem;
 }
+[data-theme="dark"] .page-header p {
+    color: #9ca3af;
+}
 .card {
-    background-color: white;
+    background-color: var(--header-bg);
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     transition: all 0.2s;
 }
 .card:hover {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+[data-theme="dark"] .card {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+}
+[data-theme="dark"] .card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+[data-theme="dark"] input {
+    background-color: var(--nav-bg);
+    border-color: #4b5563;
+    color: var(--text-color);
+}
+[data-theme="dark"] input::placeholder {
+    color: #9ca3af;
+}
+[data-theme="dark"] .bg-gray-50 {
+    background-color: #1f2937;
+}
+[data-theme="dark"] .border-gray-200 {
+    border-color: #374151;
+}
+[data-theme="dark"] .text-gray-500 {
+    color: #9ca3af;
+}
+.hover-row:hover {
+    background-color: var(--nav-bg);
+}
+.relationship-badge {
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
 }

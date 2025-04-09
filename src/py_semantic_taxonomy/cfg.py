@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     typesense_embedding_model: str = "ts/all-MiniLM-L12-v2"
     typesense_exclude_if_missing_for_language: bool = True
 
-    languages: list[str] = ["en", "de", "es", "da", "fr", "pt", "it"]
+    languages: list[str] = ["en", "de", "es", "fr", "pt", "it", "da"]
 
     # allow_origins: Set[str] = {
     #     "https://brightway.cauldron.ch",
