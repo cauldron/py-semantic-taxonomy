@@ -11,7 +11,7 @@ metadata_obj = MetaData()
 concept_table = Table(
     "concept",
     metadata_obj,
-    Column("id_", String, primary_key=True),
+    Column("id_", String, primary_key=True, index=True),
     Column("types", BetterJSON, default=[]),
     Column("pref_labels", BetterJSON, default=[]),
     Column("schemes", BetterJSON, default=[]),
@@ -27,12 +27,19 @@ concept_table = Table(
     Column("extra", BetterJSON, default={}),
 )
 
-Index("concept_id_index", concept_table.c.id_)
+Index(
+    'concept_schemes_index',
+    concept_table.c.schemes,
+    postgresql_using="GIN",
+    postgresql_ops={
+        'schemes': 'jsonb_path_ops',
+    }
+)
 
 concept_scheme_table = Table(
     "concept_scheme",
     metadata_obj,
-    Column("id_", String, primary_key=True),
+    Column("id_", String, primary_key=True, index=True),
     Column("types", BetterJSON, default=[]),
     Column("pref_labels", BetterJSON, default=[]),
     Column("created", BetterJSON, default=[]),
@@ -47,21 +54,16 @@ concept_scheme_table = Table(
     Column("extra", BetterJSON, default={}),
 )
 
-Index("concept_scheme_id_index", concept_scheme_table.c.id_)
-
 relationship_table = Table(
     "relationship",
     metadata_obj,
     Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("source", String, nullable=False),
-    Column("target", String, nullable=False),
+    Column("source", String, nullable=False, index=True),
+    Column("target", String, nullable=False, index=True),
     # https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.Enum
     Column("predicate", Enum(RelationshipVerbs, values_callable=lambda x: [i.value for i in x])),
     UniqueConstraint("source", "target", name="relationship_source_target_uniqueness"),
 )
-
-Index("relationship_source_index", relationship_table.c.source)
-Index("relationship_target_index", relationship_table.c.target)
 
 correspondence_table = Table(
     "correspondence",
@@ -92,4 +94,21 @@ association_table = Table(
     Column("target_concepts", BetterJSON, default=[]),
     Column("kind", Enum(AssociationKind, values_callable=lambda x: [i.value for i in x])),
     Column("extra", BetterJSON, default={}),
+)
+
+Index(
+    'association_source_concepts_index',
+    association_table.c.source_concepts,
+    postgresql_using="GIN",
+    postgresql_ops={
+        'source_concepts': 'jsonb_path_ops',
+    }
+)
+Index(
+    'association_target_concepts_index',
+    association_table.c.target_concepts,
+    postgresql_using="GIN",
+    postgresql_ops={
+        'target_concepts': 'jsonb_path_ops',
+    }
 )

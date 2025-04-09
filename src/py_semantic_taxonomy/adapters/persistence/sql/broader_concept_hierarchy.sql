@@ -22,11 +22,20 @@ WITH RECURSIVE concept_hierarchy (
         ON sc.id_ = rt.source
     WHERE sc.id_ = :source_concept
         AND rt.predicate = :broader
-        AND EXISTS (
-            SELECT *
-            FROM jsonb_array_elements(tc.schemes) AS elements
-            WHERE elements.value ->> '@id' = :concept_scheme
-        )
+        -- Equivalent to
+        AND tc.schemes @@ '$."@id" == :concept_scheme'
+        -- But this won't work with parameterized query inputs
+        -- so we take the long way around
+        -- AND jsonb_path_match(
+        --     tc.schemes,
+        --     '$."@id" == $var',
+        --     jsonb_build_object('var', :concept_scheme :: text)
+        -- )
+        -- AND EXISTS (
+        --     SELECT *
+        --     FROM jsonb_array_elements(tc.schemes) AS elements
+        --     WHERE elements.value ->> '@id' = :concept_scheme
+        -- )
     UNION
     SELECT tc.*, ch.depth + 1 AS depth
     FROM relationship AS rt

@@ -23,7 +23,6 @@ from py_semantic_taxonomy.domain.entities import (
     AssociationNotFoundError,
     Concept,
     ConceptNotFoundError,
-    ConceptRelationships,
     ConceptScheme,
     ConceptSchemeNotFoundError,
     Correspondence,
