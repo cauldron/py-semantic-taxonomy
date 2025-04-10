@@ -4,7 +4,7 @@ from urllib.parse import unquote
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from langcodes import Language
 
@@ -40,6 +40,13 @@ class WebPaths(StrEnum):
     concept_scheme_view = "/concept_scheme/{iri:path}"
     concept_view = "/concept/{iri:path}"
     search = "/search/"
+
+
+@router.get('/')
+async def redirect_blank_web_page(
+    request: Request,
+) -> RedirectResponse:
+    return RedirectResponse(request.url_for('web_concept_schemes'))
 
 
 @router.get(

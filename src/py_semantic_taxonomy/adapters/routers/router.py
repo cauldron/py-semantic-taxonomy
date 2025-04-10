@@ -2,7 +2,7 @@ from enum import StrEnum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from pydantic_settings import BaseSettings
 
 import py_semantic_taxonomy.adapters.routers.request_dto as req

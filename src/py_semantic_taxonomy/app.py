@@ -9,6 +9,7 @@ from py_semantic_taxonomy.adapters.persistence.database import (
 )
 from py_semantic_taxonomy.adapters.routers.router import router
 from py_semantic_taxonomy.adapters.routers.web_router import router as web_router
+from py_semantic_taxonomy.adapters.routers.catch_router import router as catch_router
 from py_semantic_taxonomy.dependencies import get_search_service
 
 # from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +38,7 @@ def create_app() -> FastAPI:
 
     app.include_router(router)
     app.include_router(web_router)
+    app.include_router(catch_router)
     app.mount(
         "/static",
         StaticFiles(directory=Path(__file__).parent / "adapters" / "routers" / "static"),
