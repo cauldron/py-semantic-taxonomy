@@ -135,14 +135,16 @@ paths:
     get:
       tags:
       - ConceptScheme
-      summary: Get a `ConceptScheme` object
+      summary: Get a `ConceptScheme` object or list all concept schemes
       operationId: concept_scheme_get_concept_scheme__get
       parameters:
       - name: iri
         in: query
-        required: true
+        required: false
         schema:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Iri
       responses:
         '200':
@@ -150,7 +152,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConceptScheme-Output'
+                anyOf:
+                - $ref: '#/components/schemas/ConceptScheme-Output'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/ConceptScheme-Output'
+                title: Response Concept Scheme Get Concept Scheme  Get
         '404':
           description: Resource not found
         '422':

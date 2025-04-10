@@ -33,7 +33,7 @@ The following parameters must be either specified as environment variables, or g
 * `PyST_typesense_url` : Typesense host URL
 * `PyST_typesense_api_key` : Typesense API key. Must have collection creation rights.
 * `PyST_typesense_embedding_model` : [Typesense embedding model](https://typesense.org/docs/28.0/api/vector-search.html#using-built-in-models) for semantic search. Default is "ts/all-MiniLM-L12-v2"
-* `PyST_languages` : List of language codes used in the search engine and web UI. Should be a JSON string, e.g. '["en", "de"]'.
+* `PyST_languages` : List of language codes used in the search engine and web UI. Should be a JSON _string_, e.g. `'["en", "de"]'`. Default is `'["en", "de", "es", "fr", "pt", "it", "da"]'`
 
 3\. Run the server
 
