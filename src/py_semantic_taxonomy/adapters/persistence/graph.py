@@ -157,14 +157,16 @@ class PostgresKOSGraphDatabase:
             "extra",
         ]
         async with self.engine.connect() as conn:
-            results = (await conn.execute(
-                text(open(SQL_TEMPLATES / "broader_concept_hierarchy.sql").read()),
-                {
-                    "broader": str(RelationshipVerbs.broader),
-                    "source_concept": concept_iri,
-                    "concept_scheme": concept_scheme_iri,
-                },
-            )).fetchall()
+            results = (
+                await conn.execute(
+                    text(open(SQL_TEMPLATES / "broader_concept_hierarchy.sql").read()),
+                    {
+                        "broader": str(RelationshipVerbs.broader),
+                        "source_concept": concept_iri,
+                        "concept_scheme": concept_scheme_iri,
+                    },
+                )
+            ).fetchall()
         results.sort(key=lambda x: (x[-1], x[0]))
         return [Concept(**{key: value for key, value in zip(columns, row)}) for row in results]
 

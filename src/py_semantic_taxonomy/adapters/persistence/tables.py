@@ -28,12 +28,12 @@ concept_table = Table(
 )
 
 Index(
-    'concept_schemes_index',
+    "concept_schemes_index",
     concept_table.c.schemes,
     postgresql_using="GIN",
     postgresql_ops={
-        'schemes': 'jsonb_path_ops',
-    }
+        "schemes": "jsonb_path_ops",
+    },
 )
 
 concept_scheme_table = Table(
@@ -97,18 +97,18 @@ association_table = Table(
 )
 
 Index(
-    'association_source_concepts_index',
+    "association_source_concepts_index",
     association_table.c.source_concepts,
     postgresql_using="GIN",
     postgresql_ops={
-        'source_concepts': 'jsonb_path_ops',
-    }
+        "source_concepts": "jsonb_path_ops",
+    },
 )
 Index(
-    'association_target_concepts_index',
+    "association_target_concepts_index",
     association_table.c.target_concepts,
     postgresql_using="GIN",
     postgresql_ops={
-        'target_concepts': 'jsonb_path_ops',
-    }
+        "target_concepts": "jsonb_path_ops",
+    },
 )
