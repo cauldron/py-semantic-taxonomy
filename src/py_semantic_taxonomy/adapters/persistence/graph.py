@@ -16,6 +16,7 @@ from py_semantic_taxonomy.adapters.persistence.tables import (
 )
 from py_semantic_taxonomy.domain.constants import (
     SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES,
+    AssociationKind,
     RelationshipVerbs,
 )
 from py_semantic_taxonomy.domain.entities import (
@@ -456,6 +457,24 @@ class PostgresKOSGraphDatabase:
                 raise AssociationNotFoundError
             await conn.rollback()
         return Association(**result._mapping)
+
+    async def associations_get_for_source_concept(
+        self, concept_iri: str, simple_only: bool
+    ) -> list[Association]:
+        source_associations = func.jsonb_array_elements(
+            association_table.c.source_concepts
+        ).table_valued("value", joins_implicitly=True)
+
+        async with self.engine.connect() as conn:
+            # See above discussion on how best to search within JSONB fields
+            stmt = select(association_table).where(
+                source_associations.c.value.op("->")("@id") == cast(concept_iri, JSONB)
+            )
+            if simple_only:
+                stmt = stmt.where(association_table.c.kind == AssociationKind.simple)
+            result = (await conn.execute(stmt.order_by(association_table.c.id_))).fetchall()
+            await conn.rollback()
+        return [Association(**row._mapping) for row in result]
 
     async def association_create(self, association: Association) -> Association:
         async with self.engine.connect() as conn:

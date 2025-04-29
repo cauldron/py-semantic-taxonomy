@@ -228,10 +228,10 @@ class GraphService:
     async def association_get(self, iri: str) -> Association:
         return await self.graph.association_get(iri=iri)
 
-    async def associations_get_for_concept(
+    async def associations_get_for_source_concept(
         self, concept_iri: str, simple_only: bool = False
     ) -> list[Association]:
-        return await self.graph.associations_get_for_concept(
+        return await self.graph.associations_get_for_source_concept(
             concept_iri=concept_iri, simple_only=simple_only
         )
 
