@@ -1,10 +1,10 @@
 from enum import StrEnum
 from pathlib import Path as PathLib
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from langcodes import Language
 
@@ -103,12 +103,19 @@ async def web_concept_scheme_view(
 async def web_concept_view(
     request: Request,
     iri: str = Path(..., description="The IRI of the concept to view"),
+    concept_scheme: str | None = None,
     service=Depends(get_graph_service),
 ) -> HTMLResponse:
     """View a specific concept."""
     try:
         decoded_iri = unquote(iri)
         concept = await service.concept_get(iri=decoded_iri)
+        if not concept_scheme:
+            return RedirectResponse(
+                str(request.url_for("web_concept_view", iri=quote(iri)))
+                + "?concept_scheme="
+                + quote(concept.schemes[0]["@id"], safe="")
+            )
         relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
 
         relationships_data = []
