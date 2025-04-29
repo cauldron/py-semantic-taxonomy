@@ -88,7 +88,9 @@ class GraphService(Protocol):
 
     async def concept_get(self, iri: str) -> Concept: ...
 
-    async def concept_broader_in_ascending_order(self, concept_iri: str, concept_scheme_iri: str) -> list[Concept]: ...
+    async def concept_broader_in_ascending_order(
+        self, concept_iri: str, concept_scheme_iri: str
+    ) -> list[Concept]: ...
 
     async def concept_create(
         self, concept: Concept, relationships: list[Relationship] = []

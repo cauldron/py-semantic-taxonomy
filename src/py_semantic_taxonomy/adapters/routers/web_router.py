@@ -30,7 +30,7 @@ def best_label(obj: de.SKOS) -> str:
     for notation_obj in obj.notations:
         if value := notation_obj.get("@value"):
             return value
-    return obj.pref_labels[0]['@value'][:25]
+    return obj.pref_labels[0]["@value"][:25]
 
 
 templates = Jinja2Templates(directory=str(PathLib(__file__).parent / "templates"))
@@ -51,11 +51,11 @@ class WebPaths(StrEnum):
     search = "/search/"
 
 
-@router.get('/')
+@router.get("/")
 async def redirect_blank_web_page(
     request: Request,
 ) -> RedirectResponse:
-    return RedirectResponse(request.url_for('web_concept_schemes'))
+    return RedirectResponse(request.url_for("web_concept_schemes"))
 
 
 @router.get(
@@ -141,7 +141,9 @@ async def web_concept_view(
             )
         scheme = await service.concept_scheme_get(iri=unquote(concept_scheme))
         relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
-        broader = await service.concept_broader_in_ascending_order(concept_iri=concept.id_, concept_scheme_iri=scheme.id_)
+        broader = await service.concept_broader_in_ascending_order(
+            concept_iri=concept.id_, concept_scheme_iri=scheme.id_
+        )
         relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
 
         relationships_data = []
@@ -164,11 +166,11 @@ async def web_concept_view(
                         related_iri=related_iri,
                     )
 
-        scheme_list = [(request.url_for("web_concept_scheme_view", iri=quote(s["@id"])), s) for s in concept.schemes]
-        broader_list = [
-            (concept_view_url(request, c.id_, scheme.id_), c)
-            for c in broader[::-1]
+        scheme_list = [
+            (request.url_for("web_concept_scheme_view", iri=quote(s["@id"])), s)
+            for s in concept.schemes
         ]
+        broader_list = [(concept_view_url(request, c.id_, scheme.id_), c) for c in broader[::-1]]
         return templates.TemplateResponse(
             "concept_view.html",
             {
@@ -205,9 +207,7 @@ async def web_search(
     try:
         results = []
         if query:
-            results = await search_service.search(
-                query=query, language=language, semantic=semantic
-            )
+            results = await search_service.search(query=query, language=language, semantic=semantic)
         return templates.TemplateResponse(
             "search.html",
             {
