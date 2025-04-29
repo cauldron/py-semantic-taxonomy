@@ -9,15 +9,12 @@ from fastapi.templating import Jinja2Templates
 from langcodes import Language
 
 from py_semantic_taxonomy.cfg import get_settings
-from py_semantic_taxonomy.dependencies import get_graph_service
+from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
 
 logger = structlog.get_logger("py-semantic-taxonomy")
 
 router = APIRouter(prefix="/web", include_in_schema=False)
-
-templates = Jinja2Templates(directory=str(PathLib(__file__).parent / "templates"))
-templates.env.filters["split"] = lambda s, sep: s.split(sep)
 
 
 def value_for_language(value: list[dict[str, str]], lang: str) -> str:
@@ -28,6 +25,8 @@ def value_for_language(value: list[dict[str, str]], lang: str) -> str:
     return ""
 
 
+templates = Jinja2Templates(directory=str(PathLib(__file__).parent / "templates"))
+templates.env.filters["split"] = lambda s, sep: s.split(sep)
 templates.env.filters["lang"] = value_for_language
 
 
@@ -40,6 +39,14 @@ class WebPaths(StrEnum):
     concept_schemes = "/concept_schemes/"
     concept_scheme_view = "/concept_scheme/{iri:path}"
     concept_view = "/concept/{iri:path}"
+    search = "/search/"
+
+
+@router.get('/')
+async def redirect_blank_web_page(
+    request: Request,
+) -> RedirectResponse:
+    return RedirectResponse(request.url_for('web_concept_schemes'))
 
 
 @router.get(
@@ -105,6 +112,7 @@ async def web_concept_view(
     iri: str = Path(..., description="The IRI of the concept to view"),
     concept_scheme: str | None = None,
     service=Depends(get_graph_service),
+    settings=Depends(get_settings),
 ) -> HTMLResponse:
     """View a specific concept."""
     try:
@@ -119,6 +127,7 @@ async def web_concept_view(
         scheme = await service.concept_scheme_get(iri=unquote(concept_scheme))
         relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
         broader = await service.concept_broader_in_ascending_order(concept_iri=iri, concept_scheme_iri=scheme.id_)
+        relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
 
         relationships_data = []
         for rel in relationships:
@@ -144,11 +153,12 @@ async def web_concept_view(
             "concept_view.html",
             {
                 "request": request,
-                "concept": concept.to_json_ld(),
                 "broader": broader[::-1],
                 "scheme": scheme,
                 "relationships": relationships_data,
                 "related_concepts": related_concepts,
+                "concept": concept,
+                "languages": format_languages(settings.languages),
             },
         )
     except de.ConceptNotFoundError:
@@ -156,3 +166,39 @@ async def web_concept_view(
     except de.ConceptSchemesNotInDatabase as e:
         logger.error("Database error while fetching concept", iri=decoded_iri, error=str(e))
         raise HTTPException(status_code=500, detail="Database error while fetching concept")
+
+
+@router.get(
+    WebPaths.search,
+    response_class=HTMLResponse,
+)
+async def web_search(
+    request: Request,
+    query: str = "",
+    language: str = "en",
+    semantic: bool = True,
+    search_service=Depends(get_search_service),
+) -> HTMLResponse:
+    """Search for concepts."""
+    try:
+        results = []
+        if query:
+            results = await search_service.search(
+                query=query, language=language, semantic=semantic
+            )
+        return templates.TemplateResponse(
+            "search.html",
+            {
+                "request": request,
+                "query": query,
+                "language": language,
+                "semantic": semantic,
+                "results": results,
+            },
+        )
+    except de.SearchNotConfigured:
+        raise HTTPException(status_code=503, detail="Search engine not available")
+    except de.UnknownLanguage:
+        raise HTTPException(
+            status_code=422, detail="Search engine not configured for given language"
+        )

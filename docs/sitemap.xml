@@ -2,18 +2,22 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://docs.pyst.dev/</loc>
-         <lastmod>2025-04-04</lastmod>
+         <lastmod>2025-04-10</lastmod>
     </url>
     <url>
          <loc>https://docs.pyst.dev/architecture/</loc>
-         <lastmod>2025-04-04</lastmod>
+         <lastmod>2025-04-10</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.pyst.dev/common-workflows/</loc>
+         <lastmod>2025-04-10</lastmod>
     </url>
     <url>
          <loc>https://docs.pyst.dev/data-model/</loc>
-         <lastmod>2025-04-04</lastmod>
+         <lastmod>2025-04-10</lastmod>
     </url>
     <url>
          <loc>https://docs.pyst.dev/development/</loc>
-         <lastmod>2025-04-04</lastmod>
+         <lastmod>2025-04-10</lastmod>
     </url>
 </urlset>

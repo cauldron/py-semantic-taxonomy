@@ -6,7 +6,7 @@
 <div class="flex justify-between items-center">
     <div>
         <h1>Concept Schemes</h1>
-        <p>Browse and manage your semantic taxonomies</p>
+        <p style="color: var(--text-secondary)">Browse and manage your semantic taxonomies</p>
     </div>
     <a href="/web/concept_scheme/create/" class="btn-primary opacity-50 cursor-not-allowed" aria-disabled="true">
         <i class="fas fa-plus mr-2"></i>Create New Scheme
@@ -20,10 +20,10 @@
     <div class="card p-4">
         <div class="flex justify-between items-center">
             <div class="flex items-center">
-                <i class="fas fa-globe text-gray-400 mr-2"></i>
-                <label for="language" class="text-sm font-medium text-gray-700">Display Language:</label>
+                <i class="fas fa-globe mr-2" style="color: var(--text-secondary)"></i>
+                <label for="language" class="text-sm font-medium" style="color: var(--text-color)">Display Language:</label>
             </div>
-            <select id="language" class="mt-1 block w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
+            <select id="language" class="mt-1 block w-48 pl-3 pr-10 py-2 text-base border rounded-md text-sm" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
                 {% for row in languages %}
                 <option value="{{ row.0 }}">{{ row.1 }}</option>
                 {% endfor %}
@@ -34,30 +34,30 @@
     <!-- Concept Schemes Table -->
     <div class="card overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+            <table class="min-w-full divide-y" style="border-color: var(--border-color)">
+                <thead style="background-color: var(--nav-bg)">
                     <tr>
-                        <th scope="col" class="w-1/3 px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label</th>
-                        <th scope="col" class="w-2/3 px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Definition</th>
-                        <th scope="col" class="w-24 px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th scope="col" class="w-1/3 px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Label</th>
+                        <th scope="col" class="w-2/3 px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Definition</th>
+                        <th scope="col" class="w-24 px-6 py-4 text-right text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="divide-y" style="background-color: var(--header-bg); border-color: var(--border-color)">
                     {% for scheme in concept_schemes %}
-                    <tr class="hover:bg-gray-50 transition-colors">
+                    <tr class="transition-colors hover-row">
                         <td class="px-6 py-4">
                             <a href="/web/concept_scheme/{{ scheme.id_|urlencode }}">
                                 {% for row in languages %}
-                                <div class="text-sm font-medium text-primary{% if row[0] != 'en' %} hidden{% endif %}" data-lang="{{ row[0] }}">
+                                <div class="text-sm font-medium text-primary{% if row[0] != 'en' %} hidden{% endif %}" style="color: var(--text-secondary)" data-lang="{{ row[0] }}">
                                     {% if scheme.pref_labels|lang(row[0]) %}
                                         {{ scheme.pref_labels|lang(row[0]) }}
                                     {% else %}
-                                    <span class="text-gray-400 italic">No Concept Scheme label available</span>
+                                    <span class="italic" style="color: var(--text-tertiary)">No Concept Scheme label available</span>
                                     {% endif %}
                                 </div>
                                 {% endfor %}
                                 {% if scheme.notations %}
-                                <div class="text-xs text-gray-500 mt-1">
+                                <div class="text-xs mt-1" style="color: var(--text-secondary)">
                                     <i class="fas fa-hashtag mr-1"></i>{{ scheme.notations[0]['@value'] }}
                                 </div>
                                 {% endif %}
@@ -66,11 +66,11 @@
                         <td class="px-6 py-4">
                             <a href="/web/concept_scheme/{{ scheme.id_|urlencode }}">
                                 {% for row in languages %}
-                                    <div class="text-sm text-gray-500 line-clamp-2{% if row[0] != 'en' %} hidden{% endif %}" data-lang="{{ row[0] }}">
+                                    <div class="text-sm line-clamp-2{% if row[0] != 'en' %} hidden{% endif %}" style="color: var(--text-secondary)" data-lang="{{ row[0] }}">
                                         {% if scheme.definitions|lang(row[0]) %}
                                             {{ scheme.definitions|lang(row[0])}}
                                         {% else %}
-                                            <span class="text-gray-400 italic">No definition available</span>
+                                            <span class="italic" style="color: var(--text-tertiary)">No definition available</span>
                                         {% endif %}
                                         </div>
                                 {% endfor %}
@@ -78,16 +78,16 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <a href="/web/concept_scheme/{{ scheme.id_|urlencode }}"
-                               class="text-primary text-primary-hover inline-flex items-center">
+                               class="text-primary hover:text-primary-hover inline-flex items-center">
                                 <i class="fas fa-eye mr-1"></i>View
                             </a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="3" class="px-6 py-4 text-sm text-gray-500 text-center">
+                        <td colspan="3" class="px-6 py-4 text-sm text-center" style="color: var(--text-secondary)">
                             <div class="flex flex-col items-center py-8">
-                                <i class="fas fa-folder-open text-gray-400 text-3xl mb-2"></i>
+                                <i class="fas fa-folder-open text-3xl mb-2" style="color: var(--text-tertiary)"></i>
                                 <p>No concept schemes found.</p>
                             </div>
                         </td>

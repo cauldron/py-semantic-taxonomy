@@ -4,6 +4,7 @@ from py_semantic_taxonomy.adapters.routers.router import Paths
 from py_semantic_taxonomy.domain.constants import SKOS
 
 
+@pytest.mark.skip(reason="Generic redirection turned off for now")
 @pytest.mark.postgres
 async def test_generic_get_from_iri_concept(postgres, cn_db_engine, cn, client):
     response = await client.get("/foo", follow_redirects=False)
@@ -28,6 +29,7 @@ async def test_generic_get_from_iri_concept(postgres, cn_db_engine, cn, client):
         assert concept[key] == value
 
 
+@pytest.mark.skip(reason="Generic redirection turned off for now")
 @pytest.mark.postgres
 async def test_generic_get_from_iri_concept_scheme(postgres, cn_db_engine, cn, client):
     response = await client.get("/foo", follow_redirects=False)
@@ -51,6 +53,7 @@ async def test_generic_get_from_iri_concept_scheme(postgres, cn_db_engine, cn, c
         assert cs[key] == value
 
 
+@pytest.mark.skip(reason="Generic redirection turned off for now")
 @pytest.mark.postgres
 async def test_generic_get_from_iri_correspondence(postgres, cn_db_engine, cn, client):
     response = await client.get("/foo", follow_redirects=False)

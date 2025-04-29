@@ -54,6 +54,7 @@ concept_scheme_table = Table(
     Column("extra", BetterJSON, default={}),
 )
 
+
 relationship_table = Table(
     "relationship",
     metadata_obj,
@@ -64,6 +65,7 @@ relationship_table = Table(
     Column("predicate", Enum(RelationshipVerbs, values_callable=lambda x: [i.value for i in x])),
     UniqueConstraint("source", "target", name="relationship_source_target_uniqueness"),
 )
+
 
 correspondence_table = Table(
     "correspondence",

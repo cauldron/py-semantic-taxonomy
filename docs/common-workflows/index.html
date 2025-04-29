@@ -8,11 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://docs.pyst.dev/development/">
+        <link rel="canonical" href="https://docs.pyst.dev/common-workflows/">
       
       
-        <link rel="prev" href="../architecture/">
+        <link rel="prev" href="..">
       
+      
+        <link rel="next" href="../data-model/">
       
       
       <link rel="icon" href="../img/favicon-96x96.png">
@@ -20,7 +22,7 @@
     
     
       
-        <title>Development and testing - py-semantic-taxonomy (PyST)</title>
+        <title>Common workflows - py-semantic-taxonomy (PyST)</title>
       
     
     
@@ -70,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#development-and-testing" class="md-skip">
+        <a href="#common-workflows" class="md-skip">
           Skip to content
         </a>
       
@@ -105,7 +107,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Development and testing
+              Common workflows
             
           </span>
         </div>
@@ -243,10 +245,32 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../common-workflows/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Common workflows
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -257,6 +281,62 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#importing-the-combined-nomenclature-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Importing the Combined Nomenclature codes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-a-new-taxonomy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating a new taxonomy
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#updating-a-concept-or-a-concept-relationship" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating a Concept or a Concept relationship
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-a-new-correspondence" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating a new Correspondence
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -331,32 +411,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Development and testing
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../development/" class="md-nav__link">
         
   
   
@@ -367,71 +425,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#asynchronous-code" class="md-nav__link">
-    <span class="md-ellipsis">
-      Asynchronous code
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      Prerequisites
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#containers-for-postgres-and-typesense" class="md-nav__link">
-    <span class="md-ellipsis">
-      Containers for Postgres and Typesense
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#testing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Testing
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#linting" class="md-nav__link">
-    <span class="md-ellipsis">
-      Linting
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -463,45 +456,36 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#asynchronous-code" class="md-nav__link">
+  <a href="#importing-the-combined-nomenclature-codes" class="md-nav__link">
     <span class="md-ellipsis">
-      Asynchronous code
+      Importing the Combined Nomenclature codes
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#creating-a-new-taxonomy" class="md-nav__link">
     <span class="md-ellipsis">
-      Prerequisites
+      Creating a new taxonomy
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#containers-for-postgres-and-typesense" class="md-nav__link">
+  <a href="#updating-a-concept-or-a-concept-relationship" class="md-nav__link">
     <span class="md-ellipsis">
-      Containers for Postgres and Typesense
+      Updating a Concept or a Concept relationship
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#testing" class="md-nav__link">
+  <a href="#creating-a-new-correspondence" class="md-nav__link">
     <span class="md-ellipsis">
-      Testing
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#linting" class="md-nav__link">
-    <span class="md-ellipsis">
-      Linting
+      Creating a new Correspondence
     </span>
   </a>
   
@@ -526,28 +510,43 @@
   
 
 
-<h1 id="development-and-testing">Development and testing<a class="headerlink" href="#development-and-testing" title="Permanent link">#</a></h1>
-<h2 id="asynchronous-code">Asynchronous code<a class="headerlink" href="#asynchronous-code" title="Permanent link">#</a></h2>
-<p>All three layers of PyST are asynchronous; most functions and methods user <code>async</code> and must be called with <code>await</code>. Developing in this style can be challenging at first; see the tests for patterns which you can follow if you need help.</p>
-<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">#</a></h2>
-<p>Use <code>pip install "py-semantic-taxonomy[dev]"</code> to get everything needed for development and testing.</p>
-<h2 id="containers-for-postgres-and-typesense">Containers for Postgres and Typesense<a class="headerlink" href="#containers-for-postgres-and-typesense" title="Permanent link">#</a></h2>
-<p>Development and testing require Docker via <a href="https://testcontainers.com/">testcontainers</a>. On MacOS you will need a recent version of Docker Desktop - the alternatives don't seem to work.</p>
-<p>The <code>scripts</code> directory has two scripts for running Postgres and Typesense containers:</p>
+<h1 id="common-workflows">Common Workflows<a class="headerlink" href="#common-workflows" title="Permanent link">#</a></h1>
+<h2 id="importing-the-combined-nomenclature-codes">Importing the Combined Nomenclature codes<a class="headerlink" href="#importing-the-combined-nomenclature-codes" title="Permanent link">#</a></h2>
+<p>This functionality is built into <code>pyst_client</code>. <code>py-semantic-taxonomy</code> must be deployed and available:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pyst_client.cn</span><span class="w"> </span><span class="kn">import</span> <span class="n">CombinedNomenclatureLoader</span>
+<span class="n">CombinedNomenclatureLoader</span><span class="p">(</span>
+    <span class="n">year</span><span class="o">=&lt;</span><span class="n">year</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">api_key</span><span class="o">=&lt;</span><span class="n">pyst</span><span class="o">-</span><span class="n">api</span><span class="o">-</span><span class="n">key</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">host</span><span class="o">=&lt;</span><span class="n">host</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="n">sample</span><span class="o">=</span><span class="kc">True</span> <span class="ow">or</span> <span class="kc">False</span>
+<span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+</code></pre></div>
+<p>Where:</p>
 <ul>
-<li><a href="https://github.com/cauldron/py-semantic-taxonomy/blob/main/scripts/start_typesense_container.py">start_typesense_container.py</a></li>
-<li><a href="https://github.com/cauldron/py-semantic-taxonomy/blob/main/scripts/start_postgres_container.py">start-postgres-container.py</a></li>
+<li><code>year</code> is a integer, like <code>2024</code></li>
+<li><code>api_key</code> is the write-enabled API key (<code>PyST_auth_token</code>) for <code>py-semantic-taxonomy</code>.</li>
+<li><code>host</code> is the URL that <code>py-semantic-taxonomy</code> is running at, e.g. "http://localhost:8000" if running locally</li>
+<li><code>sample</code> is a boolean flag on whether only a sample of the available data should be imported. The full import takes more than an hour.</li>
 </ul>
-<p>If you run those scripts, you will get instructions on how to set the environment variable values needed to run the development server:</p>
-<div class="highlight"><pre><span></span><code><span class="go">python src/py_semantic_taxonomy/app.py</span>
-</code></pre></div>
-<h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">#</a></h2>
-<p>When adding new functionality, it's important to write unit tests for each layer effected, as well as integration tests. Unit tests should <em>mock</em> the other layers - see the <a href="https://github.com/cauldron/py-semantic-taxonomy/blob/main/tests/conftest.py">conftest.py</a> file for test mocks and fixture data.</p>
-<p><img alt="Integration and unit tests" src="../img/testing.png" /></p>
-<h2 id="linting">Linting<a class="headerlink" href="#linting" title="Permanent link">#</a></h2>
-<div class="highlight"><pre><span></span><code><span class="go">isort --profile=black tests/ &amp;&amp; black tests/ &amp;&amp; \</span>
-<span class="go">isort --profile=black src/ &amp;&amp; black src/</span>
-</code></pre></div>
+<h2 id="creating-a-new-taxonomy">Creating a new taxonomy<a class="headerlink" href="#creating-a-new-taxonomy" title="Permanent link">#</a></h2>
+<p>PyST stores concept schemes, concepts, and relationships between concepts all in different places, so the creation of these objects needs to happen in a defined order:</p>
+<ul>
+<li>First, decide on the URL pattern you will use for concept schemes and concepts. A reasonable pattern is <code>https://&lt;base_url&gt;/&lt;concept-scheme-notation&gt;/&lt;concept-notation&gt;</code>. Many of the EU semantic taxonomies use this patter, e.g. <code>http://data.europa.eu/xsp/cn2025/970300000080</code>. When following this pattern, the concept scheme notation should be different from version to version or year to year.</li>
+<li>Second, create the concept scheme.</li>
+<li>Third, create the concepts. Although it is possible to provide relationship information among concepts inside the individual concept documents, this is recommended against, as concept creation requests are normally submitted in parallel, and we can't run graph integrity checks against unknown graph nodes.</li>
+<li>Finally, define relationships among concepts. It's best if each request to <code>relationships</code> creates one relationship, and these can be chunked to run in parallel (asyncio doesn't seem to like it when thousands of tasks are submitted at once - its better to do 20 or 50 at a time).</li>
+</ul>
+<h2 id="updating-a-concept-or-a-concept-relationship">Updating a <code>Concept</code> or a <code>Concept</code> relationship<a class="headerlink" href="#updating-a-concept-or-a-concept-relationship" title="Permanent link">#</a></h2>
+<p>Best practice is to always record the who, what, why, and when of changes, which can be done by adding <a href="https://docs.pyst.dev/data-model/#tracking-changes">change, editorial, or history notes</a> to the <code>Concept</code>.</p>
+<p>Depending on your institutions review practices, you could also require that change suggestions include changing the <code>Concept.status</code> to <code>draft</code>, and that changes are only accepted after review, when the status could be changed to <code>accepted</code>.</p>
+<h2 id="creating-a-new-correspondence">Creating a new Correspondence<a class="headerlink" href="#creating-a-new-correspondence" title="Permanent link">#</a></h2>
+<p>Creating new <code>Correspondence</code> and <code>ConceptAssociation</code> objects should also follow a set order:</p>
+<ul>
+<li>First, decide on the URL pattern you will use, especially for <code>ConceptAssociations</code>, which can be N-to-1. It would be nice if the URLs for <code>Correspondences</code> were human readable, but <code>ConceptAssociations</code> could use computer-generated ids.</li>
+<li>Second, create the <code>Correspondence</code> object. This doesn't have any references to <code>ConceptAssociation</code> objects.</li>
+<li>Third, create the <code>ConceptAssociation</code> objects. They don't have any information on membership in a <code>Correspondence</code>.</li>
+<li>Finally, link the <code>ConceptAssociation</code> objects to the <code>Correspondence</code> using the <code>made_of</code> endpoint. This can be done in one request as this endpoint takes a list of inputs.</li>
+</ul>
 
 
 
