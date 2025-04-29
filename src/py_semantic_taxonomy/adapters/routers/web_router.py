@@ -25,9 +25,18 @@ def value_for_language(value: list[dict[str, str]], lang: str) -> str:
     return ""
 
 
+def best_label(obj: de.SKOS) -> str:
+    """Get the best available short label"""
+    for notation_obj in obj.notations:
+        if value := notation_obj.get("@value"):
+            return value
+    return obj.pref_labels[0]['@value'][:25]
+
+
 templates = Jinja2Templates(directory=str(PathLib(__file__).parent / "templates"))
 templates.env.filters["split"] = lambda s, sep: s.split(sep)
 templates.env.filters["lang"] = value_for_language
+templates.env.filters["best_label"] = best_label
 
 
 def format_languages(languages: list[str]) -> list[tuple[str, str]]:
@@ -103,6 +112,14 @@ async def web_concept_scheme_view(
         raise HTTPException(status_code=500, detail="Database error while fetching concept scheme")
 
 
+def concept_view_url(request: Request, concept_iri: str, concept_scheme_iri: str) -> str:
+    return (
+        str(request.url_for("web_concept_view", iri=quote(concept_iri)))
+        + "?concept_scheme="
+        + quote(concept_scheme_iri, safe="")
+    )
+
+
 @router.get(
     WebPaths.concept_view,
     response_class=HTMLResponse,
@@ -120,13 +137,11 @@ async def web_concept_view(
         concept = await service.concept_get(iri=decoded_iri)
         if not concept_scheme:
             return RedirectResponse(
-                str(request.url_for("web_concept_view", iri=quote(iri)))
-                + "?concept_scheme="
-                + quote(concept.schemes[0]["@id"], safe="")
+                concept_view_url(request, concept.id_, concept.schemes[0]["@id"])
             )
         scheme = await service.concept_scheme_get(iri=unquote(concept_scheme))
         relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
-        broader = await service.concept_broader_in_ascending_order(concept_iri=iri, concept_scheme_iri=scheme.id_)
+        broader = await service.concept_broader_in_ascending_order(concept_iri=concept.id_, concept_scheme_iri=scheme.id_)
         relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
 
         relationships_data = []
@@ -149,12 +164,19 @@ async def web_concept_view(
                         related_iri=related_iri,
                     )
 
+        scheme_list = [(request.url_for("web_concept_scheme_view", iri=quote(s["@id"])), s) for s in concept.schemes]
+        broader_list = [
+            (concept_view_url(request, c.id_, scheme.id_), c)
+            for c in broader[::-1]
+        ]
         return templates.TemplateResponse(
             "concept_view.html",
             {
                 "request": request,
-                "broader": broader[::-1],
                 "scheme": scheme,
+                "scheme_url": request.url_for("web_concept_scheme_view", iri=quote(scheme.id_)),
+                "broader_list": broader_list,
+                "scheme_list": scheme_list,
                 "relationships": relationships_data,
                 "related_concepts": related_concepts,
                 "concept": concept,

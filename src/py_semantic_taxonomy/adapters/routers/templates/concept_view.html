@@ -6,7 +6,7 @@
 <div class="flex justify-between items-center">
     <div>
         <h1>{{ concept.pref_labels|lang('en') }}</h1>
-        <p style="color: var(--text-secondary)">Concept Details</p>
+        <p style="color: var(--text-secondary)"> Hierarchy >> <a href="{{ scheme_url }} " class="text-primary hover:text-primary-hover">{{ scheme|best_label }}</a>{% for b in broader_list %} >> <a href="{{ b.0 }}" class="text-primary hover:text-primary-hover">{{ b.1|best_label }}</a>{% endfor %}</p>
     </div>
     <div class="flex space-x-3">
         <a href="/web/concept_schemes/" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
@@ -259,9 +259,9 @@ style="color: var(--text-color)">Current Concept</span>
                 <div>
                     <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Concept Schemes</h3>
                     <div class="mt-1 text-sm" style="color: var(--text-color)">
-                        {% for scheme in concept.schemes %}
-                        <a href="/web/concept_scheme/{{ scheme['@id']|urlencode }}" class="text-primary hover:text-primary-hover">
-                            {{ scheme['@id'] }}
+                        {% for scheme in scheme_list %}
+                        <a href="{{ scheme.0 }}" class="text-primary hover:text-primary-hover">
+                            {{ scheme.1['@id'] }}
                         </a>
                         {% endfor %}
                     </div>
