@@ -116,7 +116,9 @@ async def web_concept_view(
                 + "?concept_scheme="
                 + quote(concept.schemes[0]["@id"], safe="")
             )
+        scheme = await service.concept_scheme_get(iri=unquote(concept_scheme))
         relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
+        broader = await service.concept_broader_in_ascending_order(concept_iri=iri, concept_scheme_iri=scheme.id_)
 
         relationships_data = []
         for rel in relationships:
@@ -143,6 +145,8 @@ async def web_concept_view(
             {
                 "request": request,
                 "concept": concept.to_json_ld(),
+                "broader": broader[::-1],
+                "scheme": scheme,
                 "relationships": relationships_data,
                 "related_concepts": related_concepts,
             },
