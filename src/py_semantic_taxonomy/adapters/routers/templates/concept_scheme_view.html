@@ -1,20 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}{{ concept_scheme.pref_labels|lang("en") }} - PyST{% endblock %}
+{% block title %}{{ concept_scheme.pref_labels|lang(language) }} - PyST{% endblock %}
 
 {% block page_header %}
 <div class="flex justify-between items-center">
     <div>
-        <h1>{{ concept_scheme.pref_labels|lang("en") }}</h1>
+        <h1>{{ concept_scheme.pref_labels|lang(language) }}</h1>
         <p style="color: var(--text-secondary)">Concept Scheme Details</p>
     </div>
     <div class="flex space-x-3">
         <a href="/web/concept_schemes/" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
             <i class="fas fa-arrow-left mr-2"></i>Back to Schemes
         </a>
+<!--
         <a href="/web/concept_scheme/create/" class="btn-primary opacity-50 cursor-not-allowed" aria-disabled="true">
             <i class="fas fa-plus mr-2"></i>Create New Scheme
         </a>
+ -->
     </div>
 </div>
 {% endblock %}
@@ -23,21 +25,6 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Left Column: Concept List -->
     <div class="lg:col-span-2 space-y-6">
-        <!-- Language Selector -->
-        <div class="card p-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center">
-                    <i class="fas fa-globe mr-2" style="color: var(--text-secondary)"></i>
-                    <label for="language" class="text-sm font-medium" style="color: var(--text-color)">Display Language:</label>
-                </div>
-                <select id="language" class="mt-1 block w-48 pl-3 pr-10 py-2 text-base border rounded-md text-sm" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
-                    {% for row in languages %}
-                    <option value="{{ row.0 }}">{{ row.1 }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
         <!-- Concept List -->
         <div class="card overflow-hidden">
             <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color)">
@@ -56,16 +43,14 @@
                         {% for concept in concepts %}
                         <tr class="transition-colors hover-row">
                             <td class="px-6 py-4">
-                                <a href="/web/concept/{{ concept.id_|urlencode }}">
-                                    {% for row in languages %}
-                                    <div class="text-sm font-medium text-primary{% if row[0] != 'en' %} hidden{% endif %}" data-lang="{{ row[0] }}">
-                                        {% if concept.pref_labels|lang(row[0]) %}
-                                            {{ concept.pref_labels|lang(row[0]) }}
+                                <a href="{{ concept.url }}">
+                                    <div class="text-sm font-medium text-primary">
+                                        {% if concept.pref_labels|lang(language) %}
+                                            {{ concept.pref_labels|lang(language) }}
                                         {% else %}
                                             <span class="italic" style="color: var(--text-tertiary)">No concept label available</span>
                                         {% endif %}
                                     </div>
-                                    {% endfor %}
                                     {% if concept.notations %}
                                     <div class="text-xs mt-1" style="color: var(--text-secondary)">
                                         <i class="fas fa-hashtag mr-1"></i>{{ concept.notations[0]['@value'] }}
@@ -74,20 +59,18 @@
                                 </a>
                             </td>
                             <td class="px-6 py-4">
-                                <a href="/web/concept/{{ concept.id_|urlencode }}">
-                                    {% for row in languages %}
-                                    <div class="text-sm line-clamp-2{% if row[0] != 'en' %} hidden{% endif %}" style="color: var(--text-secondary)" data-lang="{{ row[0] }}">
-                                        {% if concept.definitions|lang(row[0]) %}
-                                            {{ concept.definitions|lang(row[0])}}
+                                <a href="{{ concept.url }}">
+                                    <div class="text-sm line-clamp-2" style="color: var(--text-secondary)">
+                                        {% if concept.definitions|lang(language) %}
+                                            {{ concept.definitions|lang(language)}}
                                         {% else %}
                                             <span class="italic" style="color: var(--text-tertiary)">No definition available</span>
                                         {% endif %}
                                     </div>
-                                    {% endfor %}
                                 </a>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="/web/concept/{{ concept.id_|urlencode }}"
+                                <a href="{{ concept.url }}"
                                    class="text-primary hover:text-primary-hover inline-flex items-center">
                                     <i class="fas fa-eye mr-1"></i>View
                                 </a>
@@ -119,15 +102,13 @@
                 <!-- Description -->
                 <div>
                     <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Description</h3>
-                        {% for row in languages %}
-                        <div class="mt-1 text-sm {% if row[0] != 'en' %} hidden{% endif %}" style="color: var(--text-color)" data-lang="{{ row[0] }}">
-                            {% if concept_scheme.definitions|lang(row[0]) %}
-                                {{ concept_scheme.definitions|lang(row[0])}}
+                        <div class="mt-1 text-sm" style="color: var(--text-color)">
+                            {% if concept_scheme.definitions|lang(language) %}
+                                {{ concept_scheme.definitions|lang(language)}}
                             {% else %}
                                 <span class="italic" style="color: var(--text-tertiary)">No description available</span>
                             {% endif %}
                         </div>
-                        {% endfor %}
                 </div>
 
                 <!-- Creator -->
@@ -180,15 +161,7 @@
 
 <script>
 document.getElementById('language').addEventListener('change', function(e) {
-    const selectedLang = e.target.value;
-    // Hide all language versions
-    document.querySelectorAll('[data-lang]').forEach(el => {
-        el.classList.add('hidden');
-    });
-    // Show selected language version
-    document.querySelectorAll(`[data-lang="${selectedLang}"]`).forEach(el => {
-        el.classList.remove('hidden');
-    });
+    window.location.href = e.target.value;
 });
 </script>
 {% endblock %}

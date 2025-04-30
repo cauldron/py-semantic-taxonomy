@@ -1,6 +1,6 @@
 from enum import StrEnum
 from pathlib import Path as PathLib
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, urlencode
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
@@ -11,7 +11,7 @@ from langcodes import Language
 from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
-from py_semantic_taxonomy.domain.constants import AssociationKind
+from py_semantic_taxonomy.domain.constants import AssociationKind, RelationshipVerbs
 
 logger = structlog.get_logger("py-semantic-taxonomy")
 
@@ -26,18 +26,38 @@ def value_for_language(value: list[dict[str, str]], lang: str) -> str:
     return ""
 
 
-def best_label(obj: de.SKOS) -> str:
+def best_label(obj: de.SKOS | str, lang: str) -> str:
     """Get the best available short label"""
+    # External IRI without data
+    if isinstance(obj, str):
+        return obj
+    for label_obj in obj.pref_labels:
+        if label_obj["@language"] == lang:
+            return label_obj["@value"]
+    return "(label unavailable)"
+
+
+def best_short_label(obj: de.SKOS | str, lang: str, cutoff: int = 30) -> str:
+    """Get the best available short label"""
+    # External IRI without data
+    if isinstance(obj, str):
+        return obj
     for notation_obj in obj.notations:
         if value := notation_obj.get("@value"):
             return value
-    return obj.pref_labels[0]["@value"][:25]
+    for label_obj in obj.pref_labels:
+        if label_obj["@language"] == lang:
+            if len(label_obj["@value"]) > cutoff:
+                return label_obj["@value"][:cutoff] + "..."
+            return label_obj["@value"]
+    return "(label unavailable)"
 
 
 templates = Jinja2Templates(directory=str(PathLib(__file__).parent / "templates"))
 templates.env.filters["split"] = lambda s, sep: s.split(sep)
 templates.env.filters["lang"] = value_for_language
 templates.env.filters["best_label"] = best_label
+templates.env.filters["best_short_label"] = best_short_label
 
 
 def format_languages(languages: list[str]) -> list[tuple[str, str]]:
@@ -59,23 +79,49 @@ async def redirect_blank_web_page(
     return RedirectResponse(request.url_for("web_concept_schemes"))
 
 
+def concept_scheme_view_url(request: Request, concept_scheme_iri: str, language: str) -> str:
+    params = {"language": language}
+    return (
+        str(request.url_for("web_concept_scheme_view", iri=quote(concept_scheme_iri)))
+        + "?"
+        + urlencode(params)
+    )
+
+
 @router.get(
     WebPaths.concept_schemes,
     response_class=HTMLResponse,
 )
 async def web_concept_schemes(
     request: Request,
+    language: str | None = None,
     service=Depends(get_graph_service),
     settings=Depends(get_settings),
 ) -> HTMLResponse:
     """List all concept schemes."""
+    if not language:
+        return RedirectResponse(
+            str(request.url_for("web_concept_schemes"))
+            + "?language="
+            + quote(settings.languages[0])
+        )
+
     concept_schemes = await service.concept_scheme_list()
+    for scheme in concept_schemes:
+        scheme.url = concept_scheme_view_url(request, scheme.id_, language)
+
+    languages = [(request.url, Language.get(language).display_name(language).title())] + [
+        (str(request.url_for("web_concept_schemes")) + "?language=" + quote(code), label)
+        for code, label in format_languages(settings.languages)
+        if code != language
+    ]
     return templates.TemplateResponse(
         "concept_schemes.html",
         {
             "request": request,
             "concept_schemes": concept_schemes,
-            "languages": format_languages(settings.languages),
+            "language_selector": languages,
+            "language": language,
         },
     )
 
@@ -87,23 +133,41 @@ async def web_concept_schemes(
 async def web_concept_scheme_view(
     request: Request,
     iri: str = Path(..., description="The IRI of the concept scheme"),
+    language: str | None = None,
     service=Depends(get_graph_service),
     settings=Depends(get_settings),
 ) -> HTMLResponse:
     """View a specific concept scheme."""
     try:
+        if not language:
+            return RedirectResponse(
+                str(request.url_for("web_concept_scheme_view", iri=iri))
+                + "?language="
+                + quote(settings.languages[0])
+            )
+
         decoded_iri = unquote(iri)
         concept_scheme = await service.concept_scheme_get(iri=decoded_iri)
         concepts = await service.concepts_get_for_scheme(
             concept_scheme_iri=decoded_iri, top_concepts_only=True
         )
+        for concept in concepts:
+            concept.url = concept_view_url(request, concept.id_, concept_scheme.id_, language)
+
+        languages = [(request.url, Language.get(language).display_name(language).title())] + [
+            (str(request.url_for("web_concept_scheme_view", iri=iri)) + "?language=" + quote(code), label)
+            for code, label in format_languages(settings.languages)
+            if code != language
+        ]
+
         return templates.TemplateResponse(
             "concept_scheme_view.html",
             {
                 "request": request,
                 "concept_scheme": concept_scheme,
                 "concepts": concepts,
-                "languages": format_languages(settings.languages),
+                "language": language,
+                "language_selector": languages,
             },
         )
     except de.ConceptSchemeNotFoundError:
@@ -113,11 +177,12 @@ async def web_concept_scheme_view(
         raise HTTPException(status_code=500, detail="Database error while fetching concept scheme")
 
 
-def concept_view_url(request: Request, concept_iri: str, concept_scheme_iri: str) -> str:
+def concept_view_url(
+    request: Request, concept_iri: str, concept_scheme_iri: str, language: str
+) -> str:
+    params = {"concept_scheme": concept_scheme_iri, "language": language}
     return (
-        str(request.url_for("web_concept_view", iri=quote(concept_iri)))
-        + "?concept_scheme="
-        + quote(concept_scheme_iri, safe="")
+        str(request.url_for("web_concept_view", iri=quote(concept_iri))) + "?" + urlencode(params)
     )
 
 
@@ -129,6 +194,7 @@ async def web_concept_view(
     request: Request,
     iri: str = Path(..., description="The IRI of the concept to view"),
     concept_scheme: str | None = None,
+    language: str | None = None,
     service=Depends(get_graph_service),
     settings=Depends(get_settings),
 ) -> HTMLResponse:
@@ -138,84 +204,119 @@ async def web_concept_view(
         concept = await service.concept_get(iri=decoded_iri)
         if not concept_scheme:
             return RedirectResponse(
-                concept_view_url(request, concept.id_, concept.schemes[0]["@id"])
+                concept_view_url(
+                    request,
+                    concept.id_,
+                    concept.schemes[0]["@id"],
+                    language or settings.languages[0],
+                )
             )
+
+        if not language:
+            return RedirectResponse(
+                concept_view_url(
+                    request, concept.id_, concept.schemes[0]["@id"], settings.languages[0]
+                )
+            )
+        concept = concept.filter_language(language)
+
         scheme = await service.concept_scheme_get(iri=unquote(concept_scheme))
-        relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
-        broader = await service.concept_broader_in_ascending_order(
-            concept_iri=concept.id_, concept_scheme_iri=scheme.id_
-        )
-        relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
 
-        relationships_data = []
-        for rel in relationships:
-            relationships_data.append(
-                {"source": rel.source, "target": rel.target, "predicate": rel.predicate}
+        hierarchy = (
+            await service.concept_broader_in_ascending_order(
+                concept_iri=concept.id_, concept_scheme_iri=scheme.id_
             )
+        )[::-1]
+        hierarchy = [(concept_view_url(request, c.id_, scheme.id_, language), c) for c in hierarchy]
 
-        related_concepts = {}
-        for rel in relationships:
-            related_iri = rel.target if rel.source == decoded_iri else rel.source
-            if related_iri not in related_concepts:
-                try:
-                    related_concept = await service.concept_get(iri=related_iri)
-                    related_concepts[related_iri] = related_concept.to_json_ld()
-                except de.ConceptNotFoundError:
-                    logger.warning(
-                        "Related concept not found",
-                        concept_iri=iri,
-                        related_iri=related_iri,
-                    )
+        async def get_concept_and_link(iri: str) -> (str, de.Concept | str):
+            try:
+                concept = (await service.concept_get(iri=iri)).filter_language(language)
+                url = concept_view_url(
+                    request,
+                    iri,
+                    (
+                        scheme.id_
+                        if any(scheme.id_ == os["@id"] for os in concept.schemes)
+                        else concept.schemes[0]["@id"]
+                    ),
+                    language,
+                )
+                return url, concept
+            except de.ConceptNotFoundError:
+                return iri, iri
+
+        relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
+        broader = [
+            (await get_concept_and_link(obj.target))
+            for obj in relationships
+            if obj.source == concept.id_ and obj.predicate == RelationshipVerbs.broader
+        ]
+        narrower = [
+            (await get_concept_and_link(obj.source))
+            for obj in relationships
+            if obj.target == concept.id_ and obj.predicate == RelationshipVerbs.broader
+        ]
 
         scheme_list = [
             (request.url_for("web_concept_view", iri=quote(s["@id"])), s) for s in concept.schemes
         ]
-        broader_list = [(concept_view_url(request, c.id_, scheme.id_), c) for c in broader[::-1]]
 
         associations = await service.associations_get_for_source_concept(concept_iri=concept.id_)
         formatted_associations = []
         for obj in filter(lambda x: x.kind == AssociationKind.simple, associations):
             for target in obj.target_concepts:
                 try:
-                    other = await service.concept_get(iri=target["@id"])
+                    url, assoc_concept = await get_concept_and_link(target["@id"])
                     formatted_associations.append(
-                        (
-                            concept_view_url(
-                                request,
-                                target["@id"],
-                                (
-                                    scheme.id_
-                                    if any(scheme.id_ == os["@id"] for os in other.schemes)
-                                    else other.schemes[0]["@id"]
-                                ),
+                        {
+                            "url": url,
+                            "obj": assoc_concept,
+                            "conditional": None,
+                            "conversion": target.get(
+                                "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
                             ),
-                            None,
-                            other.pref_labels[0]["@value"],
-                            target.get("http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"),
-                        )
+                        }
                     )
                 except de.ConceptNotFoundError:
                     formatted_associations.append(
-                        (
-                            target["@id"],
-                            None,
-                            target["@id"],
-                            target.get("http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"),
-                        )
+                        {
+                            "url": target["@id"],
+                            "obj": target["@id"],
+                            "conditional": None,
+                            "conversion": target.get(
+                                "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
+                            ),
+                        }
                     )
+
+        languages = [(request.url, Language.get(language).display_name(language).title())] + [
+            (
+                concept_view_url(
+                    request,
+                    concept.id_,
+                    scheme.id_,
+                    code,
+                ),
+                label,
+            )
+            for code, label in format_languages(settings.languages)
+            if code != language
+        ]
 
         return templates.TemplateResponse(
             "concept_view.html",
             {
                 "request": request,
                 "scheme": scheme,
-                "scheme_url": request.url_for("web_concept_scheme_view", iri=quote(scheme.id_)),
-                "broader_list": broader_list,
+                "scheme_url": concept_scheme_view_url(request, scheme.id_, language),
+                "hierarchy": hierarchy,
                 "scheme_list": scheme_list,
-                "relationships": relationships_data,
-                "related_concepts": related_concepts,
+                "broader_concepts": broader,
+                "narrower_concepts": narrower,
                 "concept": concept,
-                "languages": format_languages(settings.languages),
+                "language_selector": languages,
+                "language": language,
                 "associations": formatted_associations,
                 # "conditional_associations": conditional_associations,
             },
