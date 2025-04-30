@@ -22,9 +22,7 @@ def select_string_for_language(objs: list[dict], language: str, concatenate: boo
 
 
 def select_language(objs: list[dict], language: str) -> str:
-    return [
-        obj for obj in objs if obj["@language"].lower().startswith(language.lower())
-    ]
+    return [obj for obj in objs if obj["@language"].lower().startswith(language.lower())]
 
 
 # Allow mixing non-default and default values in dataclasses

@@ -8,29 +8,16 @@
         <h1>Concept Schemes</h1>
         <p style="color: var(--text-secondary)">Browse and manage your semantic taxonomies</p>
     </div>
+<!--
     <a href="/web/concept_scheme/create/" class="btn-primary opacity-50 cursor-not-allowed" aria-disabled="true">
         <i class="fas fa-plus mr-2"></i>Create New Scheme
     </a>
-</div>
+ -->
+    </div>
 {% endblock %}
 
 {% block content %}
 <div class="space-y-6">
-    <!-- Language Selector -->
-    <div class="card p-4">
-        <div class="flex justify-between items-center">
-            <div class="flex items-center">
-                <i class="fas fa-globe mr-2" style="color: var(--text-secondary)"></i>
-                <label for="language" class="text-sm font-medium" style="color: var(--text-color)">Display Language:</label>
-            </div>
-            <select id="language" class="mt-1 block w-48 pl-3 pr-10 py-2 text-base border rounded-md text-sm" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
-                {% for row in languages %}
-                <option value="{{ row.0 }}">{{ row.1 }}</option>
-                {% endfor %}
-            </select>
-        </div>
-    </div>
-
     <!-- Concept Schemes Table -->
     <div class="card overflow-hidden">
         <div class="overflow-x-auto">
@@ -46,16 +33,14 @@
                     {% for scheme in concept_schemes %}
                     <tr class="transition-colors hover-row">
                         <td class="px-6 py-4">
-                            <a href="/web/concept_scheme/{{ scheme.id_|urlencode }}">
-                                {% for row in languages %}
-                                <div class="text-sm font-medium text-primary{% if row[0] != 'en' %} hidden{% endif %}" style="color: var(--text-secondary)" data-lang="{{ row[0] }}">
-                                    {% if scheme.pref_labels|lang(row[0]) %}
-                                        {{ scheme.pref_labels|lang(row[0]) }}
+                            <a href="{{ scheme.url }}">
+                                <div class="text-sm font-medium text-primary" style="color: var(--text-secondary)">
+                                    {% if scheme.pref_labels|lang(language) %}
+                                        {{ scheme.pref_labels|lang(language) }}
                                     {% else %}
                                     <span class="italic" style="color: var(--text-tertiary)">No Concept Scheme label available</span>
                                     {% endif %}
                                 </div>
-                                {% endfor %}
                                 {% if scheme.notations %}
                                 <div class="text-xs mt-1" style="color: var(--text-secondary)">
                                     <i class="fas fa-hashtag mr-1"></i>{{ scheme.notations[0]['@value'] }}
@@ -64,20 +49,18 @@
                             </a>
                         </td>
                         <td class="px-6 py-4">
-                            <a href="/web/concept_scheme/{{ scheme.id_|urlencode }}">
-                                {% for row in languages %}
-                                    <div class="text-sm line-clamp-2{% if row[0] != 'en' %} hidden{% endif %}" style="color: var(--text-secondary)" data-lang="{{ row[0] }}">
-                                        {% if scheme.definitions|lang(row[0]) %}
-                                            {{ scheme.definitions|lang(row[0])}}
-                                        {% else %}
-                                            <span class="italic" style="color: var(--text-tertiary)">No definition available</span>
-                                        {% endif %}
-                                        </div>
-                                {% endfor %}
+                            <a href="{{ scheme.url }}">
+                                <div class="text-sm line-clamp-2" style="color: var(--text-secondary)">
+                                    {% if scheme.definitions|lang(language) %}
+                                        {{ scheme.definitions|lang(language)}}
+                                    {% else %}
+                                        <span class="italic" style="color: var(--text-tertiary)">No definition available</span>
+                                    {% endif %}
+                                    </div>
                             </a>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="/web/concept_scheme/{{ scheme.id_|urlencode }}"
+                            <a href="{{ scheme.url }}"
                                class="text-primary hover:text-primary-hover inline-flex items-center">
                                 <i class="fas fa-eye mr-1"></i>View
                             </a>
@@ -101,15 +84,7 @@
 
 <script>
 document.getElementById('language').addEventListener('change', function(e) {
-    const selectedLang = e.target.value;
-    // Hide all language versions
-    document.querySelectorAll('[data-lang]').forEach(el => {
-        el.classList.add('hidden');
-    });
-    // Show selected language version
-    document.querySelectorAll(`[data-lang="${selectedLang}"]`).forEach(el => {
-        el.classList.remove('hidden');
-    });
+    window.location.href = e.target.value;
 });
 </script>
 {% endblock %}

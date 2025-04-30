@@ -5,8 +5,8 @@
 {% block page_header %}
 <div class="flex justify-between items-center">
     <div>
-        <h1>{{ concept.pref_labels|lang('en') }}</h1>
-        <p style="color: var(--text-secondary)"> Hierarchy >> <a href="{{ scheme_url }} " class="text-primary hover:text-primary-hover">{{ scheme|best_label }}</a>{% for b in broader_list %} >> <a href="{{ b.0 }}" class="text-primary hover:text-primary-hover">{{ b.1|best_label }}</a>{% endfor %}</p>
+        <h1>{{ concept.pref_labels|lang(language) }}</h1>
+        <p style="color: var(--text-secondary)"> Hierarchy >> <a href="{{ scheme_url }} " class="text-primary hover:text-primary-hover">{{ scheme|best_short_label(language) }}</a>{% for obj in hierarchy %} >> <a href="{{ obj.0 }}" class="text-primary hover:text-primary-hover">{{ obj.1|best_short_label(language) }}</a>{% endfor %}</p>
     </div>
     <div class="flex space-x-3">
         <a href="/web/concept_schemes/" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
@@ -20,41 +20,24 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Left Column: Concept Details -->
     <div class="lg:col-span-2 space-y-6">
-        <!-- Language Selector -->
-        <div class="card p-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center">
-                    <i class="fas fa-globe mr-2" style="color: var(--text-secondary)"></i>
-                    <label for="language" class="text-sm font-medium" style="color: var(--text-color)">Display Language:</label>
-                </div>
-                <select id="language" class="mt-1 block w-48 pl-3 pr-10 py-2 text-base border rounded-md text-sm" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
-                    {% for row in languages %}
-                    <option value="{{ row.0 }}">{{ row.1 }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
         <!-- Definition -->
         <div class="card">
             <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color)">
                 <h2 class="text-lg font-medium" style="color: var(--text-color)">Definition</h2>
             </div>
             <div class="px-4 py-5 sm:p-6">
-                {% for row in languages %}
-                <div class="text-sm {% if row[0] != 'en' %} hidden{% endif %}" style="color: var(--text-color)" data-lang="{{ row[0] }}">
-                    {% if concept.definitions|lang(row[0]) %}
-                    {{ concept.definitions|lang(row[0]) }}
+                <div class="text-sm" style="color: var(--text-color)">
+                    {% if concept.definitions|lang(language) %}
+                    {{ concept.definitions|lang(language) }}
                     {% else %}
                     <span class="italic" style="color: var(--text-tertiary)">No definition available</span>
                     {% endif %}
                 </div>
-                {% endfor %}
             </div>
         </div>
 
         <!-- Relationships -->
-        {% if relationships %}
+        {% if broader_concepts or narrower_concepts %}
         <div class="card">
             <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color)">
                 <h2 class="text-lg font-medium flex items-center" style="color: var(--text-color)">
@@ -65,14 +48,7 @@
             <div class="px-4 py-5 sm:p-6">
                 <div class="space-y-8">
                     <!-- Broader Concepts -->
-                    {% set broader_concepts = [] %}
-                    {% for rel in relationships %}
-                        {% if (rel.predicate == 'http://www.w3.org/2004/02/skos/core#broader' and rel.source == concept.id_) or
-                              (rel.predicate == 'http://www.w3.org/2004/02/skos/core#narrower' and rel.target == concept.id_) %}
-                            {% set _ = broader_concepts.append(rel) %}
-                        {% endif %}
-                    {% endfor %}
-                    {% if broader_concepts|length > 0 %}
+                    {% if broader_concepts %}
                     <div>
                         <h3 class="text-sm font-medium mb-3 flex items-center" style="color: var(--text-secondary)">
                             <i class="fas fa-arrow-up mr-2" style="color: var(--text-color)"></i>
@@ -81,23 +57,17 @@
                         </h3>
                         <div class="space-y-2">
                             {% for rel in broader_concepts %}
-                                {% set related_iri = rel.target if rel.source == concept.id_ else rel.source %}
-                                <a href="/web/concept/{{ related_iri|urlencode }}" class="block group">
+                                <a href="{{ rel.0 }}" class="block group">
                                     <div class="bg-white border rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative" style="border-color: var(--border-color); background-color: var(--nav-bg)">
                                         <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg"></div>
                                         <div class="flex items-center justify-between">
                                             <div class="flex-1">
-                                                <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">
-                                                    {% if related_iri in related_concepts %}
-                                                        {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#prefLabel']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}
-                                                    {% else %}
-                                                        {{ related_iri|replace('http://data.europa.eu/xsp/cn2024/', '')|replace('http://data.europa.eu/xsp/cn2023/', '') }}
-                                                    {% endif %}
+                                                <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">{{ rel.1|best_label(language)}}
                                                 </div>
-                                                {% if related_iri in related_concepts and related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'] %}
+                                                {% if rel.1.notations %}
                                                 <div class="text-xs mt-1 flex items-center" style="color: var(--text-secondary)">
                                                     <i class="fas fa-hashtag mr-1" style="color: var(--text-tertiary)"></i>
-                                                    {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'][0]['@value'] }}
+                                                    {{ rel.1.notations[0]['@value'] }}
                                                 </div>
                                                 {% endif %}
                                             </div>
@@ -130,14 +100,7 @@ style="color: var(--text-color)">Current Concept</span>
                     </div>
 
                     <!-- Narrower Concepts -->
-                    {% set narrower_concepts = [] %}
-                    {% for rel in relationships %}
-                        {% if (rel.predicate == 'http://www.w3.org/2004/02/skos/core#narrower' and rel.source == concept.id_) or
-                              (rel.predicate == 'http://www.w3.org/2004/02/skos/core#broader' and rel.target == concept.id_) %}
-                            {% set _ = narrower_concepts.append(rel) %}
-                        {% endif %}
-                    {% endfor %}
-                    {% if narrower_concepts|length > 0 %}
+                    {% if narrower_concepts %}
                     <div>
                         <h3 class="text-sm font-medium mb-3 flex items-center" style="color: var(--text-secondary)">
                             <i class="fas fa-arrow-down mr-2" style="color: var(--text-tertiary)"></i>
@@ -146,23 +109,17 @@ style="color: var(--text-color)">Current Concept</span>
                         </h3>
                         <div class="space-y-2">
                             {% for rel in narrower_concepts %}
-                                {% set related_iri = rel.target if rel.source == concept.id_ else rel.source %}
-                                <a href="/web/concept/{{ related_iri|urlencode }}" class="block group">
+                                <a href="{{ rel.0 }}" class="block group">
                                     <div class="bg-white border rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative" style="border-color: var(--border-color); background-color: var(--nav-bg)">
                                         <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg"></div>
                                         <div class="flex items-center justify-between">
                                             <div class="flex-1">
-                                                <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">
-                                                    {% if related_iri in related_concepts %}
-                                                        {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#prefLabel']|selectattr('@language', 'equalto', 'en')|map(attribute='@value')|first }}
-                                                    {% else %}
-                                                        {{ related_iri|replace('http://data.europa.eu/xsp/cn2024/', '')|replace('http://data.europa.eu/xsp/cn2023/', '') }}
-                                                    {% endif %}
+                                                <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">{{ rel.1|best_label(language) }}
                                                 </div>
-                                                {% if related_iri in related_concepts and related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'] %}
+                                                {% if rel.1.notations %}
                                                 <div class="text-xs mt-1 flex items-center" style="color: var(--text-secondary)">
                                                     <i class="fas fa-hashtag mr-1" style="color: var(--text-tertiary)"></i>
-                                                    {{ related_concepts[related_iri]['http://www.w3.org/2004/02/skos/core#notation'][0]['@value'] }}
+                                                    {{ rel.1.notations[0]['@value'] }}
                                                 </div>
                                                 {% endif %}
                                             </div>
@@ -196,12 +153,12 @@ style="color: var(--text-color)">Current Concept</span>
                     <div>
                         <div class="space-y-2">
                         {% for ass in associations %}
-                            <a href="{{ ass.0 }}" class="block group">
+                            <a href="{{ ass.url }}" class="block group">
                                 <div class="bg-white border rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative" style="border-color: var(--border-color); background-color: var(--nav-bg)">
                                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg"></div>
-                                    <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">{{ ass.2 }}</div>
-                                    {% if ass.3 %}
-                                        <div class="text-s mt-1" style="color: var(--text-secondary)">Conversion factor: {{ ass.3 }}
+                                    <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">{{ ass.obj|best_label(language) }}</div>
+                                    {% if ass.conversion %}
+                                        <div class="text-s mt-1" style="color: var(--text-secondary)">Conversion factor: {{ ass.conversion }}
                                         </div>
                                     {% endif %}
                                 </div>
@@ -334,15 +291,7 @@ style="color: var(--text-color)">Current Concept</span>
 
 <script>
 document.getElementById('language').addEventListener('change', function(e) {
-    const selectedLang = e.target.value;
-    // Hide all language versions
-    document.querySelectorAll('[data-lang]').forEach(el => {
-        el.classList.add('hidden');
-    });
-    // Show selected language version
-    document.querySelectorAll(`[data-lang="${selectedLang}"]`).forEach(el => {
-        el.classList.remove('hidden');
-    });
+    window.location.href = e.target.value;
 });
 </script>
 {% endblock %}
