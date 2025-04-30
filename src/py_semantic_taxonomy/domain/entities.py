@@ -12,13 +12,19 @@ from py_semantic_taxonomy.domain.constants import (
 from py_semantic_taxonomy.domain.hash_utils import hash_fnv64
 
 
-def select_language(objs: list[dict], language: str, concatenate: bool = False) -> str:
+def select_string_for_language(objs: list[dict], language: str, concatenate: bool = False) -> str:
     strings = [
         obj["@value"] for obj in objs if obj["@language"].lower().startswith(language.lower())
     ]
     if concatenate:
         return " ".join(strings)
     return strings
+
+
+def select_language(objs: list[dict], language: str) -> str:
+    return [
+        obj for obj in objs if obj["@language"].lower().startswith(language.lower())
+    ]
 
 
 # Allow mixing non-default and default values in dataclasses
@@ -83,15 +89,36 @@ class Concept(SKOS):
             # https://github.com/typesense/typesense/issues/192
             "id": hash_fnv64(self.id_),
             "url": quote_plus(self.id_),
-            "alt_labels": select_language(self.alt_labels, language),
-            "hidden_labels": select_language(self.hidden_labels, language),
+            "alt_labels": select_string_for_language(self.alt_labels, language),
+            "hidden_labels": select_string_for_language(self.hidden_labels, language),
             # One per language but can have language variants
-            "pref_label": select_language(self.pref_labels, language, concatenate=True),
-            "definition": select_language(self.definitions, language, concatenate=True),
+            "pref_label": select_string_for_language(self.pref_labels, language, concatenate=True),
+            "definition": select_string_for_language(self.definitions, language, concatenate=True),
             # Not language-specific
             "notation": " ".join([obj["@value"] for obj in self.notations]),
             "all_languages_pref_labels": [obj["@value"] for obj in self.pref_labels],
         }
+
+    def filter_language(self, language: str) -> "Concept":
+        SAME_FIELDS = (
+            "change_notes",
+            "editorial_notes",
+            "extra",
+            "history_notes",
+            "id_",
+            "notations",
+            "schemes",
+            "status",
+            "top_concept_of",
+            "types",
+        )
+        return Concept(
+            alt_labels=select_language(self.alt_labels, language),
+            definitions=select_language(self.definitions, language),
+            hidden_labels=select_language(self.hidden_labels, language),
+            pref_labels=select_language(self.pref_labels, language),
+            **{field: getattr(self, field) for field in SAME_FIELDS},
+        )
 
 
 @dataclass(kw_only=True)
@@ -99,6 +126,26 @@ class ConceptScheme(SKOS):
     created: list[datetime]
     creators: list[dict]
     version: list[str]
+
+    def filter_language(self, language: str) -> "Concept":
+        SAME_FIELDS = (
+            "change_notes",
+            "created",
+            "creators",
+            "editorial_notes",
+            "extra",
+            "history_notes",
+            "id_",
+            "notations",
+            "status",
+            "types",
+            "version",
+        )
+        return ConceptScheme(
+            definitions=select_language(self.definitions, language),
+            pref_labels=select_language(self.pref_labels, language),
+            **{field: getattr(self, field) for field in SAME_FIELDS},
+        )
 
 
 @dataclass(frozen=True)

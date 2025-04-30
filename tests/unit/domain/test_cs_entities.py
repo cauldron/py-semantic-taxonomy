@@ -114,6 +114,36 @@ def test_concept_scheme_to_db_dict(cn):
     assert given == expected, "Conversion to database dict failed"
 
 
+def test_concept_scheme_filter_language(cn):
+    original = ConceptScheme.from_json_ld(cn.scheme)
+    original.definitions = [
+        {"@language": "en", "@value": "foo"},
+        {"@language": "pt", "@value": "bar"},
+    ]
+    result = original.filter_language("en")
+    SAME_FIELDS = (
+        "change_notes",
+        "created",
+        "creators",
+        "editorial_notes",
+        "extra",
+        "history_notes",
+        "id_",
+        "notations",
+        "status",
+        "types",
+        "version",
+    )
+    for field in SAME_FIELDS:
+        assert getattr(original, field) == getattr(result, field), "Value should be the same"
+    assert result.pref_labels == [
+        {"@language": "en", "@value": "Combined Nomenclature, 2024 (CN 2024)"},
+    ], "Wrong value on language selection"
+    assert result.definitions == [
+        {"@language": "en", "@value": "foo"},
+    ], "Wrong value on language selection"
+
+
 def test_concept_scheme_from_json_ld(cn):
     given = ConceptScheme.from_json_ld(cn.scheme)
     expected = ConceptScheme(

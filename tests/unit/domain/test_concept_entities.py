@@ -80,6 +80,49 @@ def test_concept_to_db_dict(cn):
     assert given == expected, "Conversion to database dict failed"
 
 
+def test_concept_filter_language(cn):
+    original = Concept.from_json_ld(cn.concept_top)
+    original.definitions = [
+        {"@language": "en", "@value": "foo"},
+        {"@language": "pt", "@value": "bar"},
+    ]
+    original.hidden_labels = [
+        {"@language": "en", "@value": "a"},
+        {"@language": "pt", "@value": "b"},
+    ]
+    original.alt_labels = [
+        {"@language": "en", "@value": "1"},
+        {"@language": "pt", "@value": "2"},
+    ]
+    result = original.filter_language("en")
+    SAME_FIELDS = (
+        "change_notes",
+        "editorial_notes",
+        "extra",
+        "history_notes",
+        "id_",
+        "notations",
+        "schemes",
+        "status",
+        "top_concept_of",
+        "types",
+    )
+    for field in SAME_FIELDS:
+        assert getattr(original, field) == getattr(result, field), "Value should be the same"
+    assert result.pref_labels == [
+        {"@language": "en", "@value": "SECTION I - LIVE ANIMALS; ANIMAL PRODUCTS"},
+    ], "Wrong value on language selection"
+    assert result.definitions == [
+        {"@language": "en", "@value": "foo"},
+    ], "Wrong value on language selection"
+    assert result.hidden_labels == [
+        {"@language": "en", "@value": "a"},
+    ], "Wrong value on language selection"
+    assert result.alt_labels == [
+        {"@language": "en", "@value": "1"},
+    ], "Wrong value on language selection"
+
+
 def test_concept_to_search_dict(cn):
     cn.concept_top[RDF["alt_labels"]] = [
         {"@language": "pt", "@value": "foo"},
