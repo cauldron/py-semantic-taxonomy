@@ -2,6 +2,9 @@
     --primary-color: #ef5552;
     --primary-hover: #dc2626;
     --text-color: #1f2937;
+    --bg-color: #ffffff;
+    --header-bg: #ffffff;
+    --nav-bg: #f8fafc;
     --text-secondary: #6b7280;
     --text-tertiary: #9ca3af;
     --bg-color: #ffffff;
@@ -101,6 +104,8 @@ body {
     color: #6b7280;
     font-size: 1.125rem;
 }
+.card {
+    background-color: white;
 [data-theme="dark"] .page-header p {
     color: #9ca3af;
 }

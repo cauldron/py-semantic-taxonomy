@@ -24,6 +24,30 @@ async def test_get_association_not_found(sqlite, graph):
         await graph.association_get(iri="http://data.europa.eu/xsp/cn2024/woof")
 
 
+@pytest.mark.postgres
+async def test_associations_get_for_source_concept(postgres, cn, entities, graph):
+    new = Association(
+        id_="http://example.com/foo",
+        types=cn.association_top["@type"],
+        source_concepts=[
+            {"@id": cn.concept_2023_top["@id"]},
+            {"@id": cn.concept_2023_low["@id"]},
+        ],
+        target_concepts=[{"@id": cn.concept_top["@id"]}],
+    )
+    await graph.association_create(association=new)
+
+    assocs = await graph.associations_get_for_source_concept(
+        concept_iri=entities[5].id_, simple_only=False
+    )
+    assert assocs == [entities[8], new], "Incorrect data attributes"
+
+    assocs = await graph.associations_get_for_source_concept(
+        concept_iri=entities[5].id_, simple_only=True
+    )
+    assert assocs == [entities[8]], "Incorrect data attributes"
+
+
 async def test_create_association_simple(sqlite, cn, entities, graph):
     new = Association(
         id_="http://example.com/foo",

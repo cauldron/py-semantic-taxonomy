@@ -1,6 +1,6 @@
 from enum import StrEnum
 from pathlib import Path as PathLib
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
@@ -11,6 +11,7 @@ from langcodes import Language
 from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
+from py_semantic_taxonomy.domain.constants import AssociationKind
 
 logger = structlog.get_logger("py-semantic-taxonomy")
 
@@ -25,9 +26,18 @@ def value_for_language(value: list[dict[str, str]], lang: str) -> str:
     return ""
 
 
+def best_label(obj: de.SKOS) -> str:
+    """Get the best available short label"""
+    for notation_obj in obj.notations:
+        if value := notation_obj.get("@value"):
+            return value
+    return obj.pref_labels[0]["@value"][:25]
+
+
 templates = Jinja2Templates(directory=str(PathLib(__file__).parent / "templates"))
 templates.env.filters["split"] = lambda s, sep: s.split(sep)
 templates.env.filters["lang"] = value_for_language
+templates.env.filters["best_label"] = best_label
 
 
 def format_languages(languages: list[str]) -> list[tuple[str, str]]:
@@ -42,11 +52,11 @@ class WebPaths(StrEnum):
     search = "/search/"
 
 
-@router.get('/')
+@router.get("/")
 async def redirect_blank_web_page(
     request: Request,
 ) -> RedirectResponse:
-    return RedirectResponse(request.url_for('web_concept_schemes'))
+    return RedirectResponse(request.url_for("web_concept_schemes"))
 
 
 @router.get(
@@ -103,6 +113,14 @@ async def web_concept_scheme_view(
         raise HTTPException(status_code=500, detail="Database error while fetching concept scheme")
 
 
+def concept_view_url(request: Request, concept_iri: str, concept_scheme_iri: str) -> str:
+    return (
+        str(request.url_for("web_concept_view", iri=quote(concept_iri)))
+        + "?concept_scheme="
+        + quote(concept_scheme_iri, safe="")
+    )
+
+
 @router.get(
     WebPaths.concept_view,
     response_class=HTMLResponse,
@@ -110,6 +128,7 @@ async def web_concept_scheme_view(
 async def web_concept_view(
     request: Request,
     iri: str = Path(..., description="The IRI of the concept to view"),
+    concept_scheme: str | None = None,
     service=Depends(get_graph_service),
     settings=Depends(get_settings),
 ) -> HTMLResponse:
@@ -117,6 +136,15 @@ async def web_concept_view(
     try:
         decoded_iri = unquote(iri)
         concept = await service.concept_get(iri=decoded_iri)
+        if not concept_scheme:
+            return RedirectResponse(
+                concept_view_url(request, concept.id_, concept.schemes[0]["@id"])
+            )
+        scheme = await service.concept_scheme_get(iri=unquote(concept_scheme))
+        relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
+        broader = await service.concept_broader_in_ascending_order(
+            concept_iri=concept.id_, concept_scheme_iri=scheme.id_
+        )
         relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
 
         relationships_data = []
@@ -139,14 +167,57 @@ async def web_concept_view(
                         related_iri=related_iri,
                     )
 
+        scheme_list = [
+            (request.url_for("web_concept_view", iri=quote(s["@id"])), s) for s in concept.schemes
+        ]
+        broader_list = [(concept_view_url(request, c.id_, scheme.id_), c) for c in broader[::-1]]
+
+        associations = await service.associations_get_for_source_concept(concept_iri=concept.id_)
+        formatted_associations = []
+        for obj in filter(lambda x: x.kind == AssociationKind.simple, associations):
+            for target in obj.target_concepts:
+                try:
+                    other = await service.concept_get(iri=target["@id"])
+                    formatted_associations.append(
+                        (
+                            concept_view_url(
+                                request,
+                                target["@id"],
+                                (
+                                    scheme.id_
+                                    if any(scheme.id_ == os["@id"] for os in other.schemes)
+                                    else other.schemes[0]["@id"]
+                                ),
+                            ),
+                            None,
+                            other.pref_labels[0]["@value"],
+                            target.get("http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"),
+                        )
+                    )
+                except de.ConceptNotFoundError:
+                    formatted_associations.append(
+                        (
+                            target["@id"],
+                            None,
+                            target["@id"],
+                            target.get("http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"),
+                        )
+                    )
+
         return templates.TemplateResponse(
             "concept_view.html",
             {
                 "request": request,
-                "concept": concept,
+                "scheme": scheme,
+                "scheme_url": request.url_for("web_concept_scheme_view", iri=quote(scheme.id_)),
+                "broader_list": broader_list,
+                "scheme_list": scheme_list,
                 "relationships": relationships_data,
                 "related_concepts": related_concepts,
+                "concept": concept,
                 "languages": format_languages(settings.languages),
+                "associations": formatted_associations,
+                # "conditional_associations": conditional_associations,
             },
         )
     except de.ConceptNotFoundError:
@@ -171,9 +242,7 @@ async def web_search(
     try:
         results = []
         if query:
-            results = await search_service.search(
-                query=query, language=language, semantic=semantic
-            )
+            results = await search_service.search(query=query, language=language, semantic=semantic)
         return templates.TemplateResponse(
             "search.html",
             {

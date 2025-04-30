@@ -7,9 +7,9 @@ from py_semantic_taxonomy.adapters.persistence.database import (
     create_engine,
     init_db,
 )
+from py_semantic_taxonomy.adapters.routers.catch_router import router as catch_router
 from py_semantic_taxonomy.adapters.routers.router import router
 from py_semantic_taxonomy.adapters.routers.web_router import router as web_router
-from py_semantic_taxonomy.adapters.routers.catch_router import router as catch_router
 from py_semantic_taxonomy.dependencies import get_search_service
 
 # from fastapi.middleware.cors import CORSMiddleware

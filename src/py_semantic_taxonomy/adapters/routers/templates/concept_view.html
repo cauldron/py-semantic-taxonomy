@@ -6,7 +6,7 @@
 <div class="flex justify-between items-center">
     <div>
         <h1>{{ concept.pref_labels|lang('en') }}</h1>
-        <p style="color: var(--text-secondary)">Concept Details</p>
+        <p style="color: var(--text-secondary)"> Hierarchy >> <a href="{{ scheme_url }} " class="text-primary hover:text-primary-hover">{{ scheme|best_label }}</a>{% for b in broader_list %} >> <a href="{{ b.0 }}" class="text-primary hover:text-primary-hover">{{ b.1|best_label }}</a>{% endfor %}</p>
     </div>
     <div class="flex space-x-3">
         <a href="/web/concept_schemes/" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
@@ -182,6 +182,38 @@ style="color: var(--text-color)">Current Concept</span>
         </div>
         {% endif %}
 
+        <!-- Associations -->
+        {% if associations %}
+        <div class="card">
+            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color)">
+                <h2 class="text-lg font-medium flex items-center" style="color: var(--text-color)">
+                    <i class="fas fa-heart text-primary mr-2"></i>
+                    Associations
+                </h2>
+            </div>
+            <div class="px-4 py-5 sm:p-6">
+                <div class="space-y-8">
+                    <div>
+                        <div class="space-y-2">
+                        {% for ass in associations %}
+                            <a href="{{ ass.0 }}" class="block group">
+                                <div class="bg-white border rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg"></div>
+                                    <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">{{ ass.2 }}</div>
+                                    {% if ass.3 %}
+                                        <div class="text-s mt-1" style="color: var(--text-secondary)">Conversion factor: {{ ass.3 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </a>
+                        {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Notes -->
         {% if concept.editorial_notes or concept.change_notes or concept.history_notes %}
         <div class="card">
@@ -259,9 +291,9 @@ style="color: var(--text-color)">Current Concept</span>
                 <div>
                     <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Concept Schemes</h3>
                     <div class="mt-1 text-sm" style="color: var(--text-color)">
-                        {% for scheme in concept.schemes %}
-                        <a href="/web/concept_scheme/{{ scheme['@id']|urlencode }}" class="text-primary hover:text-primary-hover">
-                            {{ scheme['@id'] }}
+                        {% for scheme in scheme_list %}
+                        <a href="{{ scheme.0 }}" class="text-primary hover:text-primary-hover">
+                            {{ scheme.1['@id'] }}
                         </a>
                         {% endfor %}
                     </div>

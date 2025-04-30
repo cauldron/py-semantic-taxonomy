@@ -98,3 +98,50 @@ async def test_concepts_get_for_scheme_top_concepts(postgres, cn, graph):
 async def test_concepts_get_for_scheme_empty(postgres, cn, graph):
     concepts = await graph.concepts_get_for_scheme("http://missing.ninja/foo", False)
     assert concepts == []
+
+
+@pytest.mark.postgres
+async def test_concept_broader_in_ascending_order(postgres, cn, graph):
+    async def fake(id_: str, schemes: list[dict]) -> Concept:
+        concept = Concept(
+            id_=f"http://example.com/{id_}",
+            schemes=schemes,
+            types=[],
+            pref_labels=[],
+            status=[],
+        )
+        await graph.concept_create(concept=concept)
+        return concept
+
+    a = await fake("a", [{"@id": cn.scheme["@id"]}, {"@id": cn.scheme_2023["@id"]}])
+    b = await fake("b", [{"@id": cn.scheme["@id"]}])
+    c = await fake("c", [{"@id": cn.scheme["@id"]}])
+    d = await fake("d", [{"@id": cn.scheme_2023["@id"]}])
+    e = await fake("e", [{"@id": cn.scheme["@id"]}, {"@id": cn.scheme_2023["@id"]}])
+    f = await fake("f", [{"@id": cn.scheme_2023["@id"]}])
+    g = await fake("g", [{"@id": cn.scheme["@id"]}])
+    h = await fake("h", [{"@id": cn.scheme["@id"]}])
+
+    # A -> (B, C) (D in wrong scheme) -> E (F in wrong scheme) -> G (H with wrong verb)
+    await graph.relationships_create(
+        [
+            Relationship(source=a.id_, target=b.id_, predicate=RelationshipVerbs.broader),
+            Relationship(source=a.id_, target=c.id_, predicate=RelationshipVerbs.broader),
+            Relationship(source=a.id_, target=d.id_, predicate=RelationshipVerbs.broader),
+            Relationship(source=b.id_, target=e.id_, predicate=RelationshipVerbs.broader),
+            Relationship(source=c.id_, target=e.id_, predicate=RelationshipVerbs.broader),
+            Relationship(source=c.id_, target=f.id_, predicate=RelationshipVerbs.broader),
+            Relationship(source=e.id_, target=g.id_, predicate=RelationshipVerbs.broader),
+            Relationship(source=e.id_, target=h.id_, predicate=RelationshipVerbs.broad_match),
+        ]
+    )
+
+    expected = [
+        "http://example.com/b",
+        "http://example.com/c",
+        "http://example.com/e",
+        "http://example.com/g",
+    ]
+    result = await graph.concept_broader_in_ascending_order(a.id_, cn.scheme["@id"])
+    result_ids = [obj.id_ for obj in result]
+    assert result_ids == expected

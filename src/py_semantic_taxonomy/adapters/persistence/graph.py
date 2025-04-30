@@ -1,7 +1,10 @@
+from pathlib import Path
+
 from sqlalchemy import Table, cast, delete, func, insert, join, select, update
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from sqlalchemy.sql import text
 
 from py_semantic_taxonomy.adapters.persistence.database import create_engine
 from py_semantic_taxonomy.adapters.persistence.tables import (
@@ -13,6 +16,7 @@ from py_semantic_taxonomy.adapters.persistence.tables import (
 )
 from py_semantic_taxonomy.domain.constants import (
     SKOS_HIERARCHICAL_RELATIONSHIP_PREDICATES,
+    AssociationKind,
     RelationshipVerbs,
 )
 from py_semantic_taxonomy.domain.entities import (
@@ -31,6 +35,8 @@ from py_semantic_taxonomy.domain.entities import (
     NotFoundError,
     Relationship,
 )
+
+SQL_TEMPLATES = Path(__file__).parent / "sql"
 
 
 class PostgresKOSGraphDatabase:
@@ -131,6 +137,39 @@ class PostgresKOSGraphDatabase:
             result = (await conn.execute(stmt.order_by(concept_table.c.id_))).fetchall()
             await conn.rollback()
         return [Concept(**row._mapping) for row in result]
+
+    async def concept_broader_in_ascending_order(
+        self, concept_iri: str, concept_scheme_iri: str
+    ) -> list[Concept]:
+        columns = [
+            "id_",
+            "types",
+            "pref_labels",
+            "status",
+            "notations",
+            "definitions",
+            "change_notes",
+            "history_notes",
+            "editorial_notes",
+            "schemes",
+            "alt_labels",
+            "hidden_labels",
+            "top_concept_of",
+            "extra",
+        ]
+        async with self.engine.connect() as conn:
+            results = (
+                await conn.execute(
+                    text(open(SQL_TEMPLATES / "broader_concept_hierarchy.sql").read()),
+                    {
+                        "broader": str(RelationshipVerbs.broader),
+                        "source_concept": concept_iri,
+                        "concept_scheme": concept_scheme_iri,
+                    },
+                )
+            ).fetchall()
+        results.sort(key=lambda x: (x[-1], x[0]))
+        return [Concept(**{key: value for key, value in zip(columns, row)}) for row in results]
 
     # ConceptScheme
 
@@ -418,6 +457,24 @@ class PostgresKOSGraphDatabase:
                 raise AssociationNotFoundError
             await conn.rollback()
         return Association(**result._mapping)
+
+    async def associations_get_for_source_concept(
+        self, concept_iri: str, simple_only: bool
+    ) -> list[Association]:
+        source_associations = func.jsonb_array_elements(
+            association_table.c.source_concepts
+        ).table_valued("value", joins_implicitly=True)
+
+        async with self.engine.connect() as conn:
+            # See above discussion on how best to search within JSONB fields
+            stmt = select(association_table).where(
+                source_associations.c.value.op("->")("@id") == cast(concept_iri, JSONB)
+            )
+            if simple_only:
+                stmt = stmt.where(association_table.c.kind == AssociationKind.simple)
+            result = (await conn.execute(stmt.order_by(association_table.c.id_))).fetchall()
+            await conn.rollback()
+        return [Association(**row._mapping) for row in result]
 
     async def association_create(self, association: Association) -> Association:
         async with self.engine.connect() as conn:

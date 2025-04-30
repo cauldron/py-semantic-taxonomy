@@ -42,6 +42,13 @@ class GraphService:
     async def concept_get(self, iri: str) -> Concept:
         return await self.graph.concept_get(iri=iri)
 
+    async def concept_broader_in_ascending_order(
+        self, concept_iri: str, concept_scheme_iri: str
+    ) -> list[Concept]:
+        return await self.graph.concept_broader_in_ascending_order(
+            concept_iri=concept_iri, concept_scheme_iri=concept_scheme_iri
+        )
+
     async def _concept_refers_to_concept_scheme_in_database(self, concept: Concept) -> None:
         concept_schemes = set(await self.concept_scheme_get_all_iris())
         given_cs = {cs["@id"] for cs in concept.schemes}
@@ -220,6 +227,13 @@ class GraphService:
 
     async def association_get(self, iri: str) -> Association:
         return await self.graph.association_get(iri=iri)
+
+    async def associations_get_for_source_concept(
+        self, concept_iri: str, simple_only: bool = False
+    ) -> list[Association]:
+        return await self.graph.associations_get_for_source_concept(
+            concept_iri=concept_iri, simple_only=simple_only
+        )
 
     async def association_create(self, association: Association) -> Association:
         return await self.graph.association_create(association=association)

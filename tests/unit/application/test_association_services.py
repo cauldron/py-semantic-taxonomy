@@ -12,6 +12,17 @@ async def test_association_get(graph_service, entities):
     mock_kos_graph.association_get.assert_called_with(iri=entities[8].id_)
 
 
+async def test_associations_get_for_source_concept(graph_service, entities):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.associations_get_for_source_concept.return_value = [entities[8]]
+
+    result = await graph_service.associations_get_for_source_concept(entities[8].id_)
+    assert result == [entities[8]]
+    mock_kos_graph.associations_get_for_source_concept.assert_called_with(
+        concept_iri=entities[8].id_, simple_only=False
+    )
+
+
 async def test_association_create(graph_service, cn, entities, relationships):
     mock_kos_graph = graph_service.graph
     mock_kos_graph.association_create.return_value = entities[8]
