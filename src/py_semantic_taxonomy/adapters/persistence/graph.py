@@ -1,7 +1,7 @@
+import json
 from pathlib import Path
 
-from sqlalchemy import Table, cast, delete, func, insert, join, select, update
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Table, delete, func, insert, join, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import text
@@ -108,31 +108,15 @@ class PostgresKOSGraphDatabase:
         self, concept_scheme_iri: str, top_concepts_only: bool
     ) -> list[Concept]:
         """Get all concepts that belong to a given concept scheme."""
-        schemes = func.jsonb_array_elements(concept_table.c.schemes).table_valued(
-            "value", joins_implicitly=True
-        )
-        top_concepts_of = func.jsonb_array_elements(concept_table.c.top_concept_of).table_valued(
-            "value", joins_implicitly=True
-        )
-
         async with self.engine.connect() as conn:
-            # This approach seems to be faster (1 msec versus 4 msec; not sure this is correct or
-            # significant) and feels more correct than using `@>` (contains); it would also allow
-            # to get the concept scheme row which matches, though we already know its IRI so I'm
-            # not sure how important that is. The previous approach was:
-            # stmt = select(concept_table).where(
-            #     concept_table.c.schemes.op("@>")([{"@id": concept_scheme_iri}])
-            # )
+            # See discussion here:
+            # https://github.com/cauldron/py-semantic-taxonomy/issues/51
             stmt = select(concept_table).where(
-                schemes.c.value.op("->")("@id") == cast(concept_scheme_iri, JSONB)
+                concept_table.c.schemes.op("@>")([{"@id": concept_scheme_iri}])
             )
             if top_concepts_only:
-                # Same as above; previous query:
-                # stmt = stmt.where(
-                #     concept_table.c.top_concept_of.op("@>")([{"@id": concept_scheme_iri}])
-                # )
                 stmt = stmt.where(
-                    top_concepts_of.c.value.op("->")("@id") == cast(concept_scheme_iri, JSONB)
+                    concept_table.c.top_concept_of.op("@>")([{"@id": concept_scheme_iri}])
                 )
             result = (await conn.execute(stmt.order_by(concept_table.c.id_))).fetchall()
             await conn.rollback()
@@ -164,7 +148,7 @@ class PostgresKOSGraphDatabase:
                     {
                         "broader": str(RelationshipVerbs.broader),
                         "source_concept": concept_iri,
-                        "concept_scheme": concept_scheme_iri,
+                        "concept_scheme_dict": json.dumps([{"@id": concept_scheme_iri}]),
                     },
                 )
             ).fetchall()
@@ -461,14 +445,10 @@ class PostgresKOSGraphDatabase:
     async def associations_get_for_source_concept(
         self, concept_iri: str, simple_only: bool
     ) -> list[Association]:
-        source_associations = func.jsonb_array_elements(
-            association_table.c.source_concepts
-        ).table_valued("value", joins_implicitly=True)
-
         async with self.engine.connect() as conn:
             # See above discussion on how best to search within JSONB fields
             stmt = select(association_table).where(
-                source_associations.c.value.op("->")("@id") == cast(concept_iri, JSONB)
+                association_table.c.source_concepts.op("@>")([{"@id": concept_iri}])
             )
             if simple_only:
                 stmt = stmt.where(association_table.c.kind == AssociationKind.simple)

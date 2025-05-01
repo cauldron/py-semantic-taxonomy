@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, Mock
 
 import httpx
 import pytest
+from faker import Faker
 from fastapi.testclient import TestClient
 from rdflib import Graph
 from sqlalchemy import insert
@@ -155,7 +156,7 @@ async def postgres(monkeypatch) -> None:
 
 
 @pytest.fixture
-async def cn_db_engine(entities: list, relationships: list) -> None:
+async def cn_db_engine(entities: list, relationships: list):
     from py_semantic_taxonomy.adapters.persistence.database import (
         create_engine,
         drop_db,
@@ -209,6 +210,37 @@ async def cn_db_engine(entities: list, relationships: list) -> None:
 
     # Not sure why this is necessary, the in-memory SQLite should be recreated on each test, but...
     await drop_db(engine)
+
+
+@pytest.fixture
+async def cn_plus_db_engine(cn_db_engine, entities):
+    from py_semantic_taxonomy.adapters.persistence.tables import concept_table
+
+    fake = Faker()
+
+    def fake_concept():
+        return {
+            "id_": "http://example.com/" + fake.unique.doi(),
+            "types": ["http://www.w3.org/2004/02/skos/core#Concept"],
+            "pref_labels": [{"@language": "en", "@value": fake.name()}],
+            "schemes": [{"@id": entities[2].id_}],
+            "top_concept_of": [],
+            "definitions": [],
+            "notations": [],
+            "alt_labels": [],
+            "hidden_labels": [],
+            "change_notes": [],
+            "editorial_notes": [],
+            "extra": {},
+            "status": [],
+        }
+
+    async with cn_db_engine.connect() as conn:
+        for x in range(5):
+            await conn.execute(insert(concept_table), [fake_concept() for i in range(500)])
+        await conn.commit()
+
+    yield cn_db_engine
 
 
 @pytest.fixture

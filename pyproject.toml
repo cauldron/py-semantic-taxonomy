@@ -55,6 +55,7 @@ tracker = "https://github.com/cauldron/py-semantic-taxonomy/issues"
 # seems to work, at least for now
 testing = [
     "aiosqlite",
+    "faker",
     "httpx",
     "py_semantic_taxonomy",
     "pytest",
