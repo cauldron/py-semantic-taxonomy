@@ -67,14 +67,14 @@ API_VERSION_PREFIX = "/api/v1"
 
 
 class APIPaths(enum.StrEnum):
-    concept = "/concept/"
-    concept_scheme = "/concept_scheme/"
+    concept = "/concepts/"
+    concept_scheme = "/concept_schemes/"
     relationship = "/relationships/"
-    correspondence = "/correspondence/"
-    association = "/association/"
-    made_of = "/made_of/"
-    search = "/concept/search/"
-    suggest = "/concept/suggest/"
+    correspondence = "/correspondences/"
+    association = "/associations/"
+    made_of = "/made_ofs/"
+    search = "/concepts/search/"
+    suggest = "/concepts/suggest/"
 
 
 def get_full_api_path(api_path: str) -> str:
