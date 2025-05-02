@@ -61,3 +61,27 @@ class RelationshipVerbs(enum.StrEnum):
 class AssociationKind(enum.StrEnum):
     simple = "simple"
     conditional = "conditional"
+
+
+API_VERSION_PREFIX = "/api/v1"
+
+
+class APIPaths(enum.StrEnum):
+    concept = "/concept/"
+    concept_scheme = "/concept_scheme/"
+    relationship = "/relationships/"
+    correspondence = "/correspondence/"
+    association = "/association/"
+    made_of = "/made_of/"
+    search = "/concept/search/"
+    suggest = "/concept/suggest/"
+
+
+def get_full_api_path(api_path: str) -> str:
+    """
+    Easier access to API paths including prefix for use in templates, etc.
+
+    Uses string concatenation because `urljoin` wants complete URLs, and using path join operations
+    just feels dirty.
+    """
+    return API_VERSION_PREFIX + getattr(APIPaths, api_path)

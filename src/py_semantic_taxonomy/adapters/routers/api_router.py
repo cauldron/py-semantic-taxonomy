@@ -1,4 +1,3 @@
-from enum import StrEnum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
@@ -10,19 +9,9 @@ import py_semantic_taxonomy.adapters.routers.response_dto as response
 from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
+from py_semantic_taxonomy.domain.constants import API_VERSION_PREFIX, APIPaths
 
-router = APIRouter()
-
-
-class Paths(StrEnum):
-    concept = "/concept/"
-    concept_scheme = "/concept_scheme/"
-    relationship = "/relationships/"
-    correspondence = "/correspondence/"
-    association = "/association/"
-    made_of = "/made_of/"
-    search = "/concept/search/"
-    suggest = "/concept/suggest/"
+api_router = APIRouter(prefix=API_VERSION_PREFIX)
 
 
 """
@@ -59,8 +48,8 @@ async def verify_auth_token(
 # Concept
 
 
-@router.get(
-    Paths.concept,
+@api_router.get(
+    APIPaths.concept,
     summary="Get a `Concept` object",
     response_model=response.Concept,
     tags=["Concept"],
@@ -77,8 +66,8 @@ async def concept_get(
         raise HTTPException(status_code=404, detail=f"Concept with IRI `{iri}` not found")
 
 
-@router.post(
-    Paths.concept,
+@api_router.post(
+    APIPaths.concept,
     summary="Create a `Concept` object",
     response_model=response.Concept,
     dependencies=[Depends(verify_auth_token)],
@@ -109,8 +98,8 @@ async def concept_create(
         raise HTTPException(status_code=422, detail=str(err))
 
 
-@router.put(
-    Paths.concept,
+@api_router.put(
+    APIPaths.concept,
     summary="Update a `Concept` object",
     response_model=response.Concept,
     dependencies=[Depends(verify_auth_token)],
@@ -138,8 +127,8 @@ async def concept_update(
         raise HTTPException(status_code=422, detail=str(err))
 
 
-@router.delete(
-    Paths.concept,
+@api_router.delete(
+    APIPaths.concept,
     summary="Delete a `Concept` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
@@ -159,8 +148,8 @@ async def concept_delete(
 # Concept Scheme
 
 
-@router.get(
-    Paths.concept_scheme,
+@api_router.get(
+    APIPaths.concept_scheme,
     summary="Get a `ConceptScheme` object or list all concept schemes",
     response_model=response.ConceptScheme | list[response.ConceptScheme],
     tags=["ConceptScheme"],
@@ -181,8 +170,8 @@ async def concept_scheme_get(
         raise HTTPException(status_code=404, detail=f"Concept Scheme with IRI `{iri}` not found")
 
 
-@router.post(
-    Paths.concept_scheme,
+@api_router.post(
+    APIPaths.concept_scheme,
     summary="Create a `ConceptScheme` object",
     response_model=response.ConceptScheme,
     dependencies=[Depends(verify_auth_token)],
@@ -204,8 +193,8 @@ async def concept_scheme_create(
         )
 
 
-@router.put(
-    Paths.concept_scheme,
+@api_router.put(
+    APIPaths.concept_scheme,
     summary="Update a `ConceptScheme` object",
     response_model=response.ConceptScheme,
     dependencies=[Depends(verify_auth_token)],
@@ -225,8 +214,8 @@ async def concept_scheme_update(
         raise HTTPException(status_code=404, detail=f"Concept Scheme with IRI `{cs.id_}` not found")
 
 
-@router.delete(
-    Paths.concept_scheme,
+@api_router.delete(
+    APIPaths.concept_scheme,
     summary="Delete a `ConceptScheme` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
@@ -246,8 +235,8 @@ async def concept_scheme_delete(
 # Relationship
 
 
-@router.get(
-    Paths.relationship,
+@api_router.get(
+    APIPaths.relationship,
     summary="Get a list of `Concept` relationships",
     response_model=list[response.Relationship],
     response_model_exclude_unset=True,
@@ -263,8 +252,8 @@ async def relationships_get(
     return [response.Relationship(**obj.to_json_ld()) for obj in lst]
 
 
-@router.post(
-    Paths.relationship,
+@api_router.post(
+    APIPaths.relationship,
     summary="Create a list of `Concept` relationships",
     response_model=list[response.Relationship],
     response_model_exclude_unset=True,
@@ -290,8 +279,8 @@ async def relationships_create(
         raise HTTPException(status_code=422, detail=str(err))
 
 
-@router.delete(
-    Paths.relationship,
+@api_router.delete(
+    APIPaths.relationship,
     summary="Delete a list of `Concept` relationships",
     dependencies=[Depends(verify_auth_token)],
     tags=["Concept"],
@@ -315,8 +304,8 @@ async def relationship_delete(
 # Correspondence
 
 
-@router.get(
-    Paths.correspondence,
+@api_router.get(
+    APIPaths.correspondence,
     summary="Get a `Correspondence` object",
     response_model=response.Correspondence,
     tags=["Correspondence"],
@@ -333,8 +322,8 @@ async def correspondence_get(
         raise HTTPException(status_code=404, detail=f"Correspondence with IRI `{iri}` not found")
 
 
-@router.post(
-    Paths.correspondence,
+@api_router.post(
+    APIPaths.correspondence,
     summary="Create a `Correspondence` object",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
@@ -356,8 +345,8 @@ async def correspondence_create(
         )
 
 
-@router.put(
-    Paths.correspondence,
+@api_router.put(
+    APIPaths.correspondence,
     summary="Update a `Correspondence` object",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
@@ -379,8 +368,8 @@ async def correspondence_update(
         )
 
 
-@router.delete(
-    Paths.correspondence,
+@api_router.delete(
+    APIPaths.correspondence,
     summary="Delete a `Correspondence` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
@@ -400,8 +389,8 @@ async def correspondence_delete(
 # Association
 
 
-@router.get(
-    Paths.association,
+@api_router.get(
+    APIPaths.association,
     summary="Get an `Association` object",
     response_model=response.Association,
     tags=["ConceptAssociation"],
@@ -418,8 +407,8 @@ async def association_get(
         raise HTTPException(status_code=404, detail=f"Association with IRI `{iri}` not found")
 
 
-@router.post(
-    Paths.association,
+@api_router.post(
+    APIPaths.association,
     summary="Create an `Association` object",
     response_model=response.Association,
     dependencies=[Depends(verify_auth_token)],
@@ -439,8 +428,8 @@ async def association_create(
         raise HTTPException(status_code=409, detail=str(exc))
 
 
-@router.delete(
-    Paths.association,
+@api_router.delete(
+    APIPaths.association,
     summary="Delete an `Association` object",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=[Depends(verify_auth_token)],
@@ -457,8 +446,8 @@ async def association_delete(
         raise HTTPException(status_code=404, detail=str(err))
 
 
-@router.post(
-    Paths.made_of,
+@api_router.post(
+    APIPaths.made_of,
     summary="Add some `Correspondence` `madeOf` links",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
@@ -480,8 +469,8 @@ async def made_of_add(
         )
 
 
-@router.delete(
-    Paths.made_of,
+@api_router.delete(
+    APIPaths.made_of,
     summary="Remove some `Correspondence` `madeOf` links",
     response_model=response.Correspondence,
     dependencies=[Depends(verify_auth_token)],
@@ -503,8 +492,8 @@ async def made_of_remove(
         )
 
 
-@router.get(
-    Paths.search,
+@api_router.get(
+    APIPaths.search,
     summary="Search for `Concept` objects",
     response_model=list[de.SearchResult],
     tags=["Concept"],
@@ -527,8 +516,8 @@ async def concept_search(
         )
 
 
-@router.get(
-    Paths.suggest,
+@api_router.get(
+    APIPaths.suggest,
     summary="Suggestion search for `Concept` objects",
     response_model=list[de.SearchResult],
     tags=["Concept"],

@@ -1,6 +1,6 @@
 import pytest
 
-from py_semantic_taxonomy.adapters.routers.router import Paths
+from py_semantic_taxonomy.domain.constants import get_full_api_path
 
 CONCEPT = {
     "@id": "http://data.europa.eu/xsp/cn2024/370400000080",
@@ -22,17 +22,17 @@ CONCEPT = {
 
 @pytest.mark.typesense
 async def test_typesense_searching(sqlite, typesense, anonymous_client, cn):
-    result = await anonymous_client.get(Paths.search, params={"query": "Zaum", "language": "de"})
+    result = await anonymous_client.get(get_full_api_path("search"), params={"query": "Zaum", "language": "de"})
     assert result.status_code == 200
     assert result.json()[0]["id_"] == cn.concept_2023_low["@id"]
 
     result = await anonymous_client.get(
-        Paths.search, params={"query": "Zaum", "language": "de", "semantic": "0"}
+        get_full_api_path("search"), params={"query": "Zaum", "language": "de", "semantic": "0"}
     )
     assert result.status_code == 200
     assert result.json() == []
 
-    result = await anonymous_client.get(Paths.suggest, params={"query": "Ese", "language": "de"})
+    result = await anonymous_client.get(get_full_api_path("suggest"), params={"query": "Ese", "language": "de"})
     assert result.status_code == 200
     assert result.json() == [
         {
@@ -42,20 +42,20 @@ async def test_typesense_searching(sqlite, typesense, anonymous_client, cn):
         }
     ]
 
-    result = await anonymous_client.get(Paths.search, params={"query": "Zaum", "language": "jp"})
+    result = await anonymous_client.get(get_full_api_path("search"), params={"query": "Zaum", "language": "jp"})
     assert result.status_code == 422
 
 
 @pytest.mark.typesense
 async def test_typesense_concepts_create_delete(postgres, typesense, client, cn_db_engine, cn):
-    response = await client.get(Paths.search, params={"query": "kodak", "language": "en"})
+    response = await client.get(get_full_api_path("search"), params={"query": "kodak", "language": "en"})
     assert response.status_code == 200
     assert response.json()[0]["id_"] != CONCEPT["@id"]
 
-    response = await client.post(Paths.concept, json=CONCEPT)
+    response = await client.post(get_full_api_path("concept"), json=CONCEPT)
     assert response.status_code == 200
 
-    response = await client.get(Paths.search, params={"query": "kodak", "language": "en"})
+    response = await client.get(get_full_api_path("search"), params={"query": "kodak", "language": "en"})
     assert response.status_code == 200
     assert response.json()[0]["id_"] == CONCEPT["@id"]
 
@@ -65,10 +65,10 @@ async def test_typesense_concepts_create_delete(postgres, typesense, client, cn_
             "@value": "Salami Sausage",
         }
     ]
-    response = await client.put(Paths.concept, json=CONCEPT)
+    response = await client.put(get_full_api_path("concept"), json=CONCEPT)
     assert response.status_code == 200
 
-    response = await client.get(Paths.search, params={"query": "kodak", "language": "en"})
+    response = await client.get(get_full_api_path("search"), params={"query": "kodak", "language": "en"})
     assert response.status_code == 200
     assert (
         response.json()[0]["label"]
@@ -81,16 +81,16 @@ async def test_typesense_concepts_create_delete(postgres, typesense, client, cn_
             "@value": "Photographic plates, film, paper, paperboard and textiles, exposed but not developed",
         }
     ]
-    response = await client.put(Paths.concept, json=CONCEPT)
+    response = await client.put(get_full_api_path("concept"), json=CONCEPT)
     assert response.status_code == 200
 
-    response = await client.get(Paths.search, params={"query": "kodak", "language": "en"})
+    response = await client.get(get_full_api_path("search"), params={"query": "kodak", "language": "en"})
     assert response.status_code == 200
     assert response.json()[0]["id_"] == CONCEPT["@id"]
 
-    response = await client.delete(Paths.concept, params={"iri": CONCEPT["@id"]})
+    response = await client.delete(get_full_api_path("concept"), params={"iri": CONCEPT["@id"]})
     assert response.status_code == 204
 
-    response = await client.get(Paths.search, params={"query": "kodak", "language": "en"})
+    response = await client.get(get_full_api_path("search"), params={"query": "kodak", "language": "en"})
     assert response.status_code == 200
     assert response.json()[0]["id_"] != CONCEPT["@id"]

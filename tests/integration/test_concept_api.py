@@ -1,13 +1,12 @@
 import pytest
 
-from py_semantic_taxonomy.adapters.routers.router import Paths
 from py_semantic_taxonomy.domain.constants import RDF_MAPPING as RDF
-from py_semantic_taxonomy.domain.constants import SKOS, SKOS_RELATIONSHIP_PREDICATES
+from py_semantic_taxonomy.domain.constants import SKOS, SKOS_RELATIONSHIP_PREDICATES, get_full_api_path
 
 
 @pytest.mark.postgres
 async def test_get_concept(postgres, cn_db_engine, cn, client):
-    response = await client.get(Paths.concept, params={"iri": cn.concept_top["@id"]})
+    response = await client.get(get_full_api_path("concept"), params={"iri": cn.concept_top["@id"]})
     assert response.status_code == 200
     expected = {
         key: value
@@ -26,7 +25,7 @@ async def test_get_concept(postgres, cn_db_engine, cn, client):
 @pytest.mark.postgres
 async def test_get_concept_404(postgres, cn_db_engine, client):
     response = await client.get(
-        Paths.concept, params={"iri": "http://data.europa.eu/xsp/cn2024/woof"}
+        get_full_api_path("concept"), params={"iri": "http://data.europa.eu/xsp/cn2024/woof"}
     )
     assert response.status_code == 404
 
@@ -35,7 +34,7 @@ async def test_get_concept_404(postgres, cn_db_engine, client):
 async def test_create_concept(postgres, cn_db_engine, cn, client):
     # Broader relationship already given in `cn_db_engine` fixture
     del cn.concept_low[f"{SKOS}broader"]
-    response = await client.post(Paths.concept, json=cn.concept_low)
+    response = await client.post(get_full_api_path("concept"), json=cn.concept_low)
     assert response.status_code == 200
     expected = {
         key: value
@@ -50,7 +49,7 @@ async def test_create_concept(postgres, cn_db_engine, cn, client):
     for key, value in expected.items():
         assert given[key] == value
 
-    given = (await client.get(Paths.concept, params={"iri": cn.concept_low["@id"]})).json()
+    given = (await client.get(get_full_api_path("concept"), params={"iri": cn.concept_low["@id"]})).json()
     for key, value in expected.items():
         assert given[key] == value
 
@@ -63,7 +62,7 @@ async def test_create_concept_concept_scheme_not_in_database(postgres, cn_db_eng
 
     updated[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
 
-    response = await client.post(Paths.concept, json=updated)
+    response = await client.post(get_full_api_path("concept"), json=updated)
     assert response.status_code == 422
     assert response.json() == {
         "detail": "At least one of the specified concept schemes must be in the database: {'http://example.com/foo'}"
@@ -75,7 +74,7 @@ async def test_create_concept_hierarchy_conflict(postgres, cn_db_engine, cn, cli
     new = cn.concept_low
     new[RDF["top_concept_of"]] = [{"@id": cn.scheme["@id"]}]
 
-    response = await client.post(Paths.concept, json=new)
+    response = await client.post(get_full_api_path("concept"), json=new)
     assert response.status_code == 422
     assert response.json() == {
         "detail": f"Concept is marked as `topConceptOf` but also has broader relationship to `{cn.concept_mid['@id']}`"
@@ -87,7 +86,7 @@ async def test_create_concept_relationships(postgres, cn_db_engine, cn, client):
     # Broader relationship already given in `cn_db_engine` fixture
     cn.concept_low[f"{SKOS}broader"] = [{"@id": "http://example.com/foo"}]
     cn.concept_low[f"{SKOS}exactMatch"] = [{"@id": "http://example.com/bar"}]
-    response = await client.post(Paths.concept, json=cn.concept_low)
+    response = await client.post(get_full_api_path("concept"), json=cn.concept_low)
     assert response.status_code == 200
     expected = {
         key: value
@@ -102,11 +101,11 @@ async def test_create_concept_relationships(postgres, cn_db_engine, cn, client):
     for key, value in expected.items():
         assert given[key] == value
 
-    given = (await client.get(Paths.concept, params={"iri": cn.concept_low["@id"]})).json()
+    given = (await client.get(get_full_api_path("concept"), params={"iri": cn.concept_low["@id"]})).json()
     for key, value in expected.items():
         assert given[key] == value
 
-    given = (await client.get(Paths.relationship, params={"iri": cn.concept_low["@id"]})).json()
+    given = (await client.get(get_full_api_path("relationship"), params={"iri": cn.concept_low["@id"]})).json()
     assert {
         "@id": cn.concept_low["@id"],
         f"{SKOS}broader": [{"@id": "http://example.com/foo"}],
@@ -123,19 +122,19 @@ async def test_create_concept_relationships_across_scheme(
 ):
     new_scheme = cn.scheme
     new_scheme["@id"] = "http://example.com/foo"
-    await client.post(Paths.concept_scheme, json=new_scheme)
+    await client.post(get_full_api_path("concept_scheme"), json=new_scheme)
 
     new_concept = cn.concept_low
     new_concept[f"{SKOS}inScheme"] = [{"@id": "http://example.com/foo"}]
     new_concept["@id"] = "http://example.com/bar"
-    response = await client.post(Paths.concept, json=new_concept)
+    response = await client.post(get_full_api_path("concept"), json=new_concept)
 
     assert response.status_code == 422
     assert response.json()["detail"].endswith(
         "`skos:broadMatch` instead."
     ), "API return value incorrect"
 
-    response = await client.get(Paths.concept, params={"iri": new_concept["@id"]})
+    response = await client.get(get_full_api_path("concept"), params={"iri": new_concept["@id"]})
     assert response.status_code == 404
 
 
@@ -145,18 +144,18 @@ async def test_create_concept_relationships_duplicate(
 ):
     new_concept = cn.concept_low
     new_concept[f"{SKOS}broader"].extend(new_concept[f"{SKOS}broader"])
-    response = await client.post(Paths.concept, json=new_concept)
+    response = await client.post(get_full_api_path("concept"), json=new_concept)
 
     assert response.status_code == 422
     assert response.json()["detail"].endswith("already exists"), "API return value incorrect"
 
-    response = await client.get(Paths.concept, params={"iri": new_concept["@id"]})
+    response = await client.get(get_full_api_path("concept"), params={"iri": new_concept["@id"]})
     assert response.status_code == 404
 
 
 @pytest.mark.postgres
 async def test_create_concept_duplicate(postgres, cn_db_engine, cn, client):
-    response = await client.post(Paths.concept, json=cn.concept_top)
+    response = await client.post(get_full_api_path("concept"), json=cn.concept_top)
     assert response.status_code == 409
 
 
@@ -167,7 +166,7 @@ async def test_update_concept(postgres, cn_db_engine, cn, client):
     if f"{SKOS}narrower" in updated:
         del updated[f"{SKOS}narrower"]
 
-    response = await client.put(Paths.concept, json=updated)
+    response = await client.put(get_full_api_path("concept"), json=updated)
     assert response.status_code == 200
     expected = {
         key: value for key, value in updated.items() if key not in SKOS_RELATIONSHIP_PREDICATES
@@ -180,7 +179,7 @@ async def test_update_concept(postgres, cn_db_engine, cn, client):
     for key, value in expected.items():
         assert given[key] == value
 
-    given = (await client.get(Paths.concept, params={"iri": updated["@id"]})).json()
+    given = (await client.get(get_full_api_path("concept"), params={"iri": updated["@id"]})).json()
     for key, value in expected.items():
         assert given[key] == value
 
@@ -192,7 +191,7 @@ async def test_update_concept_hierarchy_conflict(postgres, cn_db_engine, cn, cli
     if f"{SKOS}broader" in new:
         del new[f"{SKOS}broader"]
 
-    response = await client.put(Paths.concept, json=new)
+    response = await client.put(get_full_api_path("concept"), json=new)
     assert response.status_code == 422
     assert response.json() == {
         "detail": f"Concept is marked as `topConceptOf` but also has broader relationship to `{cn.concept_top['@id']}`"
@@ -207,7 +206,7 @@ async def test_update_concept_concept_scheme_not_in_database(postgres, cn_db_eng
 
     updated[RDF["schemes"]] = [{"@id": "http://example.com/foo"}]
 
-    response = await client.put(Paths.concept, json=updated)
+    response = await client.put(get_full_api_path("concept"), json=updated)
     assert response.status_code == 422
     assert response.json() == {
         "detail": "At least one of the specified concept schemes must be in the database: {'http://example.com/foo'}"
@@ -218,7 +217,7 @@ async def test_update_concept_concept_scheme_not_in_database(postgres, cn_db_eng
 async def test_update_concept_relationship_cross_concept_scheme(postgres, cn_db_engine, cn, client):
     new_scheme = cn.scheme
     new_scheme["@id"] = "http://example.com/foo"
-    await client.post(Paths.concept_scheme, json=new_scheme)
+    await client.post(get_full_api_path("concept_scheme"), json=new_scheme)
 
     updated = cn.concept_top
     if f"{SKOS}narrower" in updated:
@@ -226,7 +225,7 @@ async def test_update_concept_relationship_cross_concept_scheme(postgres, cn_db_
 
     updated[RDF["schemes"]] = [{"@id": "http://example.com/foo"}]
 
-    response = await client.put(Paths.concept, json=updated)
+    response = await client.put(get_full_api_path("concept"), json=updated)
     assert response.status_code == 422
     assert response.json() == {
         "detail": "Update asked to change concept schemes, but existing concept scheme {'http://data.europa.eu/xsp/cn2024/cn2024'} had hierarchical relationships."
@@ -238,21 +237,21 @@ async def test_update_concept_not_found(postgres, cn_db_engine, cn, client):
     obj = cn.concept_low
     del obj[f"{SKOS}broader"]
 
-    response = await client.put(Paths.concept, json=obj)
+    response = await client.put(get_full_api_path("concept"), json=obj)
     assert response.status_code == 404
 
 
 @pytest.mark.postgres
 async def test_delete_concept(postgres, cn_db_engine, cn, client):
-    response = await client.get(Paths.concept, params={"iri": cn.concept_top["@id"]})
+    response = await client.get(get_full_api_path("concept"), params={"iri": cn.concept_top["@id"]})
     assert response.status_code == 200
     assert response.json()
 
-    response = await client.delete(Paths.concept, params={"iri": cn.concept_top["@id"]})
+    response = await client.delete(get_full_api_path("concept"), params={"iri": cn.concept_top["@id"]})
     assert response.status_code == 204
 
-    response = await client.delete(Paths.concept, params={"iri": cn.concept_top["@id"]})
+    response = await client.delete(get_full_api_path("concept"), params={"iri": cn.concept_top["@id"]})
     assert response.status_code == 404
 
-    response = await client.get(Paths.concept, params={"iri": cn.concept_top["@id"]})
+    response = await client.get(get_full_api_path("concept"), params={"iri": cn.concept_top["@id"]})
     assert response.status_code == 404
