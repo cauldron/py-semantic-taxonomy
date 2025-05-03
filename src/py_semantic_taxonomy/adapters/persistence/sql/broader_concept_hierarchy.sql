@@ -22,21 +22,9 @@ WITH RECURSIVE concept_hierarchy (
         ON sc.id_ = rt.source
     WHERE sc.id_ = :source_concept
         AND rt.predicate = :broader
-        -- Equivalent to
-        -- AND tc.schemes @@ '$."@id" == :concept_scheme'
-        -- But this won't work with parameterized query inputs
-        -- so we take the long way around
-        AND jsonb_path_match(
-            tc.schemes,
-            '$."@id" == $var',
-            jsonb_build_object('var', :concept_scheme :: text)
-        )
-        -- TBD: Profile if new approach is actually faster
-        -- AND EXISTS (
-        --     SELECT *
-        --     FROM jsonb_array_elements(tc.schemes) AS elements
-        --     WHERE elements.value ->> '@id' = :concept_scheme
-        -- )
+        -- See discussion here:
+        -- https://github.com/cauldron/py-semantic-taxonomy/issues/51
+        AND tc.schemes @> :concept_scheme_dict
     UNION
     SELECT tc.*, ch.depth + 1 AS depth
     FROM relationship AS rt
@@ -45,10 +33,6 @@ WITH RECURSIVE concept_hierarchy (
     INNER JOIN concept AS tc
         ON tc.id_ = rt.target
     WHERE rt.predicate = :broader
-        AND jsonb_path_match(
-            tc.schemes,
-            '$."@id" == $var',
-            jsonb_build_object('var', :concept_scheme :: text)
-        )
+        AND tc.schemes @> :concept_scheme_dict
 )
 SELECT DISTINCT * FROM concept_hierarchy;

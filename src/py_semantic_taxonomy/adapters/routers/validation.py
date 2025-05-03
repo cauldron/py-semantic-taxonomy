@@ -161,6 +161,3 @@ class NonLiteralNote(BaseModel):
     issued: conlist(DateTime, min_length=1, max_length=1) = Field(
         alias="http://purl.org/dc/terms/issued"
     )
-    value: conlist(MultilingualString, min_length=1, max_length=1) = Field(
-        alias="http://www.w3.org/1999/02/22-rdf-syntax-ns#value"
-    )

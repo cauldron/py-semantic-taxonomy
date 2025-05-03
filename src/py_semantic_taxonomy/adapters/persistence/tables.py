@@ -28,7 +28,7 @@ concept_table = Table(
 )
 
 Index(
-    "concept_schemes_index",
+    "concept_concept_schemes_index",
     concept_table.c.schemes,
     postgresql_using="GIN",
     postgresql_ops={
