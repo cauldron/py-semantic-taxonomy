@@ -35,6 +35,24 @@ async def test_get_concept_404(postgres, cn_db_engine, client):
 
 
 @pytest.mark.postgres
+async def test_get_concept_all(postgres, cn_db_engine, cn, client):
+    response = await client.get(
+        get_full_api_path("concept_all"), params={"concept_scheme_iri": cn.scheme["@id"]}
+    )
+    assert response.status_code == 200
+    expected = {
+        key: value
+        for key, value in cn.concept_top.items()
+        if key not in SKOS_RELATIONSHIP_PREDICATES
+    }
+    given = response.json()
+    for key, value in expected.items():
+        assert given[0][key] == value
+
+    assert [obj["@id"] for obj in given] == sorted([cn.concept_top["@id"], cn.concept_mid["@id"]])
+
+
+@pytest.mark.postgres
 async def test_create_concept(postgres, cn_db_engine, cn, client):
     # Broader relationship already given in `cn_db_engine` fixture
     del cn.concept_low[f"{SKOS}broader"]

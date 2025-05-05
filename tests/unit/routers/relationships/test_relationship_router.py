@@ -57,7 +57,8 @@ async def test_relationships_get_args(cn, anonymous_client, monkeypatch, relatio
     )
 
     response = await anonymous_client.get(
-        get_full_api_path("relationship"), params={"iri": relationships[3].source, "source": 0, "target": 1}
+        get_full_api_path("relationship"),
+        params={"iri": relationships[3].source, "source": 0, "target": 1},
     )
     assert response.status_code == 200
     GraphService.relationships_get.assert_called_with(

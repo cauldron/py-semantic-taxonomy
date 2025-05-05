@@ -99,6 +99,33 @@ async def concept_suggest(
 
 
 @api_router.get(
+    APIPaths.concept_all,
+    summary="Get a list of concept objects with optional filters.",
+    response_model=list[response.Concept],
+    tags=["Concept"],
+)
+async def concept_all_get(
+    concept_scheme_iri: str | None = None,
+    top_concepts_only: bool = False,
+    service=Depends(get_graph_service),
+) -> list[response.Concept]:
+    """
+    Retrieve a list of `Concept` objects.
+
+    The list can be filtered to a given concept scheme by using the URL parameter
+    `concept_scheme_iri=<iri>`.
+
+    The list can be further filtered to only be top concepts of the given concept scheme (if
+    `concept_scheme_iri` is specified) with the URL parameter `top_concepts_only=<bool>`. If
+    `concept_scheme_iri` is not specified, `top_concepts_only` *has no effect*.
+    """
+    results = await service.concepts_get_all(
+        concept_scheme_iri=concept_scheme_iri, top_concepts_only=top_concepts_only
+    )
+    return [response.Concept(**obj.to_json_ld()) for obj in results]
+
+
+@api_router.get(
     APIPaths.concept,
     summary="Get a `Concept` object",
     response_model=response.Concept,

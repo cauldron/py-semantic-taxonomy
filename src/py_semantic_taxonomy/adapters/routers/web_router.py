@@ -153,14 +153,19 @@ async def web_concept_scheme_view(
 
         decoded_iri = unquote(iri)
         concept_scheme = await service.concept_scheme_get(iri=decoded_iri)
-        concepts = await service.concepts_get_for_scheme(
+        concepts = await service.concepts_get_all(
             concept_scheme_iri=decoded_iri, top_concepts_only=True
         )
         for concept in concepts:
             concept.url = concept_view_url(request, concept.id_, concept_scheme.id_, language)
 
         languages = [(request.url, Language.get(language).display_name(language).title())] + [
-            (str(request.url_for("web_concept_scheme_view", iri=iri)) + "?language=" + quote(code), label)
+            (
+                str(request.url_for("web_concept_scheme_view", iri=iri))
+                + "?language="
+                + quote(code),
+                label,
+            )
             for code, label in format_languages(settings.languages)
             if code != language
         ]

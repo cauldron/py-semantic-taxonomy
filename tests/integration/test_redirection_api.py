@@ -1,6 +1,7 @@
 import pytest
 
-from py_semantic_taxonomy.domain.constants import SKOS, get_full_api_path
+from py_semantic_taxonomy.domain.constants import SKOS
+from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 
 
 @pytest.mark.skip(reason="Generic redirection turned off for now")

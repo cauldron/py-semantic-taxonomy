@@ -25,8 +25,8 @@ class KOSGraphDatabase(Protocol):
 
     async def concept_delete(self, iri: str) -> int: ...
 
-    async def concepts_get_for_scheme(
-        self, concept_scheme_iri: str, top_concepts_only: bool
+    async def concepts_get_all(
+        self, concept_scheme_iri: str | None, top_concepts_only: bool
     ) -> list[Concept]: ...
 
     async def concept_broader_in_ascending_order(
@@ -104,8 +104,8 @@ class GraphService(Protocol):
 
     async def concept_delete(self, iri: str) -> None: ...
 
-    async def concepts_get_for_scheme(
-        self, concept_scheme_iri: str, top_concepts_only: bool
+    async def concepts_get_all(
+        self, concept_scheme_iri: str | None, top_concepts_only: bool
     ) -> list[Concept]: ...
 
     async def concept_scheme_get(self, iri: str) -> ConceptScheme: ...

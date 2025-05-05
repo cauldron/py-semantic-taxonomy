@@ -71,6 +71,13 @@ class PostgresKOSGraphDatabase:
             await conn.rollback()
         return Concept(**result._mapping)
 
+    async def concept_get_all_iris(self) -> list[str]:
+        async with self.engine.connect() as conn:
+            stmt = select(concept_table.c.id_)
+            result = (await conn.execute(stmt)).scalars()
+            await conn.rollback()
+        return list(result)
+
     async def concept_create(self, concept: Concept) -> Concept:
         async with self.engine.connect() as conn:
             count = await self._get_count_from_iri(conn, concept.id_, concept_table)
@@ -104,20 +111,19 @@ class PostgresKOSGraphDatabase:
             await conn.commit()
         return result.rowcount
 
-    async def concepts_get_for_scheme(
-        self, concept_scheme_iri: str, top_concepts_only: bool
+    async def concepts_get_all(
+        self, concept_scheme_iri: str | None, top_concepts_only: bool
     ) -> list[Concept]:
-        """Get all concepts that belong to a given concept scheme."""
         async with self.engine.connect() as conn:
-            # See discussion here:
-            # https://github.com/cauldron/py-semantic-taxonomy/issues/51
-            stmt = select(concept_table).where(
-                concept_table.c.schemes.op("@>")([{"@id": concept_scheme_iri}])
-            )
-            if top_concepts_only:
-                stmt = stmt.where(
-                    concept_table.c.top_concept_of.op("@>")([{"@id": concept_scheme_iri}])
-                )
+            stmt = select(concept_table)
+            if concept_scheme_iri is not None:
+                # See discussion here:
+                # https://github.com/cauldron/py-semantic-taxonomy/issues/51
+                stmt = stmt.where(concept_table.c.schemes.op("@>")([{"@id": concept_scheme_iri}]))
+                if top_concepts_only:
+                    stmt = stmt.where(
+                        concept_table.c.top_concept_of.op("@>")([{"@id": concept_scheme_iri}])
+                    )
             result = (await conn.execute(stmt.order_by(concept_table.c.id_))).fetchall()
             await conn.rollback()
         return [Concept(**row._mapping) for row in result]
