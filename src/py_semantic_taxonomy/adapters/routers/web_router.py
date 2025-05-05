@@ -11,7 +11,11 @@ from langcodes import Language
 from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
-from py_semantic_taxonomy.domain.constants import AssociationKind, RelationshipVerbs, get_full_api_path
+from py_semantic_taxonomy.domain.constants import (
+    AssociationKind,
+    RelationshipVerbs,
+)
+from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 
 logger = structlog.get_logger("py-semantic-taxonomy")
 

@@ -1,13 +1,16 @@
 import orjson
 import pytest
 
-from py_semantic_taxonomy.domain.constants import SKOS, RelationshipVerbs, get_full_api_path
+from py_semantic_taxonomy.domain.constants import SKOS, RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import Relationship
+from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 
 
 @pytest.mark.postgres
 async def test_get_relationships(postgres, cn_db_engine, relationships, client):
-    response = await client.get(get_full_api_path("relationship"), params={"iri": relationships[3].source})
+    response = await client.get(
+        get_full_api_path("relationship"), params={"iri": relationships[3].source}
+    )
     assert response.status_code == 200
     assert response.json() == [
         {
@@ -20,7 +23,8 @@ async def test_get_relationships(postgres, cn_db_engine, relationships, client):
 @pytest.mark.postgres
 async def test_get_relationships_args(postgres, cn_db_engine, relationships, client):
     response = await client.get(
-        get_full_api_path("relationship"), params={"iri": relationships[3].source, "source": 0, "target": 1}
+        get_full_api_path("relationship"),
+        params={"iri": relationships[3].source, "source": 0, "target": 1},
     )
     assert response.status_code == 200
     assert response.json() == [
@@ -57,14 +61,18 @@ async def test_create_relationships(postgres, cn_db_engine, client):
     assert response.status_code == 200
     assert response.json() == given, "API return value incorrect"
 
-    response = await client.get(get_full_api_path("relationship"), params={"iri": "http://example.com/foo"})
+    response = await client.get(
+        get_full_api_path("relationship"), params={"iri": "http://example.com/foo"}
+    )
     assert response.status_code == 200
     assert response.json() == given
 
 
 @pytest.mark.postgres
 async def test_create_relationships_duplicate(postgres, cn_db_engine, client, relationships):
-    response = await client.post(get_full_api_path("relationship"), json=[relationships[3].to_json_ld()])
+    response = await client.post(
+        get_full_api_path("relationship"), json=[relationships[3].to_json_ld()]
+    )
     assert response.status_code == 409
     assert response.json() == {
         "detail": "Relationship between source `http://data.europa.eu/xsp/cn2024/010021000090` and target `http://data.europa.eu/xsp/cn2024/010011000090` already exists"

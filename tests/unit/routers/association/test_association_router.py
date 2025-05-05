@@ -1,12 +1,13 @@
 from unittest.mock import AsyncMock
 
 from py_semantic_taxonomy.application.graph_service import GraphService
-from py_semantic_taxonomy.domain.constants import RDF_MAPPING, get_full_api_path
+from py_semantic_taxonomy.domain.constants import RDF_MAPPING
 from py_semantic_taxonomy.domain.entities import (
     Association,
     AssociationNotFoundError,
     DuplicateIRI,
 )
+from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 
 
 async def test_association_get(cn, anonymous_client, monkeypatch):
@@ -33,7 +34,7 @@ async def test_association_get_not_found(cn, anonymous_client, monkeypatch):
         GraphService, "association_get", AsyncMock(side_effect=AssociationNotFoundError())
     )
 
-    response = await anonymous_client.get(get_full_api_path("association"), params={"iri": "foo"})
+    response = await anonymous_client.get(get_full_api_path("association", iri="foo"))
     assert response.status_code == 404
     assert response.json() == {
         "detail": "Association with IRI `foo` not found",

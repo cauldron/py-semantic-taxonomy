@@ -1,6 +1,6 @@
 import pytest
 
-from py_semantic_taxonomy.domain.constants import get_full_api_path
+from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 
 CONCEPT = {
     "@id": "http://data.europa.eu/xsp/cn2024/370400000080",
@@ -52,7 +52,7 @@ async def test_typesense_concepts_create_delete(postgres, typesense, client, cn_
     assert response.status_code == 200
     assert response.json()[0]["id_"] != CONCEPT["@id"]
 
-    response = await client.post(get_full_api_path("concept"), json=CONCEPT)
+    response = await client.post(get_full_api_path("concept", iri=CONCEPT["@id"]), json=CONCEPT)
     assert response.status_code == 200
 
     response = await client.get(get_full_api_path("search"), params={"query": "kodak", "language": "en"})
@@ -65,7 +65,7 @@ async def test_typesense_concepts_create_delete(postgres, typesense, client, cn_
             "@value": "Salami Sausage",
         }
     ]
-    response = await client.put(get_full_api_path("concept"), json=CONCEPT)
+    response = await client.put(get_full_api_path("concept", iri=CONCEPT["@id"]), json=CONCEPT)
     assert response.status_code == 200
 
     response = await client.get(get_full_api_path("search"), params={"query": "kodak", "language": "en"})
@@ -81,14 +81,14 @@ async def test_typesense_concepts_create_delete(postgres, typesense, client, cn_
             "@value": "Photographic plates, film, paper, paperboard and textiles, exposed but not developed",
         }
     ]
-    response = await client.put(get_full_api_path("concept"), json=CONCEPT)
+    response = await client.put(get_full_api_path("concept", iri=CONCEPT["@id"]), json=CONCEPT)
     assert response.status_code == 200
 
     response = await client.get(get_full_api_path("search"), params={"query": "kodak", "language": "en"})
     assert response.status_code == 200
     assert response.json()[0]["id_"] == CONCEPT["@id"]
 
-    response = await client.delete(get_full_api_path("concept"), params={"iri": CONCEPT["@id"]})
+    response = await client.delete(get_full_api_path("concept", iri=CONCEPT["@id"]))
     assert response.status_code == 204
 
     response = await client.get(get_full_api_path("search"), params={"query": "kodak", "language": "en"})

@@ -3,13 +3,14 @@ from unittest.mock import AsyncMock
 import orjson
 
 from py_semantic_taxonomy.application.graph_service import GraphService
-from py_semantic_taxonomy.domain.constants import XKOS, get_full_api_path
+from py_semantic_taxonomy.domain.constants import XKOS
 from py_semantic_taxonomy.domain.entities import (
     Correspondence,
     CorrespondenceNotFoundError,
     DuplicateIRI,
     MadeOf,
 )
+from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 
 
 async def test_correspondence(cn, anonymous_client, monkeypatch):
@@ -20,7 +21,7 @@ async def test_correspondence(cn, anonymous_client, monkeypatch):
     )
 
     response = await anonymous_client.get(
-        get_full_api_path("correspondence"), params={"iri": cn.correspondence["@id"]}
+        get_full_api_path("correspondence", iri=cn.correspondence["@id"])
     )
     assert response.status_code == 200
     correspondence = response.json()
@@ -37,7 +38,7 @@ async def test_correspondence_get_not_found(cn, anonymous_client, monkeypatch):
         GraphService, "correspondence_get", AsyncMock(side_effect=CorrespondenceNotFoundError())
     )
 
-    response = await anonymous_client.get(get_full_api_path("correspondence"), params={"iri": "foo"})
+    response = await anonymous_client.get(get_full_api_path("correspondence", iri="foo"))
     correspondence = response.json()
     assert response.status_code == 404
     assert correspondence == {
@@ -52,15 +53,19 @@ async def test_correspondence_create(cn, client, monkeypatch):
         AsyncMock(return_value=Correspondence.from_json_ld(cn.correspondence)),
     )
 
-    response = await client.post(get_full_api_path("correspondence"), json=cn.correspondence)
+    response = await client.post(
+        get_full_api_path("correspondence", iri=cn.correspondence["@id"]), json=cn.correspondence
+    )
     assert response.status_code == 200
 
     GraphService.correspondence_create.assert_called_once()
     assert isinstance(GraphService.correspondence_create.call_args[0][0], Correspondence)
 
 
-async def test_correspondence_create_unauthorized(anonymous_client):
-    response = await anonymous_client.post(get_full_api_path("correspondence"), json={})
+async def test_correspondence_create_unauthorized(anonymous_client, cn):
+    response = await anonymous_client.post(
+        get_full_api_path("correspondence", iri=cn.correspondence["@id"]), json=cn.correspondence
+    )
     assert response.status_code == 400
 
 
@@ -70,7 +75,7 @@ async def test_correspondence_create_error_validation_errors(cn, client, monkeyp
     obj = cn.correspondence
     obj[f"{XKOS}madeOf"] = []
 
-    response = await client.post(get_full_api_path("correspondence"), json=obj)
+    response = await client.post(get_full_api_path("correspondence", iri=obj["@id"]), json=obj)
     assert response.json()["detail"][0]["type"] == "value_error"
     assert (
         response.json()["detail"][0]["msg"]
@@ -82,7 +87,9 @@ async def test_correspondence_create_error_validation_errors(cn, client, monkeyp
 async def test_correspondence_create_error_already_exists(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "correspondence_create", AsyncMock(side_effect=DuplicateIRI))
 
-    response = await client.post(get_full_api_path("correspondence"), json=cn.correspondence)
+    response = await client.post(
+        get_full_api_path("correspondence", iri=cn.correspondence["@id"]), json=cn.correspondence
+    )
     assert response.json() == {
         "detail": f"Correspondence with IRI `{cn.correspondence['@id']}` already exists",
     }
@@ -97,15 +104,19 @@ async def test_correspondence_update(cn, client, monkeypatch):
     )
 
     updated = cn.correspondence
-    response = await client.put(get_full_api_path("correspondence"), json=updated)
+    response = await client.put(
+        get_full_api_path("correspondence", iri=updated["@id"]), json=updated
+    )
     assert response.status_code == 200
 
     GraphService.correspondence_update.assert_called_once()
     assert isinstance(GraphService.correspondence_update.call_args[0][0], Correspondence)
 
 
-async def test_correspondence_update_unauthorized(anonymous_client):
-    response = await anonymous_client.put(get_full_api_path("correspondence"), json={})
+async def test_correspondence_update_unauthorized(anonymous_client, cn):
+    response = await anonymous_client.put(
+        get_full_api_path("correspondence", iri=cn.correspondence["@id"]), json=cn.correspondence
+    )
     assert response.status_code == 400
 
 
@@ -115,7 +126,7 @@ async def test_correspondence_update_error_validation_errors(cn, client, monkeyp
     obj = cn.correspondence
     obj[f"{XKOS}madeOf"] = ["a"]
 
-    response = await client.put(get_full_api_path("correspondence"), json=obj)
+    response = await client.put(get_full_api_path("correspondence", iri=obj["@id"]), json=obj)
     assert response.json()["detail"][0]["type"] == "value_error"
     assert (
         response.json()["detail"][0]["msg"]
@@ -132,7 +143,7 @@ async def test_correspondence_update_error_missing(cn, client, monkeypatch):
     obj = cn.correspondence
     obj["@id"] = "http://pyst-tests.ninja/correspondence/missing"
 
-    response = await client.put(get_full_api_path("correspondence"), json=obj)
+    response = await client.put(get_full_api_path("correspondence", iri=obj["@id"]), json=obj)
     assert response.json() == {"detail": f"Correspondence with IRI `{obj['@id']}` not found"}
     assert response.status_code == 404
 
@@ -140,15 +151,19 @@ async def test_correspondence_update_error_missing(cn, client, monkeypatch):
 async def test_correspondence_delete(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "correspondence_delete", AsyncMock(return_value=1))
 
-    response = await client.delete(get_full_api_path("correspondence"), params={"iri": cn.correspondence["@id"]})
+    response = await client.delete(
+        get_full_api_path("correspondence", iri=cn.correspondence["@id"])
+    )
     assert response.status_code == 204
 
     GraphService.correspondence_delete.assert_called_once()
     assert isinstance(GraphService.correspondence_delete.call_args[1]["iri"], str)
 
 
-async def test_correspondence_delete_unauthorized(anonymous_client):
-    response = await anonymous_client.delete(get_full_api_path("correspondence"), params={"iri": ""})
+async def test_correspondence_delete_unauthorized(anonymous_client, cn):
+    response = await anonymous_client.delete(
+        get_full_api_path("correspondence", iri=cn.correspondence["@id"])
+    )
     assert response.status_code == 400
 
 
@@ -159,7 +174,9 @@ async def test_correspondence_delete_not_found(cn, client, monkeypatch):
         AsyncMock(side_effect=CorrespondenceNotFoundError("Test")),
     )
 
-    response = await client.delete(get_full_api_path("correspondence"), params={"iri": cn.correspondence["@id"]})
+    response = await client.delete(
+        get_full_api_path("correspondence", iri=cn.correspondence["@id"])
+    )
     assert response.status_code == 404
     assert response.json() == {"detail": "Test"}
 

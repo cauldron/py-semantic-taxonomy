@@ -67,21 +67,15 @@ API_VERSION_PREFIX = "/api/v1"
 
 
 class APIPaths(enum.StrEnum):
-    concept = "/concepts/"
-    concept_scheme = "/concept_schemes/"
+    concept = "/concepts/{iri:path}"
+    concept_all = "/concepts/"
+    concept_scheme = "concept_schemes/{iri:path}"
+    concept_scheme_all = "/concept_schemes/"
     relationship = "/relationships/"
-    correspondence = "/correspondences/"
-    association = "/associations/"
+    correspondence = "/correspondences/{iri:path}"
+    correspondence_all = "/correspondences/"
+    association = "/associations/{iri:path}"
+    association_all = "/associations/"
     made_of = "/made_ofs/"
     search = "/concepts/search/"
     suggest = "/concepts/suggest/"
-
-
-def get_full_api_path(api_path: str) -> str:
-    """
-    Easier access to API paths including prefix for use in templates, etc.
-
-    Uses string concatenation because `urljoin` wants complete URLs, and using path join operations
-    just feels dirty.
-    """
-    return API_VERSION_PREFIX + getattr(APIPaths, api_path)

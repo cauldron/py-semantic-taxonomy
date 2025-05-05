@@ -3,13 +3,14 @@ from unittest.mock import AsyncMock
 import orjson
 
 from py_semantic_taxonomy.application.graph_service import GraphService
-from py_semantic_taxonomy.domain.constants import RelationshipVerbs, get_full_api_path
+from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     DuplicateRelationship,
     HierarchicRelationshipAcrossConceptScheme,
     Relationship,
     RelationshipsReferencesConceptScheme,
 )
+from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 
 
 async def test_relationships_get(cn, anonymous_client, monkeypatch, relationships):

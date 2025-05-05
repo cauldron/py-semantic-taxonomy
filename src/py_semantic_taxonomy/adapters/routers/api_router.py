@@ -45,6 +45,56 @@ async def verify_auth_token(
         raise HTTPException(status_code=400, detail="X-PyST-Auth-Token header missing or invalid")
 
 
+# Search
+
+
+@api_router.get(
+    APIPaths.search,
+    summary="Search for `Concept` objects",
+    response_model=list[de.SearchResult],
+    tags=["Concept"],
+    responses={503: {"description": "Search engine not available"}},
+)
+async def concept_search(
+    query: str,
+    language: str,
+    semantic: bool = True,
+    service=Depends(get_search_service),
+) -> list[de.SearchResult]:
+    try:
+        results = await service.search(query=query, language=language, semantic=semantic)
+        return results
+    except de.SearchNotConfigured:
+        raise HTTPException(status_code=503, detail="Search engine not available")
+    except de.UnknownLanguage:
+        raise HTTPException(
+            status_code=422, detail="Search engine not configured for given language"
+        )
+
+
+@api_router.get(
+    APIPaths.suggest,
+    summary="Suggestion search for `Concept` objects",
+    response_model=list[de.SearchResult],
+    tags=["Concept"],
+    responses={503: {"description": "Search engine not available"}},
+)
+async def concept_suggest(
+    query: str,
+    language: str,
+    service=Depends(get_search_service),
+) -> list[de.SearchResult]:
+    try:
+        results = await service.suggest(query=query, language=language)
+        return results
+    except de.SearchNotConfigured:
+        raise HTTPException(status_code=503, detail="Search engine not available")
+    except de.UnknownLanguage:
+        raise HTTPException(
+            status_code=422, detail="Search engine not configured for given language"
+        )
+
+
 # Concept
 
 
@@ -489,51 +539,4 @@ async def made_of_remove(
     except de.CorrespondenceNotFoundError:
         raise HTTPException(
             status_code=404, detail=f"Correspondence with IRI `{made_of.id_}` not found"
-        )
-
-
-@api_router.get(
-    APIPaths.search,
-    summary="Search for `Concept` objects",
-    response_model=list[de.SearchResult],
-    tags=["Concept"],
-    responses={503: {"description": "Search engine not available"}},
-)
-async def concept_search(
-    query: str,
-    language: str,
-    semantic: bool = True,
-    service=Depends(get_search_service),
-) -> list[de.SearchResult]:
-    try:
-        results = await service.search(query=query, language=language, semantic=semantic)
-        return results
-    except de.SearchNotConfigured:
-        raise HTTPException(status_code=503, detail="Search engine not available")
-    except de.UnknownLanguage:
-        raise HTTPException(
-            status_code=422, detail="Search engine not configured for given language"
-        )
-
-
-@api_router.get(
-    APIPaths.suggest,
-    summary="Suggestion search for `Concept` objects",
-    response_model=list[de.SearchResult],
-    tags=["Concept"],
-    responses={503: {"description": "Search engine not available"}},
-)
-async def concept_suggest(
-    query: str,
-    language: str,
-    service=Depends(get_search_service),
-) -> list[de.SearchResult]:
-    try:
-        results = await service.suggest(query=query, language=language)
-        return results
-    except de.SearchNotConfigured:
-        raise HTTPException(status_code=503, detail="Search engine not available")
-    except de.UnknownLanguage:
-        raise HTTPException(
-            status_code=422, detail="Search engine not configured for given language"
         )

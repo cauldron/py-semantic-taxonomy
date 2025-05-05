@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 from py_semantic_taxonomy.application.graph_service import GraphService
 from py_semantic_taxonomy.application.search_service import SearchService
-from py_semantic_taxonomy.domain.constants import SKOS, RelationshipVerbs, get_full_api_path
+from py_semantic_taxonomy.domain.constants import SKOS, RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     Concept,
     ConceptNotFoundError,
@@ -16,6 +16,7 @@ from py_semantic_taxonomy.domain.entities import (
     SearchResult,
     UnknownLanguage,
 )
+from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 
 
 async def test_concept_get(cn, anonymous_client, monkeypatch):
@@ -23,7 +24,7 @@ async def test_concept_get(cn, anonymous_client, monkeypatch):
         GraphService, "concept_get", AsyncMock(return_value=Concept.from_json_ld(cn.concept_top))
     )
 
-    response = await anonymous_client.get(get_full_api_path("concept"), params={"iri": cn.concept_top["@id"]})
+    response = await anonymous_client.get(get_full_api_path("concept", iri=cn.concept_top["@id"]))
     assert response.status_code == 200
     for key, value in response.json().items():
         if value:
@@ -36,7 +37,7 @@ async def test_concept_get(cn, anonymous_client, monkeypatch):
 async def test_concept_get_not_found(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(GraphService, "concept_get", AsyncMock(side_effect=ConceptNotFoundError()))
 
-    response = await anonymous_client.get(get_full_api_path("concept"), params={"iri": "foo"})
+    response = await anonymous_client.get(get_full_api_path("concept", iri="foo"))
     concept = response.json()
     assert response.status_code == 404
     assert concept == {
@@ -54,7 +55,9 @@ async def test_concept_create(cn, client, monkeypatch):
         GraphService, "concept_create", AsyncMock(return_value=Concept.from_json_ld(cn.concept_low))
     )
 
-    response = await client.post(get_full_api_path("concept"), json=cn.concept_low)
+    response = await client.post(
+        get_full_api_path("concept", iri=cn.concept_low["@id"]), json=cn.concept_low
+    )
     assert response.status_code == 200
     GraphService.concept_create.assert_called_with(
         concept=Concept.from_json_ld(cn.concept_low),
@@ -73,9 +76,10 @@ async def test_concept_create_error_validation_errors(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "concept_create", AsyncMock())
 
     obj = cn.concept_low
+    previous_id = obj["@id"]
     del obj["@id"]
 
-    response = await client.post(get_full_api_path("concept"), json=obj)
+    response = await client.post(get_full_api_path("concept", iri=previous_id), json=obj)
     assert response.json()["detail"][0]["type"] == "missing"
     assert response.json()["detail"][0]["loc"] == ["body", "@id"]
     assert response.status_code == 422
@@ -88,7 +92,9 @@ async def test_concept_create_error_concept_schemes_not_in_database(cn, client, 
         AsyncMock(side_effect=ConceptSchemesNotInDatabase("Problem")),
     )
 
-    response = await client.post(get_full_api_path("concept"), json=cn.concept_top)
+    response = await client.post(
+        get_full_api_path("concept", iri=cn.concept_top["@id"]), json=cn.concept_top
+    )
     assert response.status_code == 422
     assert response.json() == {"detail": "Problem"}
 
@@ -100,7 +106,9 @@ async def test_concept_create_error_hierarchy_conflict(cn, client, monkeypatch):
         AsyncMock(side_effect=HierarchyConflict("Problem")),
     )
 
-    response = await client.post(get_full_api_path("concept"), json=cn.concept_top)
+    response = await client.post(
+        get_full_api_path("concept", iri=cn.concept_top["@id"]), json=cn.concept_top
+    )
     assert response.status_code == 422
     assert response.json() == {"detail": "Problem"}
 
@@ -108,7 +116,9 @@ async def test_concept_create_error_hierarchy_conflict(cn, client, monkeypatch):
 async def test_concept_create_error_already_exists(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "concept_create", AsyncMock(side_effect=DuplicateIRI))
 
-    response = await client.post(get_full_api_path("concept"), json=cn.concept_low)
+    response = await client.post(
+        get_full_api_path("concept", iri=cn.concept_low["@id"]), json=cn.concept_low
+    )
     assert response.json() == {
         "detail": f"Concept with IRI `{cn.concept_low['@id']}` already exists",
     }
@@ -120,7 +130,9 @@ async def test_concept_create_error_relationships(cn, client, monkeypatch):
         GraphService, "concept_create", AsyncMock(side_effect=DuplicateRelationship("Test"))
     )
 
-    response = await client.post(get_full_api_path("concept"), json=cn.concept_low)
+    response = await client.post(
+        get_full_api_path("concept", iri=cn.concept_low["@id"]), json=cn.concept_low
+    )
     assert response.json() == {
         "detail": "Test",
     }
@@ -137,15 +149,17 @@ async def test_concept_update(cn, client, monkeypatch):
     if f"{SKOS}narrower" in updated:
         del updated[f"{SKOS}narrower"]
 
-    response = await client.put(get_full_api_path("concept"), json=updated)
+    response = await client.put(get_full_api_path("concept", iri=updated["@id"]), json=updated)
     assert response.status_code == 200
 
     GraphService.concept_update.assert_called_once()
     assert isinstance(GraphService.concept_update.call_args[0][0], Concept)
 
 
-async def test_concept_update_unauthorized(anonymous_client):
-    response = await anonymous_client.put(get_full_api_path("concept"), json={})
+async def test_concept_update_unauthorized(anonymous_client, cn):
+    response = await anonymous_client.put(
+        get_full_api_path("concept", iri=cn.concept_low["@id"]), json={}
+    )
     assert response.status_code == 400
 
 
@@ -156,7 +170,7 @@ async def test_concept_update_error_validation_errors(cn, client, monkeypatch):
     del obj[f"{SKOS}broader"]
     del obj[f"{SKOS}prefLabel"]
 
-    response = await client.put(get_full_api_path("concept"), json=obj)
+    response = await client.put(get_full_api_path("concept", iri=obj["@id"]), json=obj)
     assert response.json()["detail"][0]["type"] == "missing"
     assert response.json()["detail"][0]["loc"] == ["body", f"{SKOS}prefLabel"]
     assert response.status_code == 422
@@ -169,7 +183,9 @@ async def test_concept_update_error_hierarchy_conflict(cn, client, monkeypatch):
         AsyncMock(side_effect=HierarchyConflict("Problem")),
     )
 
-    response = await client.put(get_full_api_path("concept"), json=cn.concept_top)
+    response = await client.put(
+        get_full_api_path("concept", iri=cn.concept_top["@id"]), json=cn.concept_top
+    )
     assert response.status_code == 422
     assert response.json() == {"detail": "Problem"}
 
@@ -181,7 +197,9 @@ async def test_concept_update_error_concept_schemes_not_in_database(cn, client, 
         AsyncMock(side_effect=ConceptSchemesNotInDatabase("Problem")),
     )
 
-    response = await client.put(get_full_api_path("concept"), json=cn.concept_top)
+    response = await client.put(
+        get_full_api_path("concept", iri=cn.concept_top["@id"]), json=cn.concept_top
+    )
     assert response.status_code == 422
     assert response.json() == {"detail": "Problem"}
 
@@ -193,7 +211,9 @@ async def test_concept_update_error_relationships_concept_schemes(cn, client, mo
         AsyncMock(side_effect=RelationshipsInCurrentConceptScheme("Problem")),
     )
 
-    response = await client.put(get_full_api_path("concept"), json=cn.concept_top)
+    response = await client.put(
+        get_full_api_path("concept", iri=cn.concept_top["@id"]), json=cn.concept_top
+    )
     assert response.status_code == 422
     assert response.json() == {"detail": "Problem"}
 
@@ -205,7 +225,7 @@ async def test_concept_update_error_missing(cn, client, monkeypatch):
     del obj[f"{SKOS}broader"]
     id_ = obj["@id"]
 
-    response = await client.put(get_full_api_path("concept"), json=obj)
+    response = await client.put(get_full_api_path("concept", iri=obj["@id"]), json=obj)
     assert response.json() == {
         "detail": f"Concept with IRI `{id_}` not found",
     }
@@ -215,15 +235,17 @@ async def test_concept_update_error_missing(cn, client, monkeypatch):
 async def test_concept_delete(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "concept_delete", AsyncMock(return_value=1))
 
-    response = await client.delete(get_full_api_path("concept"), params={"iri": cn.concept_top["@id"]})
+    response = await client.delete(get_full_api_path("concept", iri=cn.concept_top["@id"]))
     assert response.status_code == 204
 
     GraphService.concept_delete.assert_called_once()
     assert isinstance(GraphService.concept_delete.call_args[1]["iri"], str)
 
 
-async def test_concept_delete_unauthorized(anonymous_client):
-    response = await anonymous_client.delete(get_full_api_path("concept"), params={"iri": ""})
+async def test_concept_delete_unauthorized(anonymous_client, cn):
+    response = await anonymous_client.delete(
+        get_full_api_path("concept", iri=cn.concept_top["@id"]), params={"iri": ""}
+    )
     assert response.status_code == 400
 
 
@@ -234,7 +256,7 @@ async def test_concept_delete_not_found(cn, client, monkeypatch):
         AsyncMock(side_effect=ConceptNotFoundError("Test")),
     )
 
-    response = await client.delete(get_full_api_path("concept"), params={"iri": cn.concept_top["@id"]})
+    response = await client.delete(get_full_api_path("concept", iri=cn.concept_top["@id"]))
     assert response.status_code == 404
     assert response.json() == {"detail": "Test"}
 
@@ -308,7 +330,9 @@ async def test_concept_suggest_not_configured(anonymous_client, monkeypatch):
         AsyncMock(side_effect=SearchNotConfigured()),
     )
 
-    response = await anonymous_client.get(get_full_api_path("suggest"), params={"query": "foo", "language": "en"})
+    response = await anonymous_client.get(
+        get_full_api_path("suggest"), params={"query": "foo", "language": "en"}
+    )
     assert response.status_code == 503
     assert response.json() == {"detail": "Search engine not available"}
 
@@ -320,6 +344,8 @@ async def test_concept_suggest_unknown_language(anonymous_client, monkeypatch):
         AsyncMock(side_effect=UnknownLanguage()),
     )
 
-    response = await anonymous_client.get(get_full_api_path("suggest"), params={"query": "foo", "language": "en"})
+    response = await anonymous_client.get(
+        get_full_api_path("suggest"), params={"query": "foo", "language": "en"}
+    )
     assert response.status_code == 422
     assert response.json() == {"detail": "Search engine not configured for given language"}
