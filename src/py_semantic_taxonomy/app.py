@@ -7,8 +7,8 @@ from py_semantic_taxonomy.adapters.persistence.database import (
     create_engine,
     init_db,
 )
+from py_semantic_taxonomy.adapters.routers.api_router import api_router
 from py_semantic_taxonomy.adapters.routers.catch_router import router as catch_router
-from py_semantic_taxonomy.adapters.routers.router import router
 from py_semantic_taxonomy.adapters.routers.web_router import router as web_router
 from py_semantic_taxonomy.dependencies import get_search_service
 
@@ -36,7 +36,7 @@ def create_app() -> FastAPI:
     #     allow_headers=["*"],
     # )
 
-    app.include_router(router)
+    app.include_router(api_router)
     app.include_router(web_router)
     app.include_router(catch_router)
     app.mount(
@@ -49,7 +49,7 @@ def create_app() -> FastAPI:
 
 def test_app() -> FastAPI:
     app = FastAPI()
-    app.include_router(router)
+    app.include_router(api_router)
     app.include_router(web_router)
     return app
 

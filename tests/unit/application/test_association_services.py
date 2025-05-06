@@ -1,6 +1,6 @@
 import pytest
 
-from py_semantic_taxonomy.domain.entities import AssociationNotFoundError
+from py_semantic_taxonomy.domain.entities import AssociationKind, AssociationNotFoundError
 
 
 async def test_association_get(graph_service, entities):
@@ -12,14 +12,36 @@ async def test_association_get(graph_service, entities):
     mock_kos_graph.association_get.assert_called_with(iri=entities[8].id_)
 
 
-async def test_associations_get_for_source_concept(graph_service, entities):
+async def test_associations_get_all_all_filters(graph_service, entities):
     mock_kos_graph = graph_service.graph
-    mock_kos_graph.associations_get_for_source_concept.return_value = [entities[8]]
+    mock_kos_graph.association_get_all.return_value = [entities[8]]
 
-    result = await graph_service.associations_get_for_source_concept(entities[8].id_)
+    result = await graph_service.association_get_all(
+        correspondence_iri="http://example.com/a",
+        source_concept_iri="http://example.com/b",
+        target_concept_iri="http://example.com/c",
+        kind=AssociationKind.conditional,
+    )
     assert result == [entities[8]]
-    mock_kos_graph.associations_get_for_source_concept.assert_called_with(
-        concept_iri=entities[8].id_, simple_only=False
+    mock_kos_graph.association_get_all.assert_called_with(
+        correspondence_iri="http://example.com/a",
+        source_concept_iri="http://example.com/b",
+        target_concept_iri="http://example.com/c",
+        kind=AssociationKind.conditional,
+    )
+
+
+async def test_associations_get_all_no_filters(graph_service, entities):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.association_get_all.return_value = [entities[8]]
+
+    result = await graph_service.association_get_all()
+    assert result == [entities[8]]
+    mock_kos_graph.association_get_all.assert_called_with(
+        correspondence_iri=None,
+        source_concept_iri=None,
+        target_concept_iri=None,
+        kind=None,
     )
 
 

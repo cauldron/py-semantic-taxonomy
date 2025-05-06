@@ -11,7 +11,11 @@ from langcodes import Language
 from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
-from py_semantic_taxonomy.domain.constants import AssociationKind, RelationshipVerbs
+from py_semantic_taxonomy.domain.constants import (
+    AssociationKind,
+    RelationshipVerbs,
+)
+from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 
 logger = structlog.get_logger("py-semantic-taxonomy")
 
@@ -106,7 +110,7 @@ async def web_concept_schemes(
             + quote(settings.languages[0])
         )
 
-    concept_schemes = await service.concept_scheme_list()
+    concept_schemes = await service.concept_scheme_get_all()
     for scheme in concept_schemes:
         scheme.url = concept_scheme_view_url(request, scheme.id_, language)
 
@@ -122,6 +126,7 @@ async def web_concept_schemes(
             "concept_schemes": concept_schemes,
             "language_selector": languages,
             "language": language,
+            "suggest_api_url": get_full_api_path("suggest"),
         },
     )
 
@@ -148,14 +153,19 @@ async def web_concept_scheme_view(
 
         decoded_iri = unquote(iri)
         concept_scheme = await service.concept_scheme_get(iri=decoded_iri)
-        concepts = await service.concepts_get_for_scheme(
+        concepts = await service.concept_get_all(
             concept_scheme_iri=decoded_iri, top_concepts_only=True
         )
         for concept in concepts:
             concept.url = concept_view_url(request, concept.id_, concept_scheme.id_, language)
 
         languages = [(request.url, Language.get(language).display_name(language).title())] + [
-            (str(request.url_for("web_concept_scheme_view", iri=iri)) + "?language=" + quote(code), label)
+            (
+                str(request.url_for("web_concept_scheme_view", iri=iri))
+                + "?language="
+                + quote(code),
+                label,
+            )
             for code, label in format_languages(settings.languages)
             if code != language
         ]
@@ -168,6 +178,7 @@ async def web_concept_scheme_view(
                 "concepts": concepts,
                 "language": language,
                 "language_selector": languages,
+                "suggest_api_url": get_full_api_path("suggest"),
             },
         )
     except de.ConceptSchemeNotFoundError:
@@ -262,7 +273,7 @@ async def web_concept_view(
             (request.url_for("web_concept_view", iri=quote(s["@id"])), s) for s in concept.schemes
         ]
 
-        associations = await service.associations_get_for_source_concept(concept_iri=concept.id_)
+        associations = await service.association_get_all(source_concept_iri=concept.id_)
         formatted_associations = []
         for obj in filter(lambda x: x.kind == AssociationKind.simple, associations):
             for target in obj.target_concepts:
@@ -319,6 +330,7 @@ async def web_concept_view(
                 "language": language,
                 "associations": formatted_associations,
                 # "conditional_associations": conditional_associations,
+                "suggest_api_url": get_full_api_path("suggest"),
             },
         )
     except de.ConceptNotFoundError:
@@ -352,6 +364,8 @@ async def web_search(
                 "language": language,
                 "semantic": semantic,
                 "results": results,
+                "suggest_api_url": get_full_api_path("suggest"),
+                "concept_api_url": get_full_api_path("concept"),
             },
         )
     except de.SearchNotConfigured:

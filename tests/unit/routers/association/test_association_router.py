@@ -1,13 +1,62 @@
 from unittest.mock import AsyncMock
 
-from py_semantic_taxonomy.adapters.routers.router import Paths
 from py_semantic_taxonomy.application.graph_service import GraphService
 from py_semantic_taxonomy.domain.constants import RDF_MAPPING
 from py_semantic_taxonomy.domain.entities import (
     Association,
+    AssociationKind,
     AssociationNotFoundError,
     DuplicateIRI,
 )
+from py_semantic_taxonomy.domain.url_utils import get_full_api_path
+
+
+async def test_association_get_all_all_filters(cn, anonymous_client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "association_get_all",
+        AsyncMock(return_value=[Association.from_json_ld(cn.association_top)]),
+    )
+
+    response = await anonymous_client.get(
+        get_full_api_path("association_all"),
+        params={
+            "correspondence_iri": "http://example.com/a",
+            "source_concept_iri": "http://example.com/b",
+            "target_concept_iri": "http://example.com/c",
+            "kind": "conditional",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == [cn.association_top]
+
+    GraphService.association_get_all.assert_called_once()
+    GraphService.association_get_all.assert_called_with(
+        correspondence_iri="http://example.com/a",
+        source_concept_iri="http://example.com/b",
+        target_concept_iri="http://example.com/c",
+        kind=AssociationKind.conditional,
+    )
+
+
+async def test_association_get_all_no_filters(cn, anonymous_client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "association_get_all",
+        AsyncMock(return_value=[Association.from_json_ld(cn.association_top)]),
+    )
+
+    response = await anonymous_client.get(get_full_api_path("association_all"))
+    assert response.status_code == 200
+    assert response.json() == [cn.association_top]
+
+    GraphService.association_get_all.assert_called_once()
+    GraphService.association_get_all.assert_called_with(
+        correspondence_iri=None,
+        source_concept_iri=None,
+        target_concept_iri=None,
+        kind=None,
+    )
 
 
 async def test_association_get(cn, anonymous_client, monkeypatch):
@@ -18,7 +67,7 @@ async def test_association_get(cn, anonymous_client, monkeypatch):
     )
 
     response = await anonymous_client.get(
-        Paths.association, params={"iri": cn.association_top["@id"]}
+        get_full_api_path("association"), params={"iri": cn.association_top["@id"]}
     )
     assert response.status_code == 200
     for key, value in response.json().items():
@@ -34,7 +83,7 @@ async def test_association_get_not_found(cn, anonymous_client, monkeypatch):
         GraphService, "association_get", AsyncMock(side_effect=AssociationNotFoundError())
     )
 
-    response = await anonymous_client.get(Paths.association, params={"iri": "foo"})
+    response = await anonymous_client.get(get_full_api_path("association", iri="foo"))
     assert response.status_code == 404
     assert response.json() == {
         "detail": "Association with IRI `foo` not found",
@@ -48,7 +97,7 @@ async def test_association_create(cn, client, monkeypatch):
         AsyncMock(return_value=Association.from_json_ld(cn.association_top)),
     )
 
-    response = await client.post(Paths.association, json=cn.association_top)
+    response = await client.post(get_full_api_path("association"), json=cn.association_top)
     assert response.status_code == 200
 
     GraphService.association_create.assert_called_once()
@@ -56,7 +105,7 @@ async def test_association_create(cn, client, monkeypatch):
 
 
 async def test_association_create_unauthorized(anonymous_client):
-    response = await anonymous_client.post(Paths.association, json={})
+    response = await anonymous_client.post(get_full_api_path("association"), json={})
     assert response.status_code == 400
 
 
@@ -66,7 +115,7 @@ async def test_association_create_error_validation_errors(cn, client, monkeypatc
     obj = cn.association_top
     del obj[RDF_MAPPING["source_concepts"]]
 
-    response = await client.post(Paths.association, json=obj)
+    response = await client.post(get_full_api_path("association"), json=obj)
     assert response.json()["detail"][0]["type"] == "missing"
     assert response.json()["detail"][0]["loc"] == ["body", RDF_MAPPING["source_concepts"]]
     assert response.status_code == 422
@@ -77,7 +126,7 @@ async def test_association_create_error_already_exists(cn, client, monkeypatch):
         GraphService, "association_create", AsyncMock(side_effect=DuplicateIRI("Test message"))
     )
 
-    response = await client.post(Paths.association, json=cn.association_top)
+    response = await client.post(get_full_api_path("association"), json=cn.association_top)
     assert response.json() == {"detail": "Test message"}
     assert response.status_code == 409
 
@@ -85,7 +134,9 @@ async def test_association_create_error_already_exists(cn, client, monkeypatch):
 async def test_association_delete(cn, client, monkeypatch):
     monkeypatch.setattr(GraphService, "association_delete", AsyncMock())
 
-    response = await client.delete(Paths.association, params={"iri": cn.association_top["@id"]})
+    response = await client.delete(
+        get_full_api_path("association"), params={"iri": cn.association_top["@id"]}
+    )
     assert response.status_code == 204
 
     GraphService.association_delete.assert_called_once()
@@ -93,7 +144,7 @@ async def test_association_delete(cn, client, monkeypatch):
 
 
 async def test_association_delete_unauthorized(anonymous_client):
-    response = await anonymous_client.delete(Paths.association, params={"iri": ""})
+    response = await anonymous_client.delete(get_full_api_path("association"), params={"iri": ""})
     assert response.status_code == 400
 
 
@@ -104,6 +155,8 @@ async def test_association_delete_missing(cn, client, monkeypatch):
         AsyncMock(side_effect=AssociationNotFoundError("Problem")),
     )
 
-    response = await client.delete(Paths.association, params={"iri": cn.association_top["@id"]})
+    response = await client.delete(
+        get_full_api_path("association"), params={"iri": cn.association_top["@id"]}
+    )
     assert response.json() == {"detail": "Problem"}
     assert response.status_code == 404

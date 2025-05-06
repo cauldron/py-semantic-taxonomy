@@ -61,3 +61,21 @@ class RelationshipVerbs(enum.StrEnum):
 class AssociationKind(enum.StrEnum):
     simple = "simple"
     conditional = "conditional"
+
+
+API_VERSION_PREFIX = "/api/v1"
+
+
+class APIPaths(enum.StrEnum):
+    concept = "/concepts/{iri:path}"
+    concept_all = "/concepts/"
+    concept_scheme = "concept_schemes/{iri:path}"
+    concept_scheme_all = "/concept_schemes/"
+    relationship = "/relationships/"
+    correspondence = "/correspondences/{iri:path}"
+    correspondence_all = "/correspondences/"
+    association = "/associations/{iri:path}"
+    association_all = "/associations/"
+    made_of = "/made_ofs/"
+    search = "/concepts/search/"
+    suggest = "/concepts/suggest/"

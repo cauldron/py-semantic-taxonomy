@@ -23,6 +23,14 @@ async def test_get_correspondence_not_found(sqlite, graph):
         await graph.correspondence_get(iri="http://pyst-tests.ninja/correspondence/missing")
 
 
+async def test_get_all_correspondence(sqlite, entities, graph):
+    corr = await graph.correspondence_get_all()
+    assert isinstance(corr, list), "Wrong result type"
+    assert len(corr) == 1, "Wrong number of results"
+    assert isinstance(corr[0], Correspondence), "Wrong result element type"
+    assert corr[0] == entities[3]  # Check all data attributes correct
+
+
 async def test_create_correspondence(sqlite, cn, graph):
     cn.correspondence["@id"] = "http://pyst-tests.ninja/correspondence/new"
     expected = Correspondence.from_json_ld(cn.correspondence)

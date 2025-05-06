@@ -5,6 +5,7 @@ from py_semantic_taxonomy.domain.constants import (
 )
 from py_semantic_taxonomy.domain.entities import (
     Association,
+    AssociationKind,
     AssociationNotFoundError,
     Concept,
     ConceptNotFoundError,
@@ -128,11 +129,11 @@ class GraphService:
 
         return
 
-    async def concepts_get_for_scheme(
-        self, concept_scheme_iri: str, top_concepts_only: bool = False
+    async def concept_get_all(
+        self, concept_scheme_iri: str | None = None, top_concepts_only: bool = False
     ) -> list[Concept]:
         """Get all concepts that belong to a given concept scheme."""
-        return await self.graph.concepts_get_for_scheme(
+        return await self.graph.concept_get_all(
             concept_scheme_iri=concept_scheme_iri,
             top_concepts_only=top_concepts_only,
         )
@@ -145,8 +146,8 @@ class GraphService:
     async def concept_scheme_get_all_iris(self) -> list[str]:
         return await self.graph.concept_scheme_get_all_iris()
 
-    async def concept_scheme_list(self) -> list[ConceptScheme]:
-        return await self.graph.concept_scheme_list()
+    async def concept_scheme_get_all(self) -> list[ConceptScheme]:
+        return await self.graph.concept_scheme_get_all()
 
     async def concept_scheme_create(self, concept_scheme: ConceptScheme) -> ConceptScheme:
         return await self.graph.concept_scheme_create(concept_scheme=concept_scheme)
@@ -205,6 +206,9 @@ class GraphService:
     async def correspondence_get(self, iri: str) -> Correspondence:
         return await self.graph.correspondence_get(iri=iri)
 
+    async def correspondence_get_all(self) -> list[Correspondence]:
+        return await self.graph.correspondence_get_all()
+
     async def correspondence_create(self, correspondence: Correspondence) -> Correspondence:
         return await self.graph.correspondence_create(correspondence=correspondence)
 
@@ -228,11 +232,18 @@ class GraphService:
     async def association_get(self, iri: str) -> Association:
         return await self.graph.association_get(iri=iri)
 
-    async def associations_get_for_source_concept(
-        self, concept_iri: str, simple_only: bool = False
+    async def association_get_all(
+        self,
+        correspondence_iri: str | None = None,
+        source_concept_iri: str | None = None,
+        target_concept_iri: str | None = None,
+        kind: AssociationKind | None = None,
     ) -> list[Association]:
-        return await self.graph.associations_get_for_source_concept(
-            concept_iri=concept_iri, simple_only=simple_only
+        return await self.graph.association_get_all(
+            correspondence_iri=correspondence_iri,
+            source_concept_iri=source_concept_iri,
+            target_concept_iri=target_concept_iri,
+            kind=kind,
         )
 
     async def association_create(self, association: Association) -> Association:

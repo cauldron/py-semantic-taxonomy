@@ -71,6 +71,13 @@ class PostgresKOSGraphDatabase:
             await conn.rollback()
         return Concept(**result._mapping)
 
+    async def concept_get_all_iris(self) -> list[str]:
+        async with self.engine.connect() as conn:
+            stmt = select(concept_table.c.id_)
+            result = (await conn.execute(stmt)).scalars()
+            await conn.rollback()
+        return list(result)
+
     async def concept_create(self, concept: Concept) -> Concept:
         async with self.engine.connect() as conn:
             count = await self._get_count_from_iri(conn, concept.id_, concept_table)
@@ -104,20 +111,19 @@ class PostgresKOSGraphDatabase:
             await conn.commit()
         return result.rowcount
 
-    async def concepts_get_for_scheme(
-        self, concept_scheme_iri: str, top_concepts_only: bool
+    async def concept_get_all(
+        self, concept_scheme_iri: str | None, top_concepts_only: bool
     ) -> list[Concept]:
-        """Get all concepts that belong to a given concept scheme."""
         async with self.engine.connect() as conn:
-            # See discussion here:
-            # https://github.com/cauldron/py-semantic-taxonomy/issues/51
-            stmt = select(concept_table).where(
-                concept_table.c.schemes.op("@>")([{"@id": concept_scheme_iri}])
-            )
-            if top_concepts_only:
-                stmt = stmt.where(
-                    concept_table.c.top_concept_of.op("@>")([{"@id": concept_scheme_iri}])
-                )
+            stmt = select(concept_table)
+            if concept_scheme_iri is not None:
+                # See discussion here:
+                # https://github.com/cauldron/py-semantic-taxonomy/issues/51
+                stmt = stmt.where(concept_table.c.schemes.op("@>")([{"@id": concept_scheme_iri}]))
+                if top_concepts_only:
+                    stmt = stmt.where(
+                        concept_table.c.top_concept_of.op("@>")([{"@id": concept_scheme_iri}])
+                    )
             result = (await conn.execute(stmt.order_by(concept_table.c.id_))).fetchall()
             await conn.rollback()
         return [Concept(**row._mapping) for row in result]
@@ -166,7 +172,7 @@ class PostgresKOSGraphDatabase:
             await conn.rollback()
         return ConceptScheme(**result._mapping)
 
-    async def concept_scheme_list(self) -> list[ConceptScheme]:
+    async def concept_scheme_get_all(self) -> list[ConceptScheme]:
         async with self.engine.connect() as conn:
             stmt = select(concept_scheme_table).order_by(concept_scheme_table.c.id_)
             result = (await conn.execute(stmt)).fetchall()
@@ -362,6 +368,13 @@ class PostgresKOSGraphDatabase:
             await conn.rollback()
         return Correspondence(**result._mapping)
 
+    async def correspondence_get_all(self) -> list[Correspondence]:
+        async with self.engine.connect() as conn:
+            stmt = select(correspondence_table).order_by(correspondence_table.c.id_)
+            results = (await conn.execute(stmt)).fetchall()
+            await conn.rollback()
+        return [Correspondence(**obj._mapping) for obj in results]
+
     async def correspondence_create(self, correspondence: Correspondence) -> Correspondence:
         async with self.engine.connect() as conn:
             count = await self._get_count_from_iri(conn, correspondence.id_, correspondence_table)
@@ -442,16 +455,34 @@ class PostgresKOSGraphDatabase:
             await conn.rollback()
         return Association(**result._mapping)
 
-    async def associations_get_for_source_concept(
-        self, concept_iri: str, simple_only: bool
+    async def association_get_all(
+        self,
+        correspondence_iri: str | None,
+        source_concept_iri: str | None,
+        target_concept_iri: str | None,
+        kind: AssociationKind | None,
     ) -> list[Association]:
         async with self.engine.connect() as conn:
-            # See above discussion on how best to search within JSONB fields
-            stmt = select(association_table).where(
-                association_table.c.source_concepts.op("@>")([{"@id": concept_iri}])
-            )
-            if simple_only:
-                stmt = stmt.where(association_table.c.kind == AssociationKind.simple)
+            stmt = select(association_table)
+            if correspondence_iri is not None:
+                subquery = (
+                    select(
+                        func.jsonb_array_elements(correspondence_table.c.made_ofs).op("->>")("@id")
+                    )
+                    .where(correspondence_table.c.id_ == correspondence_iri)
+                    .subquery()
+                )
+                stmt = stmt.where(association_table.c.id_.in_(subquery))
+            if source_concept_iri:
+                stmt = stmt.where(
+                    association_table.c.source_concepts.op("@>")([{"@id": source_concept_iri}])
+                )
+            if target_concept_iri:
+                stmt = stmt.where(
+                    association_table.c.target_concepts.op("@>")([{"@id": target_concept_iri}])
+                )
+            if kind:
+                stmt = stmt.where(association_table.c.kind == kind)
             result = (await conn.execute(stmt.order_by(association_table.c.id_))).fetchall()
             await conn.rollback()
         return [Association(**row._mapping) for row in result]

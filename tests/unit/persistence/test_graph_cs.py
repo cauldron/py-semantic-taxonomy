@@ -23,8 +23,8 @@ async def test_concept_scheme_get_all_iris(sqlite, entities, graph):
     assert sorted(cs) == [entities[4].id_, entities[2].id_]
 
 
-async def test_concept_scheme_list(sqlite, entities, graph):
-    cs = await graph.concept_scheme_list()
+async def test_concept_scheme_get_all(sqlite, entities, graph):
+    cs = await graph.concept_scheme_get_all()
     assert cs == sorted([entities[4], entities[2]], key=lambda x: x.id_)
 
 

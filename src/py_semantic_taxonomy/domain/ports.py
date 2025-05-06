@@ -3,6 +3,7 @@ from typing import Protocol, runtime_checkable
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     Association,
+    AssociationKind,
     Concept,
     ConceptScheme,
     Correspondence,
@@ -25,8 +26,8 @@ class KOSGraphDatabase(Protocol):
 
     async def concept_delete(self, iri: str) -> int: ...
 
-    async def concepts_get_for_scheme(
-        self, concept_scheme_iri: str, top_concepts_only: bool
+    async def concept_get_all(
+        self, concept_scheme_iri: str | None, top_concepts_only: bool
     ) -> list[Concept]: ...
 
     async def concept_broader_in_ascending_order(
@@ -37,7 +38,7 @@ class KOSGraphDatabase(Protocol):
 
     async def concept_scheme_get_all_iris(self) -> list[str]: ...
 
-    async def concept_scheme_list(self) -> list[ConceptScheme]: ...
+    async def concept_scheme_get_all(self) -> list[ConceptScheme]: ...
 
     async def concept_scheme_create(self, concept_scheme: ConceptScheme) -> ConceptScheme: ...
 
@@ -65,6 +66,8 @@ class KOSGraphDatabase(Protocol):
 
     async def correspondence_get(self, iri: str) -> Correspondence: ...
 
+    async def correspondence_get_all(self) -> list[Correspondence]: ...
+
     async def correspondence_create(self, correspondence: Correspondence) -> Correspondence: ...
 
     async def correspondence_update(self, correspondence: Correspondence) -> Correspondence: ...
@@ -73,8 +76,12 @@ class KOSGraphDatabase(Protocol):
 
     async def association_get(self, iri: str) -> Association: ...
 
-    async def associations_get_for_source_concept(
-        self, concept_iri: str, simple_only: bool
+    async def association_get_all(
+        self,
+        correspondence_iri: str | None,
+        source_concept_iri: str | None,
+        target_concept_iri: str | None,
+        kind: AssociationKind | None,
     ) -> list[Association]: ...
 
     async def association_create(self, association: Association) -> Association: ...
@@ -104,15 +111,15 @@ class GraphService(Protocol):
 
     async def concept_delete(self, iri: str) -> None: ...
 
-    async def concepts_get_for_scheme(
-        self, concept_scheme_iri: str, top_concepts_only: bool
+    async def concept_get_all(
+        self, concept_scheme_iri: str | None, top_concepts_only: bool
     ) -> list[Concept]: ...
 
     async def concept_scheme_get(self, iri: str) -> ConceptScheme: ...
 
     async def concept_scheme_get_all_iris(self) -> list[str]: ...
 
-    async def concept_scheme_list(self) -> list[ConceptScheme]: ...
+    async def concept_scheme_get_all(self) -> list[ConceptScheme]: ...
 
     async def concept_scheme_create(self, concept_scheme: ConceptScheme) -> ConceptScheme: ...
 
@@ -136,6 +143,8 @@ class GraphService(Protocol):
 
     async def correspondence_get(self, iri: str) -> Correspondence: ...
 
+    async def correspondence_get_all(self) -> list[Correspondence]: ...
+
     async def correspondence_create(self, correspondence: Correspondence) -> Correspondence: ...
 
     async def correspondence_update(self, correspondence: Correspondence) -> Correspondence: ...
@@ -148,8 +157,12 @@ class GraphService(Protocol):
 
     async def association_get(self, iri: str) -> Association: ...
 
-    async def associations_get_for_source_concept(
-        self, concept_iri: str, simple_only: bool
+    async def association_get_all(
+        self,
+        correspondence_iri: str | None,
+        source_concept_iri: str | None,
+        target_concept_iri: str | None,
+        kind: AssociationKind | None,
     ) -> list[Association]: ...
 
     async def association_create(self, association: Association) -> Association: ...

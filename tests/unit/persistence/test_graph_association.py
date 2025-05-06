@@ -4,7 +4,9 @@ from py_semantic_taxonomy.domain.constants import AssociationKind
 from py_semantic_taxonomy.domain.entities import (
     Association,
     AssociationNotFoundError,
+    Correspondence,
     DuplicateIRI,
+    MadeOf,
 )
 
 
@@ -25,7 +27,19 @@ async def test_get_association_not_found(sqlite, graph):
 
 
 @pytest.mark.postgres
-async def test_associations_get_for_source_concept(postgres, cn, entities, graph):
+async def test_associations_get_all_no_filters(postgres, cn, entities, graph):
+    assocs = await graph.association_get_all(
+        correspondence_iri=None,
+        source_concept_iri=None,
+        target_concept_iri=None,
+        kind=None,
+    )
+    assert len(assocs) == 2
+    assert assocs == [entities[7], entities[8]], "Incorrect data attributes"
+
+
+@pytest.mark.postgres
+async def test_associations_get_all_source_concept(postgres, cn, entities, graph):
     new = Association(
         id_="http://example.com/foo",
         types=cn.association_top["@type"],
@@ -37,13 +51,101 @@ async def test_associations_get_for_source_concept(postgres, cn, entities, graph
     )
     await graph.association_create(association=new)
 
-    assocs = await graph.associations_get_for_source_concept(
-        concept_iri=entities[5].id_, simple_only=False
+    assocs = await graph.association_get_all(
+        source_concept_iri=entities[5].id_,
+        correspondence_iri=None,
+        target_concept_iri=None,
+        kind=None,
     )
     assert assocs == [entities[8], new], "Incorrect data attributes"
 
-    assocs = await graph.associations_get_for_source_concept(
-        concept_iri=entities[5].id_, simple_only=True
+
+@pytest.mark.postgres
+async def test_associations_get_all_target_concept(postgres, cn, entities, graph):
+    new = Association(
+        id_="http://example.com/foo",
+        types=cn.association_top["@type"],
+        source_concepts=[
+            {"@id": cn.concept_2023_top["@id"]},
+        ],
+        target_concepts=[{"@id": cn.concept_top["@id"]}, {"@id": cn.concept_2023_low["@id"]}],
+    )
+    await graph.association_create(association=new)
+
+    assocs = await graph.association_get_all(
+        target_concept_iri=cn.concept_top["@id"],
+        correspondence_iri=None,
+        source_concept_iri=None,
+        kind=None,
+    )
+    assert assocs == [entities[8], new], "Incorrect data attributes"
+
+
+@pytest.mark.postgres
+async def test_associations_get_all_kind_conditional(postgres, cn, entities, graph):
+    new = Association(
+        id_="http://example.com/foo",
+        types=cn.association_top["@type"],
+        source_concepts=[
+            {"@id": cn.concept_2023_top["@id"]},
+            {"@id": cn.concept_2023_low["@id"]},
+        ],
+        target_concepts=[{"@id": cn.concept_top["@id"]}],
+    )
+    await graph.association_create(association=new)
+
+    assocs = await graph.association_get_all(
+        kind=AssociationKind.conditional,
+        source_concept_iri=None,
+        target_concept_iri=None,
+        correspondence_iri=None,
+    )
+    assert assocs == [new], "Incorrect data attributes"
+
+
+@pytest.mark.postgres
+async def test_associations_get_all_correspondence(postgres, cn, entities, graph):
+    cn.correspondence["@id"] = "http://pyst-tests.ninja/correspondence/new"
+    corr = Correspondence.from_json_ld(cn.correspondence)
+    await graph.correspondence_create(correspondence=corr)
+
+    assoc = Association(
+        id_="http://pyst-tests.ninja/association/foo",
+        types=cn.association_top["@type"],
+        source_concepts=[
+            {"@id": cn.concept_2023_top["@id"]},
+            {"@id": cn.concept_2023_low["@id"]},
+        ],
+        target_concepts=[{"@id": cn.concept_top["@id"]}],
+    )
+    await graph.association_create(association=assoc)
+
+    made_of = MadeOf(
+        id_="http://pyst-tests.ninja/correspondence/new",
+        made_ofs=[
+            {"@id": "http://pyst-tests.ninja/association/foo"},
+        ],
+    )
+    await graph.made_of_add(made_of)
+
+    assocs = await graph.association_get_all(
+        correspondence_iri="http://pyst-tests.ninja/correspondence/new",
+        source_concept_iri=None,
+        target_concept_iri=None,
+        kind=None,
+    )
+    assert assocs == [assoc], "Incorrect data attributes"
+
+
+@pytest.mark.postgres
+async def test_associations_get_all_all_filters(postgres, cn, entities, graph, made_of):
+    await graph.made_of_add(made_of)
+
+    assocs = await graph.association_get_all(
+        correspondence_iri=cn.correspondence["@id"],
+        source_concept_iri=cn.concept_2023_top["@id"],
+        target_concept_iri=cn.concept_top["@id"],
+        kind=AssociationKind.simple,
     )
     assert assocs == [entities[8]], "Incorrect data attributes"
 
