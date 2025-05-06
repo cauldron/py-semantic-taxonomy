@@ -22,10 +22,10 @@
     <div class="lg:col-span-2 space-y-6">
         <!-- Definition -->
         <div class="card">
-            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color)">
+            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 <h2 class="text-lg font-medium" style="color: var(--text-color)">Definition</h2>
             </div>
-            <div class="px-4 py-5 sm:p-6">
+            <div class="px-4 py-5 sm:p-6" style="background-color: var(--nav-bg)">
                 <div class="text-sm" style="color: var(--text-color)">
                     {% if concept.definitions|lang(language) %}
                     {{ concept.definitions|lang(language) }}
@@ -39,13 +39,13 @@
         <!-- Relationships -->
         {% if broader_concepts or narrower_concepts %}
         <div class="card">
-            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color)">
+            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 <h2 class="text-lg font-medium flex items-center" style="color: var(--text-color)">
                     <i class="fas fa-sitemap text-primary mr-2"></i>
                     Concept Hierarchy
                 </h2>
             </div>
-            <div class="px-4 py-5 sm:p-6">
+            <div class="px-4 py-5 sm:p-6" style="background-color: var(--nav-bg)">
                 <div class="space-y-8">
                     <!-- Broader Concepts -->
                     {% if broader_concepts %}
@@ -142,13 +142,13 @@ style="color: var(--text-color)">Current Concept</span>
         <!-- Associations -->
         {% if associations %}
         <div class="card">
-            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color)">
+            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 <h2 class="text-lg font-medium flex items-center" style="color: var(--text-color)">
                     <i class="fas fa-heart text-primary mr-2"></i>
                     Associations
                 </h2>
             </div>
-            <div class="px-4 py-5 sm:p-6">
+            <div class="px-4 py-5 sm:p-6" style="background-color: var(--nav-bg)">
                 <div class="space-y-8">
                     <div>
                         <div class="space-y-2">
@@ -218,10 +218,16 @@ style="color: var(--text-color)">Current Concept</span>
     <!-- Right Column: Concept Information -->
     <div class="lg:col-span-1">
         <div class="card">
-            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color)">
+            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 <h2 class="text-lg font-medium" style="color: var(--text-color)">Concept Information</h2>
             </div>
-            <div class="px-4 py-5 sm:p-6 space-y-4">
+            <div class="px-4 py-5 sm:p-6 space-y-4" style="background-color: var(--nav-bg)">
+                <!-- IRI -->
+                <div>
+                    <h3 class="text-sm font-medium" style="color: var(--text-secondary)">IRI</h3>
+                    <p class="mt-1 text-sm" style="color: var(--text-color)" title="{{ concept.id_ }}" id="concept_iri_clicker">{{ concept.id_|short_iri }} <i class="fas fa-copy mr-2" id="concept_iri_clicker_icon"></i></p>
+                </div>
+
                 <!-- Notation -->
                 {% if concept.notations %}
                 <div>
@@ -236,7 +242,7 @@ style="color: var(--text-color)">Current Concept</span>
                     <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Status</h3>
                     <div class="mt-1">
                         {% set status = concept.status[0]['@id']|split('/')|last|title %}
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if status == 'Accepted' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %} relationship-badge">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if status == 'Accepted' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %} relationship-badge" style="color: var(--text-secondary)">
                             {{ status }}
                         </span>
                     </div>
@@ -293,5 +299,10 @@ style="color: var(--text-color)">Current Concept</span>
 document.getElementById('language').addEventListener('change', function(e) {
     window.location.href = e.target.value;
 });
+
+var iri_clicker = document.getElementById("concept_iri_clicker");
+iri_clicker.onclick = function(){
+    navigator.clipboard.writeText("{{ concept.id_ }}").then(this.querySelector('#concept_iri_clicker_icon').classList.replace("fa-copy", "fa-check"))
+};
 </script>
 {% endblock %}
