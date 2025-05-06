@@ -13,7 +13,7 @@ from py_semantic_taxonomy.domain.entities import (
 from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 
 
-async def test_correspondence(cn, anonymous_client, monkeypatch):
+async def test_correspondence_get(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(
         GraphService,
         "correspondence_get",
@@ -44,6 +44,23 @@ async def test_correspondence_get_not_found(cn, anonymous_client, monkeypatch):
     assert correspondence == {
         "detail": "Correspondence with IRI `foo` not found",
     }
+
+
+async def test_correspondence_get_all(cn, anonymous_client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "correspondence_get_all",
+        AsyncMock(return_value=[Correspondence.from_json_ld(cn.correspondence)]),
+    )
+
+    response = await anonymous_client.get(
+        get_full_api_path("correspondence_all")
+    )
+    assert response.status_code == 200
+    correspondences = response.json()
+    assert len(correspondences) == 1
+
+    GraphService.correspondence_get_all.assert_called_once()
 
 
 async def test_correspondence_create(cn, client, monkeypatch):

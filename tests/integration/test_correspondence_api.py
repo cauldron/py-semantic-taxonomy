@@ -17,6 +17,17 @@ async def test_get_correspondence(postgres, cn_db_engine, cn, client):
 
 
 @pytest.mark.postgres
+async def test_get_correspondence_all(postgres, cn_db_engine, cn, client):
+    response = await client.get(get_full_api_path("correspondence_all"))
+    assert response.status_code == 200
+    given = response.json()
+    assert len(given) == 1
+
+    for key, value in cn.correspondence.items():
+        assert given[0][key] == value
+
+
+@pytest.mark.postgres
 async def test_get_correspondence_404(postgres, cn_db_engine, client):
     response = await client.get(
         get_full_api_path("correspondence", iri="http://pyst-tests.ninja/correspondence/missing"),

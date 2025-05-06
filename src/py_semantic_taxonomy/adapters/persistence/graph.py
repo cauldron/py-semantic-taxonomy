@@ -368,6 +368,13 @@ class PostgresKOSGraphDatabase:
             await conn.rollback()
         return Correspondence(**result._mapping)
 
+    async def correspondence_get_all(self) -> list[Correspondence]:
+        async with self.engine.connect() as conn:
+            stmt = select(correspondence_table).order_by(correspondence_table.c.id_)
+            results = (await conn.execute(stmt)).fetchall()
+            await conn.rollback()
+        return [Correspondence(**obj._mapping) for obj in results]
+
     async def correspondence_create(self, correspondence: Correspondence) -> Correspondence:
         async with self.engine.connect() as conn:
             count = await self._get_count_from_iri(conn, correspondence.id_, correspondence_table)

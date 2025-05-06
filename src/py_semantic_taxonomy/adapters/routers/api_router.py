@@ -391,6 +391,19 @@ async def relationship_delete(
 
 
 @api_router.get(
+    APIPaths.correspondence_all,
+    summary="Get all `Correspondence` objects",
+    response_model=list[response.Correspondence],
+    tags=["Correspondence"],
+)
+async def correspondence_get_all(
+    service=Depends(get_graph_service),
+) -> list[response.Correspondence]:
+    correspondences = await service.correspondence_get_all()
+    return [response.Correspondence(**obj.to_json_ld()) for obj in correspondences]
+
+
+@api_router.get(
     APIPaths.correspondence,
     summary="Get a `Correspondence` object",
     response_model=response.Correspondence,

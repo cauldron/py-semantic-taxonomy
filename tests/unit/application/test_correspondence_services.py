@@ -12,6 +12,15 @@ async def test_correspondence_get(graph_service, entities):
     mock_kos_graph.correspondence_get.assert_called_with(iri=entities[3].id_)
 
 
+async def test_correspondence_get_all(graph_service, entities):
+    mock_kos_graph = graph_service.graph
+    mock_kos_graph.correspondence_get_all.return_value = [entities[3]]
+
+    result = await graph_service.correspondence_get_all()
+    assert result[0] == entities[3]
+    mock_kos_graph.correspondence_get_all.assert_called_with()
+
+
 async def test_correspondence_create(graph_service, cn, entities, relationships):
     mock_kos_graph = graph_service.graph
     mock_kos_graph.correspondence_create.return_value = entities[3]
