@@ -22,6 +22,18 @@ async def test_get_concept_scheme_404(postgres, cn_db_engine, client):
 
 
 @pytest.mark.postgres
+async def test_get_concept_scheme_all(postgres, cn_db_engine, cn, client):
+    response = await client.get(get_full_api_path("concept_scheme_all"))
+    assert response.status_code == 200
+    given = response.json()
+    assert isinstance(given, list)
+    assert len(given) == 2
+    assert sorted([obj["@id"] for obj in given]) == sorted(
+        [cn.scheme["@id"], cn.scheme_2023["@id"]]
+    )
+
+
+@pytest.mark.postgres
 async def test_create_concept_scheme(postgres, cn_db_engine, cn, client):
     new = cn.scheme
     new["@id"] = "http://data.europa.eu/xsp/cn2024/cn2025"
