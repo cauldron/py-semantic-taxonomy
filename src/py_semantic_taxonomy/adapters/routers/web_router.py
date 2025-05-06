@@ -37,6 +37,12 @@ def best_label(obj: de.SKOS | str, lang: str) -> str:
     return "(label unavailable)"
 
 
+def short_iri(iri: str) -> str:
+    if len(iri) < 45:
+        return iri
+    return iri[:20] + "..." + iri[-20:]
+
+
 def best_short_label(obj: de.SKOS | str, lang: str, cutoff: int = 30) -> str:
     """Get the best available short label"""
     # External IRI without data
@@ -58,6 +64,7 @@ templates.env.filters["split"] = lambda s, sep: s.split(sep)
 templates.env.filters["lang"] = value_for_language
 templates.env.filters["best_label"] = best_label
 templates.env.filters["best_short_label"] = best_short_label
+templates.env.filters["short_iri"] = short_iri
 
 
 def format_languages(languages: list[str]) -> list[tuple[str, str]]:

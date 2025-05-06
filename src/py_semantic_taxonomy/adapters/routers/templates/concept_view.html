@@ -222,6 +222,12 @@ style="color: var(--text-color)">Current Concept</span>
                 <h2 class="text-lg font-medium" style="color: var(--text-color)">Concept Information</h2>
             </div>
             <div class="px-4 py-5 sm:p-6 space-y-4" style="background-color: var(--nav-bg)">
+                <!-- IRI -->
+                <div>
+                    <h3 class="text-sm font-medium" style="color: var(--text-secondary)">IRI</h3>
+                    <p class="mt-1 text-sm" style="color: var(--text-color)" title="{{ concept.id_ }}" id="concept_iri_clicker">{{ concept.id_|short_iri }} <i class="fas fa-copy mr-2" id="concept_iri_clicker_icon"></i></p>
+                </div>
+
                 <!-- Notation -->
                 {% if concept.notations %}
                 <div>
@@ -293,5 +299,10 @@ style="color: var(--text-color)">Current Concept</span>
 document.getElementById('language').addEventListener('change', function(e) {
     window.location.href = e.target.value;
 });
+
+var iri_clicker = document.getElementById("concept_iri_clicker");
+iri_clicker.onclick = function(){
+    navigator.clipboard.writeText("{{ concept.id_ }}").then(this.querySelector('#concept_iri_clicker_icon').classList.replace("fa-copy", "fa-check"))
+};
 </script>
 {% endblock %}
