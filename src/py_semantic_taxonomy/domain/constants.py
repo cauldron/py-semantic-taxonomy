@@ -69,7 +69,7 @@ API_VERSION_PREFIX = "/api/v1"
 class APIPaths(enum.StrEnum):
     concept = "/concepts/{iri:path}"
     concept_all = "/concepts/"
-    concept_scheme = "concept_schemes/{iri:path}"
+    concept_scheme = "/concept_schemes/{iri:path}"
     concept_scheme_all = "/concept_schemes/"
     relationship = "/relationships/"
     correspondence = "/correspondences/{iri:path}"
