@@ -22,6 +22,30 @@ async def test_get_association_404(postgres, cn_db_engine, client):
 
 
 @pytest.mark.postgres
+async def test_get_association_all_all_filters(postgres, cn_db_engine, cn, client, made_of):
+    await client.post(get_full_api_path("made_of"), json=made_of.to_json_ld())
+
+    response = await client.get(
+        get_full_api_path("association_all"),
+        params={
+            "correspondence_iri": cn.correspondence["@id"],
+            "source_concept_iri": cn.concept_2023_top["@id"],
+            "target_concept_iri": cn.concept_top["@id"],
+            "kind": "simple",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == [cn.association_top]
+
+
+@pytest.mark.postgres
+async def test_get_association_all_no_filters(postgres, cn_db_engine, cn, client):
+    response = await client.get(get_full_api_path("association_all"))
+    assert response.status_code == 200
+    assert response.json() == [cn.association_low, cn.association_top]
+
+
+@pytest.mark.postgres
 async def test_create_association(postgres, cn_db_engine, cn, client):
     new = cn.association_top
     new["@id"] = "http://pyst-tests.ninja/association/new"

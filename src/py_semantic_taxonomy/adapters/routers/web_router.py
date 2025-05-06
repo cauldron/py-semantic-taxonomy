@@ -273,7 +273,7 @@ async def web_concept_view(
             (request.url_for("web_concept_view", iri=quote(s["@id"])), s) for s in concept.schemes
         ]
 
-        associations = await service.associations_get_for_source_concept(concept_iri=concept.id_)
+        associations = await service.association_get_all(source_concept_iri=concept.id_)
         formatted_associations = []
         for obj in filter(lambda x: x.kind == AssociationKind.simple, associations):
             for target in obj.target_concepts:

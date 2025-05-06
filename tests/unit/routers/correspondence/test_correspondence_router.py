@@ -53,9 +53,7 @@ async def test_correspondence_get_all(cn, anonymous_client, monkeypatch):
         AsyncMock(return_value=[Correspondence.from_json_ld(cn.correspondence)]),
     )
 
-    response = await anonymous_client.get(
-        get_full_api_path("correspondence_all")
-    )
+    response = await anonymous_client.get(get_full_api_path("correspondence_all"))
     assert response.status_code == 200
     correspondences = response.json()
     assert len(correspondences) == 1

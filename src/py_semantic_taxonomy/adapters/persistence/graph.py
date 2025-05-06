@@ -455,16 +455,34 @@ class PostgresKOSGraphDatabase:
             await conn.rollback()
         return Association(**result._mapping)
 
-    async def associations_get_for_source_concept(
-        self, concept_iri: str, simple_only: bool
+    async def association_get_all(
+        self,
+        correspondence_iri: str | None,
+        source_concept_iri: str | None,
+        target_concept_iri: str | None,
+        kind: AssociationKind | None,
     ) -> list[Association]:
         async with self.engine.connect() as conn:
-            # See above discussion on how best to search within JSONB fields
-            stmt = select(association_table).where(
-                association_table.c.source_concepts.op("@>")([{"@id": concept_iri}])
-            )
-            if simple_only:
-                stmt = stmt.where(association_table.c.kind == AssociationKind.simple)
+            stmt = select(association_table)
+            if correspondence_iri is not None:
+                subquery = (
+                    select(
+                        func.jsonb_array_elements(correspondence_table.c.made_ofs).op("->>")("@id")
+                    )
+                    .where(correspondence_table.c.id_ == correspondence_iri)
+                    .subquery()
+                )
+                stmt = stmt.where(association_table.c.id_.in_(subquery))
+            if source_concept_iri:
+                stmt = stmt.where(
+                    association_table.c.source_concepts.op("@>")([{"@id": source_concept_iri}])
+                )
+            if target_concept_iri:
+                stmt = stmt.where(
+                    association_table.c.target_concepts.op("@>")([{"@id": target_concept_iri}])
+                )
+            if kind:
+                stmt = stmt.where(association_table.c.kind == kind)
             result = (await conn.execute(stmt.order_by(association_table.c.id_))).fetchall()
             await conn.rollback()
         return [Association(**row._mapping) for row in result]

@@ -3,6 +3,7 @@ from typing import Protocol, runtime_checkable
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.entities import (
     Association,
+    AssociationKind,
     Concept,
     ConceptScheme,
     Correspondence,
@@ -75,8 +76,12 @@ class KOSGraphDatabase(Protocol):
 
     async def association_get(self, iri: str) -> Association: ...
 
-    async def associations_get_for_source_concept(
-        self, concept_iri: str, simple_only: bool
+    async def association_get_all(
+        self,
+        correspondence_iri: str | None,
+        source_concept_iri: str | None,
+        target_concept_iri: str | None,
+        kind: AssociationKind | None,
     ) -> list[Association]: ...
 
     async def association_create(self, association: Association) -> Association: ...
@@ -152,8 +157,12 @@ class GraphService(Protocol):
 
     async def association_get(self, iri: str) -> Association: ...
 
-    async def associations_get_for_source_concept(
-        self, concept_iri: str, simple_only: bool
+    async def association_get_all(
+        self,
+        correspondence_iri: str | None,
+        source_concept_iri: str | None,
+        target_concept_iri: str | None,
+        kind: AssociationKind | None,
     ) -> list[Association]: ...
 
     async def association_create(self, association: Association) -> Association: ...

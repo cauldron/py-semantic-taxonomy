@@ -4,10 +4,59 @@ from py_semantic_taxonomy.application.graph_service import GraphService
 from py_semantic_taxonomy.domain.constants import RDF_MAPPING
 from py_semantic_taxonomy.domain.entities import (
     Association,
+    AssociationKind,
     AssociationNotFoundError,
     DuplicateIRI,
 )
 from py_semantic_taxonomy.domain.url_utils import get_full_api_path
+
+
+async def test_association_get_all_all_filters(cn, anonymous_client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "association_get_all",
+        AsyncMock(return_value=[Association.from_json_ld(cn.association_top)]),
+    )
+
+    response = await anonymous_client.get(
+        get_full_api_path("association_all"),
+        params={
+            "correspondence_iri": "http://example.com/a",
+            "source_concept_iri": "http://example.com/b",
+            "target_concept_iri": "http://example.com/c",
+            "kind": "conditional",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == [cn.association_top]
+
+    GraphService.association_get_all.assert_called_once()
+    GraphService.association_get_all.assert_called_with(
+        correspondence_iri="http://example.com/a",
+        source_concept_iri="http://example.com/b",
+        target_concept_iri="http://example.com/c",
+        kind=AssociationKind.conditional,
+    )
+
+
+async def test_association_get_all_no_filters(cn, anonymous_client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "association_get_all",
+        AsyncMock(return_value=[Association.from_json_ld(cn.association_top)]),
+    )
+
+    response = await anonymous_client.get(get_full_api_path("association_all"))
+    assert response.status_code == 200
+    assert response.json() == [cn.association_top]
+
+    GraphService.association_get_all.assert_called_once()
+    GraphService.association_get_all.assert_called_with(
+        correspondence_iri=None,
+        source_concept_iri=None,
+        target_concept_iri=None,
+        kind=None,
+    )
 
 
 async def test_association_get(cn, anonymous_client, monkeypatch):

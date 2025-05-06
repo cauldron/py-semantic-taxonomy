@@ -5,6 +5,7 @@ from py_semantic_taxonomy.domain.constants import (
 )
 from py_semantic_taxonomy.domain.entities import (
     Association,
+    AssociationKind,
     AssociationNotFoundError,
     Concept,
     ConceptNotFoundError,
@@ -231,11 +232,18 @@ class GraphService:
     async def association_get(self, iri: str) -> Association:
         return await self.graph.association_get(iri=iri)
 
-    async def associations_get_for_source_concept(
-        self, concept_iri: str, simple_only: bool = False
+    async def association_get_all(
+        self,
+        correspondence_iri: str | None = None,
+        source_concept_iri: str | None = None,
+        target_concept_iri: str | None = None,
+        kind: AssociationKind | None = None,
     ) -> list[Association]:
-        return await self.graph.associations_get_for_source_concept(
-            concept_iri=concept_iri, simple_only=simple_only
+        return await self.graph.association_get_all(
+            correspondence_iri=correspondence_iri,
+            source_concept_iri=source_concept_iri,
+            target_concept_iri=target_concept_iri,
+            kind=kind,
         )
 
     async def association_create(self, association: Association) -> Association:

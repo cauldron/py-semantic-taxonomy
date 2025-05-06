@@ -489,6 +489,29 @@ async def correspondence_delete(
 
 
 @api_router.get(
+    APIPaths.association_all,
+    summary="Get an `Association` object",
+    response_model=list[response.Association],
+    tags=["ConceptAssociation"],
+    responses={404: {"description": "Resource not found"}},
+)
+async def association_get_all(
+    correspondence_iri: str | None = None,
+    source_concept_iri: str | None = None,
+    target_concept_iri: str | None = None,
+    kind: de.AssociationKind | None = None,
+    service=Depends(get_graph_service),
+) -> list[response.Association]:
+    results = await service.association_get_all(
+        correspondence_iri=correspondence_iri,
+        source_concept_iri=source_concept_iri,
+        target_concept_iri=target_concept_iri,
+        kind=kind,
+    )
+    return [response.Association(**obj.to_json_ld()) for obj in results]
+
+
+@api_router.get(
     APIPaths.association,
     summary="Get an `Association` object",
     response_model=response.Association,
