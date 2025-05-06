@@ -119,7 +119,7 @@ async def concept_all_get(
     `concept_scheme_iri` is specified) with the URL parameter `top_concepts_only=<bool>`. If
     `concept_scheme_iri` is not specified, `top_concepts_only` *has no effect*.
     """
-    results = await service.concepts_get_all(
+    results = await service.concept_get_all(
         concept_scheme_iri=concept_scheme_iri, top_concepts_only=top_concepts_only
     )
     return [response.Concept(**obj.to_json_ld()) for obj in results]
@@ -234,7 +234,7 @@ async def concept_delete(
 async def concept_scheme_get_all(
     service=Depends(get_graph_service),
 ) -> list[response.ConceptScheme]:
-    concept_schemes = await service.concept_scheme_list()
+    concept_schemes = await service.concept_scheme_get_all()
     return [response.ConceptScheme(**cs.to_json_ld()) for cs in concept_schemes]
 
 

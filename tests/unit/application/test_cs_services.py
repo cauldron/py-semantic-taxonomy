@@ -21,13 +21,13 @@ async def test_concept_scheme_get_all_iris(graph_service):
     mock_kos_graph.concept_scheme_get_all_iris.assert_called_with()
 
 
-async def test_concept_scheme_list(graph_service, entities):
+async def test_concept_scheme_get_all(graph_service, entities):
     mock_kos_graph = graph_service.graph
-    mock_kos_graph.concept_scheme_list.return_value = [entities[2], entities[4]]
+    mock_kos_graph.concept_scheme_get_all.return_value = [entities[2], entities[4]]
 
-    result = await graph_service.concept_scheme_list()
+    result = await graph_service.concept_scheme_get_all()
     assert result == [entities[2], entities[4]]
-    mock_kos_graph.concept_scheme_list.assert_called_with()
+    mock_kos_graph.concept_scheme_get_all.assert_called_with()
 
 
 async def test_concept_scheme_create(graph_service, entities):

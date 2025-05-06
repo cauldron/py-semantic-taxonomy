@@ -111,7 +111,7 @@ class PostgresKOSGraphDatabase:
             await conn.commit()
         return result.rowcount
 
-    async def concepts_get_all(
+    async def concept_get_all(
         self, concept_scheme_iri: str | None, top_concepts_only: bool
     ) -> list[Concept]:
         async with self.engine.connect() as conn:
@@ -172,7 +172,7 @@ class PostgresKOSGraphDatabase:
             await conn.rollback()
         return ConceptScheme(**result._mapping)
 
-    async def concept_scheme_list(self) -> list[ConceptScheme]:
+    async def concept_scheme_get_all(self) -> list[ConceptScheme]:
         async with self.engine.connect() as conn:
             stmt = select(concept_scheme_table).order_by(concept_scheme_table.c.id_)
             result = (await conn.execute(stmt)).fetchall()

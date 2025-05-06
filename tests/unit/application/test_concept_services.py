@@ -249,35 +249,35 @@ async def concept_delete_not_found(graph_service, entities):
         await graph_service.concept_delete(entities[0].id_)
 
 
-async def test_concepts_get_all(graph_service, entities):
+async def test_concept_get_all(graph_service, entities):
     mock_kos_graph = graph_service.graph
-    mock_kos_graph.concepts_get_all.return_value = [entities[0]]
+    mock_kos_graph.concept_get_all.return_value = [entities[0]]
 
-    result = await graph_service.concepts_get_all(entities[3].id_)
+    result = await graph_service.concept_get_all(entities[3].id_)
     assert result == [entities[0]]
-    mock_kos_graph.concepts_get_all.assert_called_with(
+    mock_kos_graph.concept_get_all.assert_called_with(
         concept_scheme_iri=entities[3].id_, top_concepts_only=False
     )
 
-    result = await graph_service.concepts_get_all(entities[3].id_, True)
+    result = await graph_service.concept_get_all(entities[3].id_, True)
     assert result == [entities[0]]
-    mock_kos_graph.concepts_get_all.assert_called_with(
+    mock_kos_graph.concept_get_all.assert_called_with(
         concept_scheme_iri=entities[3].id_, top_concepts_only=True
     )
 
 
-async def test_concepts_get_all_no_concept_scheme(graph_service, entities):
+async def test_concept_get_all_no_concept_scheme(graph_service, entities):
     mock_kos_graph = graph_service.graph
-    mock_kos_graph.concepts_get_all.return_value = []
+    mock_kos_graph.concept_get_all.return_value = []
 
-    result = await graph_service.concepts_get_all()
+    result = await graph_service.concept_get_all()
     assert result == []
-    mock_kos_graph.concepts_get_all.assert_called_with(
+    mock_kos_graph.concept_get_all.assert_called_with(
         concept_scheme_iri=None, top_concepts_only=False
     )
 
-    result = await graph_service.concepts_get_all(None, True)
+    result = await graph_service.concept_get_all(None, True)
     assert result == []
-    mock_kos_graph.concepts_get_all.assert_called_with(
+    mock_kos_graph.concept_get_all.assert_called_with(
         concept_scheme_iri=None, top_concepts_only=True
     )

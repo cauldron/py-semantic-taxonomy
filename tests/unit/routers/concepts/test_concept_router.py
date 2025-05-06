@@ -48,7 +48,7 @@ async def test_concept_get_not_found(cn, anonymous_client, monkeypatch):
 async def test_concept_all_get(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(
         GraphService,
-        "concepts_get_all",
+        "concept_get_all",
         AsyncMock(return_value=[Concept.from_json_ld(cn.concept_top)]),
     )
 
@@ -58,8 +58,8 @@ async def test_concept_all_get(cn, anonymous_client, monkeypatch):
     )
     assert response.status_code == 200
 
-    GraphService.concepts_get_all.assert_called_once()
-    GraphService.concepts_get_all.assert_called_with(
+    GraphService.concept_get_all.assert_called_once()
+    GraphService.concept_get_all.assert_called_with(
         concept_scheme_iri=cn.scheme["@id"], top_concepts_only=True
     )
 

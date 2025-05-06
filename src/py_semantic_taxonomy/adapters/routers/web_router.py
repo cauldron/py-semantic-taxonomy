@@ -110,7 +110,7 @@ async def web_concept_schemes(
             + quote(settings.languages[0])
         )
 
-    concept_schemes = await service.concept_scheme_list()
+    concept_schemes = await service.concept_scheme_get_all()
     for scheme in concept_schemes:
         scheme.url = concept_scheme_view_url(request, scheme.id_, language)
 
@@ -153,7 +153,7 @@ async def web_concept_scheme_view(
 
         decoded_iri = unquote(iri)
         concept_scheme = await service.concept_scheme_get(iri=decoded_iri)
-        concepts = await service.concepts_get_all(
+        concepts = await service.concept_get_all(
             concept_scheme_iri=decoded_iri, top_concepts_only=True
         )
         for concept in concepts:

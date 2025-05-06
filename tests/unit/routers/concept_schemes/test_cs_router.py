@@ -42,7 +42,7 @@ async def test_concept_scheme_get_not_found(cn, anonymous_client, monkeypatch):
 async def test_concept_scheme_get_all(cn, anonymous_client, monkeypatch):
     monkeypatch.setattr(
         GraphService,
-        "concept_scheme_list",
+        "concept_scheme_get_all",
         AsyncMock(return_value=[ConceptScheme.from_json_ld(cn.scheme)]),
     )
 
@@ -50,7 +50,7 @@ async def test_concept_scheme_get_all(cn, anonymous_client, monkeypatch):
     assert response.status_code == 200
     assert len(response.json()) == 1
 
-    GraphService.concept_scheme_list.assert_called_once()
+    GraphService.concept_scheme_get_all.assert_called_once()
 
 
 async def test_concept_scheme_create(cn, client, monkeypatch):
