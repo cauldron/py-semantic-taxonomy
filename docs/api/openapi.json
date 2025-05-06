@@ -8,17 +8,228 @@
     }
   },
   "paths": {
-    "/concept/": {
+    "/api/v1/status/": {
+      "get": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Get a status report for PyST server",
+        "operationId": "server_status_api_v1_status__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/concepts/search/": {
+      "get": {
+        "tags": [
+          "Concept"
+        ],
+        "summary": "Search for `Concept` objects",
+        "operationId": "concept_search_api_v1_concepts_search__get",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Query"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Language"
+            }
+          },
+          {
+            "name": "semantic",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Semantic"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SearchResult"
+                  },
+                  "title": "Response Concept Search Api V1 Concepts Search  Get"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Search engine not available"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/concepts/suggest/": {
+      "get": {
+        "tags": [
+          "Concept"
+        ],
+        "summary": "Suggestion search for `Concept` objects",
+        "operationId": "concept_suggest_api_v1_concepts_suggest__get",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Query"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Language"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SearchResult"
+                  },
+                  "title": "Response Concept Suggest Api V1 Concepts Suggest  Get"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Search engine not available"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/concepts/": {
+      "get": {
+        "tags": [
+          "Concept"
+        ],
+        "summary": "Get a list of concept objects with optional filters.",
+        "description": "Retrieve a list of `Concept` objects.\n\nThe list can be filtered to a given concept scheme by using the URL parameter\n`concept_scheme_iri=<iri>`.\n\nThe list can be further filtered to only be top concepts of the given concept scheme (if\n`concept_scheme_iri` is specified) with the URL parameter `top_concepts_only=<bool>`. If\n`concept_scheme_iri` is not specified, `top_concepts_only` *has no effect*.",
+        "operationId": "concept_all_get_api_v1_concepts__get",
+        "parameters": [
+          {
+            "name": "concept_scheme_iri",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Concept Scheme Iri"
+            }
+          },
+          {
+            "name": "top_concepts_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Top Concepts Only"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Concept"
+                  },
+                  "title": "Response Concept All Get Api V1 Concepts  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/concepts/{iri}": {
       "get": {
         "tags": [
           "Concept"
         ],
         "summary": "Get a `Concept` object",
-        "operationId": "concept_get_concept__get",
+        "operationId": "concept_get_api_v1_concepts__iri__get",
         "parameters": [
           {
             "name": "iri",
-            "in": "query",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
@@ -57,7 +268,7 @@
           "Concept"
         ],
         "summary": "Create a `Concept` object",
-        "operationId": "concept_create_concept__post",
+        "operationId": "concept_create_api_v1_concepts__iri__post",
         "parameters": [
           {
             "name": "x-pyst-auth-token",
@@ -111,7 +322,7 @@
           "Concept"
         ],
         "summary": "Update a `Concept` object",
-        "operationId": "concept_update_concept__put",
+        "operationId": "concept_update_api_v1_concepts__iri__put",
         "parameters": [
           {
             "name": "x-pyst-auth-token",
@@ -165,11 +376,11 @@
           "Concept"
         ],
         "summary": "Delete a `Concept` object",
-        "operationId": "concept_delete_concept__delete",
+        "operationId": "concept_delete_api_v1_concepts__iri__delete",
         "parameters": [
           {
             "name": "iri",
-            "in": "query",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
@@ -207,27 +418,45 @@
         }
       }
     },
-    "/concept_scheme/": {
+    "/api/v1/concept_schemes/": {
       "get": {
         "tags": [
           "ConceptScheme"
         ],
-        "summary": "Get a `ConceptScheme` object or list all concept schemes",
-        "operationId": "concept_scheme_get_concept_scheme__get",
+        "summary": "Get all concept schemes",
+        "operationId": "concept_scheme_get_all_api_v1_concept_schemes__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConceptScheme-Output"
+                  },
+                  "type": "array",
+                  "title": "Response Concept Scheme Get All Api V1 Concept Schemes  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/concept_schemes/{iri}": {
+      "get": {
+        "tags": [
+          "ConceptScheme"
+        ],
+        "summary": "Get a `ConceptScheme` object",
+        "operationId": "concept_scheme_get_api_v1_concept_schemes__iri__get",
         "parameters": [
           {
             "name": "iri",
-            "in": "query",
-            "required": false,
+            "in": "path",
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "string",
               "title": "Iri"
             }
           }
@@ -238,18 +467,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/ConceptScheme-Output"
-                    },
-                    {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/ConceptScheme-Output"
-                      }
-                    }
-                  ],
-                  "title": "Response Concept Scheme Get Concept Scheme  Get"
+                  "$ref": "#/components/schemas/ConceptScheme-Output"
                 }
               }
             }
@@ -274,7 +492,7 @@
           "ConceptScheme"
         ],
         "summary": "Create a `ConceptScheme` object",
-        "operationId": "concept_scheme_create_concept_scheme__post",
+        "operationId": "concept_scheme_create_api_v1_concept_schemes__iri__post",
         "parameters": [
           {
             "name": "responses",
@@ -338,7 +556,7 @@
           "ConceptScheme"
         ],
         "summary": "Update a `ConceptScheme` object",
-        "operationId": "concept_scheme_update_concept_scheme__put",
+        "operationId": "concept_scheme_update_api_v1_concept_schemes__iri__put",
         "parameters": [
           {
             "name": "responses",
@@ -402,11 +620,11 @@
           "ConceptScheme"
         ],
         "summary": "Delete a `ConceptScheme` object",
-        "operationId": "concept_scheme_delete_concept_scheme__delete",
+        "operationId": "concept_scheme_delete_api_v1_concept_schemes__iri__delete",
         "parameters": [
           {
             "name": "iri",
-            "in": "query",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
@@ -444,13 +662,13 @@
         }
       }
     },
-    "/relationships/": {
+    "/api/v1/relationships/": {
       "get": {
         "tags": [
           "Concept"
         ],
         "summary": "Get a list of `Concept` relationships",
-        "operationId": "relationships_get_relationships__get",
+        "operationId": "relationships_get_api_v1_relationships__get",
         "parameters": [
           {
             "name": "iri",
@@ -492,7 +710,7 @@
                   "items": {
                     "$ref": "#/components/schemas/Relationship-Output"
                   },
-                  "title": "Response Relationships Get Relationships  Get"
+                  "title": "Response Relationships Get Api V1 Relationships  Get"
                 }
               }
             }
@@ -514,7 +732,7 @@
           "Concept"
         ],
         "summary": "Create a list of `Concept` relationships",
-        "operationId": "relationships_create_relationships__post",
+        "operationId": "relationships_create_api_v1_relationships__post",
         "parameters": [
           {
             "name": "x-pyst-auth-token",
@@ -551,7 +769,7 @@
                   "items": {
                     "$ref": "#/components/schemas/Relationship-Output"
                   },
-                  "title": "Response Relationships Create Relationships  Post"
+                  "title": "Response Relationships Create Api V1 Relationships  Post"
                 }
               }
             }
@@ -576,7 +794,7 @@
           "Concept"
         ],
         "summary": "Delete a list of `Concept` relationships",
-        "operationId": "relationship_delete_relationships__delete",
+        "operationId": "relationship_delete_api_v1_relationships__delete",
         "parameters": [
           {
             "name": "x-pyst-auth-token",
@@ -625,17 +843,42 @@
         }
       }
     },
-    "/correspondence/": {
+    "/api/v1/correspondences/": {
+      "get": {
+        "tags": [
+          "Correspondence"
+        ],
+        "summary": "Get all `Correspondence` objects",
+        "operationId": "correspondence_get_all_api_v1_correspondences__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Correspondence-Output"
+                  },
+                  "type": "array",
+                  "title": "Response Correspondence Get All Api V1 Correspondences  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/correspondences/{iri}": {
       "get": {
         "tags": [
           "Correspondence"
         ],
         "summary": "Get a `Correspondence` object",
-        "operationId": "correspondence_get_correspondence__get",
+        "operationId": "correspondence_get_api_v1_correspondences__iri__get",
         "parameters": [
           {
             "name": "iri",
-            "in": "query",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
@@ -674,7 +917,7 @@
           "Correspondence"
         ],
         "summary": "Create a `Correspondence` object",
-        "operationId": "correspondence_create_correspondence__post",
+        "operationId": "correspondence_create_api_v1_correspondences__iri__post",
         "parameters": [
           {
             "name": "x-pyst-auth-token",
@@ -728,7 +971,7 @@
           "Correspondence"
         ],
         "summary": "Update a `Correspondence` object",
-        "operationId": "correspondence_update_correspondence__put",
+        "operationId": "correspondence_update_api_v1_correspondences__iri__put",
         "parameters": [
           {
             "name": "x-pyst-auth-token",
@@ -782,11 +1025,11 @@
           "Correspondence"
         ],
         "summary": "Delete a `Correspondence` object",
-        "operationId": "correspondence_delete_correspondence__delete",
+        "operationId": "correspondence_delete_api_v1_correspondences__iri__delete",
         "parameters": [
           {
             "name": "iri",
-            "in": "query",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
@@ -824,17 +1067,121 @@
         }
       }
     },
-    "/association/": {
+    "/api/v1/associations/": {
       "get": {
         "tags": [
           "ConceptAssociation"
         ],
         "summary": "Get an `Association` object",
-        "operationId": "association_get_association__get",
+        "operationId": "association_get_all_api_v1_associations__get",
+        "parameters": [
+          {
+            "name": "correspondence_iri",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Correspondence Iri"
+            }
+          },
+          {
+            "name": "source_concept_iri",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Concept Iri"
+            }
+          },
+          {
+            "name": "target_concept_iri",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Concept Iri"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AssociationKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Association-Output"
+                  },
+                  "title": "Response Association Get All Api V1 Associations  Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/associations/{iri}": {
+      "get": {
+        "tags": [
+          "ConceptAssociation"
+        ],
+        "summary": "Get an `Association` object",
+        "operationId": "association_get_api_v1_associations__iri__get",
         "parameters": [
           {
             "name": "iri",
-            "in": "query",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
@@ -873,7 +1220,7 @@
           "ConceptAssociation"
         ],
         "summary": "Create an `Association` object",
-        "operationId": "association_create_association__post",
+        "operationId": "association_create_api_v1_associations__iri__post",
         "parameters": [
           {
             "name": "x-pyst-auth-token",
@@ -927,11 +1274,11 @@
           "ConceptAssociation"
         ],
         "summary": "Delete an `Association` object",
-        "operationId": "association_delete_association__delete",
+        "operationId": "association_delete_api_v1_associations__iri__delete",
         "parameters": [
           {
             "name": "iri",
-            "in": "query",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
@@ -969,13 +1316,13 @@
         }
       }
     },
-    "/made_of/": {
+    "/api/v1/made_ofs/": {
       "post": {
         "tags": [
           "Correspondence"
         ],
         "summary": "Add some `Correspondence` `madeOf` links",
-        "operationId": "made_of_add_made_of__post",
+        "operationId": "made_of_add_api_v1_made_ofs__post",
         "parameters": [
           {
             "name": "x-pyst-auth-token",
@@ -1029,7 +1376,7 @@
           "Correspondence"
         ],
         "summary": "Remove some `Correspondence` `madeOf` links",
-        "operationId": "made_of_remove_made_of__delete",
+        "operationId": "made_of_remove_api_v1_made_ofs__delete",
         "parameters": [
           {
             "name": "x-pyst-auth-token",
@@ -1065,132 +1412,6 @@
           },
           "404": {
             "description": "Resource not found"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/concept/search/": {
-      "get": {
-        "tags": [
-          "Concept"
-        ],
-        "summary": "Search for `Concept` objects",
-        "operationId": "concept_search_concept_search__get",
-        "parameters": [
-          {
-            "name": "query",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Query"
-            }
-          },
-          {
-            "name": "language",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Language"
-            }
-          },
-          {
-            "name": "semantic",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": true,
-              "title": "Semantic"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SearchResult"
-                  },
-                  "title": "Response Concept Search Concept Search  Get"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Search engine not available"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/concept/suggest/": {
-      "get": {
-        "tags": [
-          "Concept"
-        ],
-        "summary": "Suggestion search for `Concept` objects",
-        "operationId": "concept_suggest_concept_suggest__get",
-        "parameters": [
-          {
-            "name": "query",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Query"
-            }
-          },
-          {
-            "name": "language",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Language"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SearchResult"
-                  },
-                  "title": "Response Concept Suggest Concept Suggest  Get"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Search engine not available"
           },
           "422": {
             "description": "Validation Error",
@@ -1322,6 +1543,14 @@
           "http://rdf-vocabulary.ddialliance.org/xkos#targetConcept"
         ],
         "title": "Association"
+      },
+      "AssociationKind": {
+        "type": "string",
+        "enum": [
+          "simple",
+          "conditional"
+        ],
+        "title": "AssociationKind"
       },
       "Concept": {
         "properties": {
@@ -3214,7 +3443,6 @@
               "$ref": "#/components/schemas/MultilingualString"
             },
             "type": "array",
-            "maxItems": 1,
             "minItems": 1,
             "title": "Http://Www.W3.Org/1999/02/22-Rdf-Syntax-Ns#Value"
           },
@@ -3240,8 +3468,7 @@
         "required": [
           "http://www.w3.org/1999/02/22-rdf-syntax-ns#value",
           "http://purl.org/dc/terms/creator",
-          "http://purl.org/dc/terms/issued",
-          "http://www.w3.org/1999/02/22-rdf-syntax-ns#value"
+          "http://purl.org/dc/terms/issued"
         ],
         "title": "NonLiteralNote",
         "description": "Used for skos:changeNote, skos:historyNote, and skos:editorialNote.\n\nSKOS allows for string literals but we require an author and timestamp for each."
@@ -3529,6 +3756,24 @@
           "label"
         ],
         "title": "SearchResult"
+      },
+      "ServerStatus": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "search": {
+            "type": "boolean",
+            "title": "Search"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "search"
+        ],
+        "title": "ServerStatus"
       },
       "Status": {
         "properties": {
