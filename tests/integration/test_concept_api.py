@@ -35,7 +35,7 @@ async def test_get_concept_404(postgres, cn_db_engine, client):
 
 
 @pytest.mark.postgres
-async def test_get_concept_all(postgres, cn_db_engine, cn, client):
+async def test_get_concept_all_with_concept_scheme(postgres, cn_db_engine, cn, client):
     response = await client.get(
         get_full_api_path("concept_all"), params={"concept_scheme_iri": cn.scheme["@id"]}
     )
@@ -46,10 +46,61 @@ async def test_get_concept_all(postgres, cn_db_engine, cn, client):
         if key not in SKOS_RELATIONSHIP_PREDICATES
     }
     given = response.json()
+    assert isinstance(given, list)
+    assert len(given) == 2
     for key, value in expected.items():
         assert given[0][key] == value
 
     assert [obj["@id"] for obj in given] == sorted([cn.concept_top["@id"], cn.concept_mid["@id"]])
+
+
+@pytest.mark.postgres
+async def test_get_concept_all_with_concept_scheme_top_concepts(postgres, cn_db_engine, cn, client):
+    response = await client.get(
+        get_full_api_path("concept_all"),
+        params={"concept_scheme_iri": cn.scheme["@id"], "top_concepts_only": 1},
+    )
+    assert response.status_code == 200
+    given = response.json()
+    assert isinstance(given, list)
+    assert len(given) == 1
+    assert given[0]["@id"] == cn.concept_top["@id"]
+
+
+@pytest.mark.postgres
+async def test_get_concept_all(postgres, cn_db_engine, cn, client):
+    response = await client.get(get_full_api_path("concept_all"))
+    assert response.status_code == 200
+    given = response.json()
+    assert isinstance(given, list)
+    assert len(given) == 4
+    assert [obj["@id"] for obj in given] == sorted(
+        [
+            cn.concept_top["@id"],
+            cn.concept_mid["@id"],
+            cn.concept_2023_top["@id"],
+            cn.concept_2023_low["@id"],
+        ]
+    )
+
+
+@pytest.mark.postgres
+async def test_get_concept_all_top_concepts_without_concept_scheme(
+    postgres, cn_db_engine, cn, client
+):
+    response = await client.get(get_full_api_path("concept_all"), params={"top_concepts_only": 1})
+    assert response.status_code == 200
+    given = response.json()
+    assert isinstance(given, list)
+    assert len(given) == 4
+    assert [obj["@id"] for obj in given] == sorted(
+        [
+            cn.concept_top["@id"],
+            cn.concept_mid["@id"],
+            cn.concept_2023_top["@id"],
+            cn.concept_2023_low["@id"],
+        ]
+    )
 
 
 @pytest.mark.postgres

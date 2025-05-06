@@ -45,6 +45,25 @@ async def test_concept_get_not_found(cn, anonymous_client, monkeypatch):
     }
 
 
+async def test_concept_all_get(cn, anonymous_client, monkeypatch):
+    monkeypatch.setattr(
+        GraphService,
+        "concepts_get_all",
+        AsyncMock(return_value=[Concept.from_json_ld(cn.concept_top)]),
+    )
+
+    response = await anonymous_client.get(
+        get_full_api_path("concept_all"),
+        params={"concept_scheme_iri": cn.scheme["@id"], "top_concepts_only": 1},
+    )
+    assert response.status_code == 200
+
+    GraphService.concepts_get_all.assert_called_once()
+    GraphService.concepts_get_all.assert_called_with(
+        concept_scheme_iri=cn.scheme["@id"], top_concepts_only=True
+    )
+
+
 async def test_concept_create_unauthorized(anonymous_client):
     response = await anonymous_client.post(get_full_api_path("concept"), json={})
     assert response.status_code == 400
