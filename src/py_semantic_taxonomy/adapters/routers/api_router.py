@@ -10,6 +10,7 @@ from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
 from py_semantic_taxonomy.domain.constants import API_VERSION_PREFIX, APIPaths
+from py_semantic_taxonomy import __version__
 
 api_router = APIRouter(prefix=API_VERSION_PREFIX)
 
@@ -43,6 +44,23 @@ async def verify_auth_token(
 ):
     if x_pyst_auth_token != settings.auth_token:
         raise HTTPException(status_code=400, detail="X-PyST-Auth-Token header missing or invalid")
+
+# Status
+
+
+@api_router.get(
+    APIPaths.status,
+    summary="Get a status report for PyST server",
+    response_model=response.ServerStatus,
+    tags=["Status"],
+)
+async def server_status(
+    search=Depends(get_search_service),
+) -> response.ServerStatus:
+    return response.ServerStatus(
+        version=__version__,
+        search=bool(search.is_configured)
+    )
 
 
 # Search
