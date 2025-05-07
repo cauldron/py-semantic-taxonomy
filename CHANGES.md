@@ -1,5 +1,11 @@
 # `py-semantic-taxonomy` Changelog
 
+## [0.4.1] - 2025-05-07
+
+* [Fix #60: `Association` serialization is excluding `extra` attributes](https://github.com/cauldron/py-semantic-taxonomy/issues/60)
+* [Fix #61: `ConceptScheme` should have copyable IRI in sidebar](https://github.com/cauldron/py-semantic-taxonomy/issues/61)
+* [Fix #62: Missing dark mode elements: History notes](https://github.com/cauldron/py-semantic-taxonomy/issues/62)
+
 ## [0.4.0] - 2025-05-06
 
 * [#55: Indexed queries within JSONB elements](https://github.com/cauldron/py-semantic-taxonomy/pull/55)
