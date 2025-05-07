@@ -174,10 +174,10 @@ style="color: var(--text-color)">Current Concept</span>
         <!-- Notes -->
         {% if concept.editorial_notes or concept.change_notes or concept.history_notes %}
         <div class="card">
-            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color)">
+            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 <h2 class="text-lg font-medium" style="color: var(--text-color)">Notes</h2>
             </div>
-            <div class="px-4 py-5 sm:p-6 space-y-4">
+            <div class="px-4 py-5 sm:p-6 space-y-4" style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 {% if concept.editorial_notes %}
                 <div>
                     <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Editorial Notes</h3>
