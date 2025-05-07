@@ -99,6 +99,12 @@
                 <h2 class="text-lg font-medium" style="color: var(--text-color)">Scheme Information</h2>
             </div>
             <div class="px-4 py-5 sm:p-6 space-y-4" style="background-color: var(--nav-bg)">
+                <!-- IRI -->
+                <div>
+                    <h3 class="text-sm font-medium" style="color: var(--text-secondary)">IRI</h3>
+                    <p class="mt-1 text-sm" style="color: var(--text-color)" title="{{ concept_scheme.id_ }}" id="cs_iri_clicker">{{ concept_scheme.id_|short_iri }} <i class="fas fa-copy mr-2" id="cs_iri_clicker_icon"></i></p>
+                </div>
+
                 <!-- Description -->
                 <div>
                     <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Description</h3>
@@ -163,5 +169,10 @@
 document.getElementById('language').addEventListener('change', function(e) {
     window.location.href = e.target.value;
 });
+
+var iri_clicker = document.getElementById("cs_iri_clicker");
+iri_clicker.onclick = function(){
+    navigator.clipboard.writeText("{{ concept_scheme.id_ }}").then(this.querySelector('#cs_iri_clicker_icon').classList.replace("fa-copy", "fa-check"))
+};
 </script>
 {% endblock %}
