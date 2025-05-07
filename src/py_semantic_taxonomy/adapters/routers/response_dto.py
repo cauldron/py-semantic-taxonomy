@@ -254,3 +254,5 @@ class Association(BaseModel):
         description="https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences",
         example=[{"@id": "http://data.europa.eu/xsp/cn2024/010011000090"}],
     )
+
+    model_config = ConfigDict(extra="allow")

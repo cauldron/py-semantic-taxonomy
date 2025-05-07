@@ -108,5 +108,9 @@ def test_association_from_json_ld(cn):
 
 
 def test_association_to_json_ld(cn):
+    cn.association_top["foo"] = "bar"
+
+    assert Association.from_json_ld(cn.association_top).extra["foo"] == "bar"
     given = Association.from_json_ld(cn.association_top).to_json_ld()
+    assert given["foo"] == "bar"
     assert given == cn.association_top, "Conversion to JSON-LD failed"
