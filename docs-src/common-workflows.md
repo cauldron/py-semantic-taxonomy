@@ -21,6 +21,17 @@ Where:
 * `host` is the URL that `py-semantic-taxonomy` is running at, e.g. "http://localhost:8000" if running locally
 * `sample` is a boolean flag on whether only a sample of the available data should be imported. The full import takes more than an hour.
 
+If you are testing locally using the default Docker containers for Postgres and Typesense, then the `CombinedNomenclatureLoader` can take these values:
+
+```python
+CombinedNomenclatureLoader(
+    year=2024,
+    api_key="abc123",  # Default API key; adjust if needed
+    host="http://127.0.0.1:8000",  # Default Uvicorn port; adjust if needed
+    sample=True
+).write()
+```
+
 ## Creating a new taxonomy
 
 PyST stores concept schemes, concepts, and relationships between concepts all in different places, so the creation of these objects needs to happen in a defined order:

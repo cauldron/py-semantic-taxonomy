@@ -528,6 +528,14 @@
 <li><code>host</code> is the URL that <code>py-semantic-taxonomy</code> is running at, e.g. "http://localhost:8000" if running locally</li>
 <li><code>sample</code> is a boolean flag on whether only a sample of the available data should be imported. The full import takes more than an hour.</li>
 </ul>
+<p>If you are testing locally using the default Docker containers for Postgres and Typesense, then the <code>CombinedNomenclatureLoader</code> can take these values:</p>
+<div class="highlight"><pre><span></span><code><span class="n">CombinedNomenclatureLoader</span><span class="p">(</span>
+    <span class="n">year</span><span class="o">=</span><span class="mi">2024</span><span class="p">,</span>
+    <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;abc123&quot;</span><span class="p">,</span>  <span class="c1"># Default API key; adjust if needed</span>
+    <span class="n">host</span><span class="o">=</span><span class="s2">&quot;http://127.0.0.1:8000&quot;</span><span class="p">,</span>  <span class="c1"># Default Uvicorn port; adjust if needed</span>
+    <span class="n">sample</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+</code></pre></div>
 <h2 id="creating-a-new-taxonomy">Creating a new taxonomy<a class="headerlink" href="#creating-a-new-taxonomy" title="Permanent link">#</a></h2>
 <p>PyST stores concept schemes, concepts, and relationships between concepts all in different places, so the creation of these objects needs to happen in a defined order:</p>
 <ul>

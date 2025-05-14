@@ -4,6 +4,8 @@ PyST is opinionated server software for creating, maintaining, and publishing [S
 
 * [API docs](https://docs.pyst.dev/api/), [OpenAPI 3.1 JSON](https://docs.pyst.dev/api/openapi.json), [OpenAPI 3.1 YAML](https://docs.pyst.dev/api/openapi.yaml)
 * [GitHub repo](https://github.com/cauldron/py-semantic-taxonomy/)
+* [Client library](https://github.com/cauldron/pyst-client/)
+* [Client library usage guide](https://github.com/cauldron/pyst-client/blob/main/pyst_client/example/Simple%20client%20library%20guide.ipynb)
 * [Example notebook](https://github.com/cauldron/py-semantic-taxonomy/blob/main/examples/PyST%20basic%20demo.ipynb)
 
 PyST was built and is maintained by [Cauldron Solutions](https://www.cauldron.ch/).
@@ -15,6 +17,17 @@ PyST was built and is maintained by [Cauldron Solutions](https://www.cauldron.ch
 * Install and configure Postgres
 * Install and configure [Typesense](https://typesense.org/)
 * `pip install py-semantic-taxonomy`
+
+If you just want to try our the software, and have Docker installed on your machine, you can run Postgres and Typesense in containers using the scripts in the `scripts` directory, i.e.:
+
+* `python scripts/start_postgres_container.py`
+* `python scripts/start_typesense_container.py`
+
+These scripts will give you the values of the environment variables needed for step 2. Note that you will still need to make up your own `PyST_auth_token` setting and make sure it is set correctly, i.e.:
+
+```console
+export PyST_auth_token="supersecret"
+```
 
 2\. Configure required software
 
@@ -50,7 +63,15 @@ uvicorn.run(
 )
 ```
 
+If you are using the default ASGI app runner and configuration options, you can also do:
+
+```console
+python <pyst-source-directory>/src/py_semantic_taxonomy/app.py
+```
+
 4\. Add data
+
+See [common workflows](common-workflows.md) for a guide on adding example data.
 
 ## Why New Software?
 

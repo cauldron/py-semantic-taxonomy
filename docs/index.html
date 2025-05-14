@@ -477,6 +477,8 @@
 <ul>
 <li><a href="https://docs.pyst.dev/api/">API docs</a>, <a href="https://docs.pyst.dev/api/openapi.json">OpenAPI 3.1 JSON</a>, <a href="https://docs.pyst.dev/api/openapi.yaml">OpenAPI 3.1 YAML</a></li>
 <li><a href="https://github.com/cauldron/py-semantic-taxonomy/">GitHub repo</a></li>
+<li><a href="https://github.com/cauldron/pyst-client/">Client library</a></li>
+<li><a href="https://github.com/cauldron/pyst-client/blob/main/pyst_client/example/Simple%20client%20library%20guide.ipynb">Client library usage guide</a></li>
 <li><a href="https://github.com/cauldron/py-semantic-taxonomy/blob/main/examples/PyST%20basic%20demo.ipynb">Example notebook</a></li>
 </ul>
 <p>PyST was built and is maintained by <a href="https://www.cauldron.ch/">Cauldron Solutions</a>.</p>
@@ -487,6 +489,14 @@
 <li>Install and configure <a href="https://typesense.org/">Typesense</a></li>
 <li><code>pip install py-semantic-taxonomy</code></li>
 </ul>
+<p>If you just want to try our the software, and have Docker installed on your machine, you can run Postgres and Typesense in containers using the scripts in the <code>scripts</code> directory, i.e.:</p>
+<ul>
+<li><code>python scripts/start_postgres_container.py</code></li>
+<li><code>python scripts/start_typesense_container.py</code></li>
+</ul>
+<p>These scripts will give you the values of the environment variables needed for step 2. Note that you will still need to make up your own <code>PyST_auth_token</code> setting and make sure it is set correctly, i.e.:</p>
+<div class="highlight"><pre><span></span><code><span class="go">export PyST_auth_token=&quot;supersecret&quot;</span>
+</code></pre></div>
 <p>2. Configure required software</p>
 <p>The following parameters must be either specified as environment variables, or given in the file <code>pyst-config.env</code>.</p>
 <div class="admonition note">
@@ -516,7 +526,11 @@
     <span class="n">log_level</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
+<p>If you are using the default ASGI app runner and configuration options, you can also do:</p>
+<div class="highlight"><pre><span></span><code><span class="go">python &lt;pyst-source-directory&gt;/src/py_semantic_taxonomy/app.py</span>
+</code></pre></div>
 <p>4. Add data</p>
+<p>See <a href="common-workflows/">common workflows</a> for a guide on adding example data.</p>
 <h2 id="why-new-software">Why New Software?<a class="headerlink" href="#why-new-software" title="Permanent link">#</a></h2>
 <p>There are a number of great projects for browsing SKOS taxonomies already, including:</p>
 <ul>

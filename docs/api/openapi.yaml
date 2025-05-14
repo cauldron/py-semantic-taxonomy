@@ -985,6 +985,7 @@ components:
           description: https://rdf-vocabulary.ddialliance.org/xkos.html#correspondences
           example:
           - '@id': http://data.europa.eu/xsp/cn2024/010011000090
+      additionalProperties: true
       type: object
       required:
       - '@id'
