@@ -1,5 +1,9 @@
 # `py-semantic-taxonomy` Changelog
 
+## [0.4.2] - 2025-06-05
+
+* [Fix #63: `typesense` implementation assumes only one running instance of PyST](https://github.com/cauldron/py-semantic-taxonomy/issues/63)
+
 ## [0.4.1] - 2025-05-07
 
 * [Fix #60: `Association` serialization is excluding `extra` attributes](https://github.com/cauldron/py-semantic-taxonomy/issues/60)
