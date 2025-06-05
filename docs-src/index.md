@@ -46,7 +46,12 @@ The following parameters must be either specified as environment variables, or g
 * `PyST_typesense_url` : Typesense host URL
 * `PyST_typesense_api_key` : Typesense API key. Must have collection creation rights.
 * `PyST_typesense_embedding_model` : [Typesense embedding model](https://typesense.org/docs/28.0/api/vector-search.html#using-built-in-models) for semantic search. Default is "ts/all-MiniLM-L12-v2"
-* `PyST_languages` : List of language codes used in the search engine and web UI. Should be a JSON _string_, e.g. `'["en", "de"]'`. Default is `'["en", "de", "es", "fr", "pt", "it", "da"]'`
+* `PyST_typesense_prefix` : Optional prefix for Typesense [collection](https://typesense.org/docs/28.0/api/collections.html#create-a-collection) labels.
+* `PyST_languages` : List of language codes used in the search engine and web UI. Should be a JSON _string_, e.g. `'["en", "de"]'`. Default is `'["en", "de", "es", "fr", "pt", "it", "da"]'`.
+
+!!! Note
+
+    If you are deploying more than one PyST instance, you can set `PyST_typesense_prefix` to a different value for each instance. This will keep the search results for each instance separate. The `PyST_typesense_prefix` should only include letters and numbers, and should start with a letter.
 
 3\. Run the server
 

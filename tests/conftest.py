@@ -281,6 +281,44 @@ async def typesense(typesense_container, entities):
 
 
 @pytest.fixture
+async def typesense_container_with_prefix(monkeypatch, test_password: str = "123abc"):
+    container = DockerContainer("typesense/typesense:28.0")
+    container.with_exposed_ports(8108)
+    # Giving the API key in `with_command` in a pytest fixture doesn't work...
+    container.with_env("TYPESENSE_API_KEY", test_password)
+    container.with_command("--data-dir /home --enable-cors")
+    container.start()
+    wait_for_logs(container, "Peer refresh succeeded")
+
+    ip = container.get_container_host_ip()
+    port = container.get_exposed_port(8108)
+
+    check_response = httpx.get(f"http://{ip}:{port}/health")
+    if not check_response.status_code == 200:
+        raise OSError("Typesense container can't start")
+
+    monkeypatch.setenv("PyST_typesense_url", f"http://{ip}:{port}")
+    monkeypatch.setenv("PyST_typesense_api_key", test_password)
+    monkeypatch.setenv("PyST_languages", '["en", "de"]')
+    monkeypatch.setenv("PyST_typesense_prefix", "prefixtest")
+
+    yield
+
+    container.stop()
+
+
+@pytest.fixture
+async def typesense_with_prefix(typesense_container_with_prefix, entities):
+    from py_semantic_taxonomy.dependencies import get_search_service
+
+    ts = get_search_service()
+    await ts.initialize()
+
+    for i in [0, 1, 5, 6]:
+        await ts.create_concept(entities[i])
+
+
+@pytest.fixture
 async def client() -> TestClient:
     from httpx import ASGITransport, AsyncClient
 

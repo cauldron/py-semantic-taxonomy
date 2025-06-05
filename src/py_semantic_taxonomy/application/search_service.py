@@ -14,14 +14,19 @@ from py_semantic_taxonomy.domain.ports import SearchEngine
 logger = structlog.get_logger("py-semantic-taxonomy")
 
 
-def c(language: str) -> str:
-    return f"pyst-concepts-{language}"
+def c(language: str, prefix: str = "") -> str:
+    if prefix:
+        return f"{prefix}-pyst-concepts-{language}"
+    else:
+        return f"pyst-concepts-{language}"
 
 
 class SearchService:
     def __init__(self, engine: SearchEngine | None = None):
         self.settings = get_settings()
-        self.languages = {lang: c(lang) for lang in self.settings.languages}
+        self.languages = {
+            lang: c(lang, self.settings.typesense_prefix) for lang in self.settings.languages
+        }
 
         if self.settings.typesense_url == "missing" or not self.settings.typesense_url:
             self.configured = False

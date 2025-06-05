@@ -51,3 +51,10 @@ async def test_search_engine(typesense, entities):
 
     results = await engine.search("diesel", "pyst-concepts-en", True, False)
     assert not results
+
+
+@pytest.mark.typesense
+async def test_search_engine_collection_prefix(typesense_with_prefix, entities):
+    engine = get_search_engine()
+    collections = await engine._collection_labels()
+    assert collections == ["prefixtest-pyst-concepts-de", "prefixtest-pyst-concepts-en"]

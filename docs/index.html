@@ -513,8 +513,13 @@
 <li><code>PyST_typesense_url</code> : Typesense host URL</li>
 <li><code>PyST_typesense_api_key</code> : Typesense API key. Must have collection creation rights.</li>
 <li><code>PyST_typesense_embedding_model</code> : <a href="https://typesense.org/docs/28.0/api/vector-search.html#using-built-in-models">Typesense embedding model</a> for semantic search. Default is "ts/all-MiniLM-L12-v2"</li>
-<li><code>PyST_languages</code> : List of language codes used in the search engine and web UI. Should be a JSON <em>string</em>, e.g. <code>'["en", "de"]'</code>. Default is <code>'["en", "de", "es", "fr", "pt", "it", "da"]'</code></li>
+<li><code>PyST_typesense_prefix</code> : Optional prefix for Typesense <a href="https://typesense.org/docs/28.0/api/collections.html#create-a-collection">collection</a> labels.</li>
+<li><code>PyST_languages</code> : List of language codes used in the search engine and web UI. Should be a JSON <em>string</em>, e.g. <code>'["en", "de"]'</code>. Default is <code>'["en", "de", "es", "fr", "pt", "it", "da"]'</code>.</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you are deploying more than one PyST instance, you can set <code>PyST_typesense_prefix</code> to a different value for each instance. This will keep the search results for each instance separate. The <code>PyST_typesense_prefix</code> should only include letters and numbers, and should start with a letter.</p>
+</div>
 <p>3. Run the server</p>
 <p>PyST is a <a href="https://fastapi.tiangolo.com/">FastAPI app</a>; it can be run <a href="https://fastapi.tiangolo.com/deployment/manually/">as any python ASGI app</a>, e.g. with <code>uvicorn</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">uvicorn</span>

@@ -9,10 +9,6 @@ from py_semantic_taxonomy.domain.entities import SearchResult
 logger = structlog.get_logger("py-semantic-taxonomy")
 
 
-def c(language: str) -> str:
-    return f"pyst-concepts-{language}"
-
-
 class TypesenseSearchEngine:
     def __init__(self, url: str, api_key: str, embedding_model: str):
         url = urlparse(url)
