@@ -1,5 +1,13 @@
 # `py-semantic-taxonomy` Changelog
 
+## [0.4.4] - 2025-06-07
+
+* Fix packaging to include SQL queries
+
+## [0.4.3] - 2025-06-07
+
+* Fix packaging to include web media
+
 ## [0.4.2] - 2025-06-05
 
 * [Fix #63: `typesense` implementation assumes only one running instance of PyST](https://github.com/cauldron/py-semantic-taxonomy/issues/63)

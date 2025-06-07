@@ -1,0 +1,5 @@
+include LICENSE
+include *.md
+recursive-include src/py_semantic_taxonomy/adapters/routers/static *
+recursive-include src/py_semantic_taxonomy/adapters/routers/templates *
+recursive-include src/py_semantic_taxonomy/adapters/persistence/sql *
