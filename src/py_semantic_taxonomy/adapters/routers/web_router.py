@@ -357,18 +357,32 @@ async def web_search(
     language: str = "en",
     semantic: bool = True,
     search_service=Depends(get_search_service),
+    settings=Depends(get_settings),
 ) -> HTMLResponse:
     """Search for concepts."""
     try:
         results = []
         if query:
             results = await search_service.search(query=query, language=language, semantic=semantic)
+
+        languages = [(request.url, Language.get(language).display_name(language).title())] + [
+            (
+                str(request.url_for("web_search"))
+                + "?"
+                + urlencode({"query": query, "language": code, "semantic": semantic}),
+                label,
+            )
+            for code, label in format_languages(settings.languages)
+            if code != language
+        ]
+
         return templates.TemplateResponse(
             "search.html",
             {
                 "request": request,
                 "query": query,
                 "language": language,
+                "language_selector": languages,
                 "semantic": semantic,
                 "results": results,
                 "suggest_api_url": get_full_api_path("suggest"),

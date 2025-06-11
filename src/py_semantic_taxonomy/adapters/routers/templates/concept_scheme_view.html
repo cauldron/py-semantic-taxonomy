@@ -166,10 +166,6 @@
 </div>
 
 <script>
-document.getElementById('language').addEventListener('change', function(e) {
-    window.location.href = e.target.value;
-});
-
 var iri_clicker = document.getElementById("cs_iri_clicker");
 iri_clicker.onclick = function(){
     navigator.clipboard.writeText("{{ concept_scheme.id_ }}").then(this.querySelector('#cs_iri_clicker_icon').classList.replace("fa-copy", "fa-check"))
