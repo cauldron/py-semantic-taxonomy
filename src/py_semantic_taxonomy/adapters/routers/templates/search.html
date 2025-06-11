@@ -91,17 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchConceptDetails(iri, element.id);
     });
 
-    // Handle escape key to clear search
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            const searchInput = document.querySelector('input[name="query"]');
-            if (searchInput) {
-                searchInput.value = '';
-                searchInput.focus();
-            }
-        }
-    });
-
     // Fetch concept details
     async function fetchConceptDetails(iri, elementId) {
         try {

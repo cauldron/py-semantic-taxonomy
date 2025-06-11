@@ -28,13 +28,14 @@
                                 placeholder="Search concepts..."
                                 class="w-full px-4 py-2 pl-10 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                                 autocomplete="off"
+                                value="{{ query }}"
                             />
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fas fa-search text-gray-400"></i>
                             </div>
                             <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
                                 <kbd class="hidden md:inline-flex items-center px-2 py-1.5 text-xs font-semibold border rounded shadow-sm" style="color: var(--text-secondary); background-color: var(--nav-bg); border-color: var(--border-color)">
-                                    <span id="shortcut-key">Ctrl</span><span class="mx-0.5">+</span>K
+                                    <span id="shortcut-key">Esc</span>
                                 </kbd>
                             </div>
                             <input type="hidden" name="semantic" value="true" />
@@ -95,128 +96,118 @@
         </div>
     </footer>
    <script>
+        // Theme handling
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = themeToggle.querySelector('i');
+
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+
+        function updateThemeIcon(theme) {
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        // Prevent clicks on disabled links
+        document.querySelectorAll('a[aria-disabled="true"]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        // Search functionality
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('language').addEventListener('change', function(e) {
                 window.location.href = e.target.value;
             });
 
-            // Theme handling
-            const themeToggle = document.getElementById('theme-toggle');
-            const themeIcon = themeToggle.querySelector('i');
+            const searchInput = document.querySelector('input[name="query"]');
+            const suggestionsDiv = document.getElementById('suggestions');
+            let debounceTimer;
 
-            // Check for saved theme preference
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            updateThemeIcon(savedTheme);
-
-            themeToggle.addEventListener('click', () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-                updateThemeIcon(newTheme);
-            });
-
-            function updateThemeIcon(theme) {
-                themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-            }
-
-            // Prevent clicks on disabled links
-            document.querySelectorAll('a[aria-disabled="true"]').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                });
-            });
-
-            // Detect OS and update shortcut key
-            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-            if (isMac) {
-                document.getElementById('shortcut-key').textContent = '⌘';
-            } else {
-                document.getElementById('shortcut-key').textContent = 'Ctrl';
-            }
-
-            // Search functionality
-            document.addEventListener('DOMContentLoaded', function() {
-                const searchInput = document.querySelector('input[name="query"]');
-                const suggestionsDiv = document.getElementById('suggestions');
-                let debounceTimer;
-
-                // Handle keyboard shortcut
-                document.addEventListener('keydown', function(e) {
-                    // Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                        e.preventDefault();
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (searchInput) {
                         searchInput.focus();
-                    }
-                });
-
-                // Debounce function
-                function debounce(func, delay) {
-                    return function() {
-                        const context = this;
-                        const args = arguments;
-                        clearTimeout(debounceTimer);
-                        debounceTimer = setTimeout(() => func.apply(context, args), delay);
-                    };
-                }
-
-                // Fetch suggestions
-                async function fetchSuggestions(query) {
-                    if (!query) {
-                        suggestionsDiv.classList.add('hidden');
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch(`{{ suggest_api_url }}?query=${encodeURIComponent(query)}&language={{ language }}`);
-                        const suggestions = await response.json();
-
-                        if (suggestions.length > 0) {
-                            const limitedSuggestions = suggestions.slice(0, 5);
-                            const hasMore = suggestions.length > 5;
-
-                            suggestionsDiv.innerHTML = `
-                                ${limitedSuggestions.map(suggestion => `
-                                    <div class="p-2 cursor-pointer transition-colors duration-150 hover-row" onclick="selectSuggestion('${suggestion.label}')" style="color: var(--text-color)">
-                                        ${suggestion.label}
-                                    </div>
-                                `).join('')}
-                                ${hasMore ? `
-                                    <div class="p-2 text-sm text-center border-t" style="color: var(--text-secondary); border-color: var(--border-color)">
-                                        +${suggestions.length - 5} more results
-                                    </div>
-                                ` : ''}
-                            `;
-                            suggestionsDiv.classList.remove('hidden');
-                        } else {
-                            suggestionsDiv.classList.add('hidden');
-                        }
-                    } catch (error) {
-                        console.error('Error fetching suggestions:', error);
-                        suggestionsDiv.classList.add('hidden');
+                        searchInput.select();
                     }
                 }
+            });
 
-                // Handle input with debounce
-                searchInput.addEventListener('input', debounce(function(e) {
-                    fetchSuggestions(e.target.value);
-                }, 300));
-
-                // Handle suggestion selection
-                window.selectSuggestion = function(suggestion) {
-                    searchInput.value = suggestion;
-                    suggestionsDiv.classList.add('hidden');
-                    document.getElementById('searchForm').submit();
+            // Debounce function
+            function debounce(func, delay) {
+                return function() {
+                    const context = this;
+                    const args = arguments;
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => func.apply(context, args), delay);
                 };
+            }
 
-                // Close suggestions when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+            // Fetch suggestions
+            async function fetchSuggestions(query) {
+                if (!query) {
+                    suggestionsDiv.classList.add('hidden');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`{{ suggest_api_url }}?query=${encodeURIComponent(query)}&language={{ language }}`);
+                    const suggestions = await response.json();
+
+                    if (suggestions.length > 0) {
+                        const limitedSuggestions = suggestions.slice(0, 5);
+                        const hasMore = suggestions.length > 5;
+
+                        suggestionsDiv.innerHTML = `
+                            ${limitedSuggestions.map(suggestion => `
+                                <div class="p-2 cursor-pointer transition-colors duration-150 hover-row" onclick="selectSuggestion('${suggestion.label}')" style="color: var(--text-color)">
+                                    ${suggestion.label}
+                                </div>
+                            `).join('')}
+                            ${hasMore ? `
+                                <div class="p-2 text-sm text-center border-t" style="color: var(--text-secondary); border-color: var(--border-color)">
+                                    +${suggestions.length - 5} more results
+                                </div>
+                            ` : ''}
+                        `;
+                        suggestionsDiv.classList.remove('hidden');
+                    } else {
                         suggestionsDiv.classList.add('hidden');
                     }
-                });
+                } catch (error) {
+                    console.error('Error fetching suggestions:', error);
+                    suggestionsDiv.classList.add('hidden');
+                }
+            }
+
+            // Handle input with debounce
+            searchInput.addEventListener('input', debounce(function(e) {
+                fetchSuggestions(e.target.value);
+            }, 300));
+
+            // Handle suggestion selection
+            window.selectSuggestion = function(suggestion) {
+                searchInput.value = suggestion;
+                suggestionsDiv.classList.add('hidden');
+                document.getElementById('searchForm').submit();
+            };
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                    suggestionsDiv.classList.add('hidden');
+                }
             });
         });
     </script>
