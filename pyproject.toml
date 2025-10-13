@@ -87,6 +87,10 @@ dev = [
 include-package-data = true
 package-dir = {"" = "src"}
 
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["py_semantic_taxonomy*"]
+
 [tool.setuptools.dynamic]
 version = {attr = "py_semantic_taxonomy.__version__"}
 
