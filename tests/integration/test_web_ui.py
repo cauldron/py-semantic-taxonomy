@@ -85,3 +85,106 @@ async def test_web_search_empty_query(sqlite, anonymous_client):
 
     html_content = response.text
     assert "Start searching" in html_content or "Search" in html_content
+
+
+@pytest.mark.postgres
+async def test_web_search_with_concept_iri_redirects_to_concept(
+    postgres, anonymous_client, cn_db_engine, cn
+):
+    """Test that searching for a concept IRI redirects directly to the concept page."""
+    concept_iri = cn.concept_top["@id"]
+
+    response = await anonymous_client.get(
+        "/web/search/",
+        params={"query": concept_iri, "language": "de"},
+        follow_redirects=False,
+    )
+
+    # Should redirect with 303 See Other
+    assert response.status_code == 303
+
+    # Should redirect to the concept view page with language preserved
+    redirect_url = response.headers["location"]
+    assert "/web/concept/" in redirect_url
+    assert quote(concept_iri) in redirect_url
+    assert "language=de" in redirect_url
+
+
+@pytest.mark.postgres
+async def test_web_search_with_concept_scheme_iri_redirects(
+    postgres, anonymous_client, cn_db_engine, cn
+):
+    """Test that searching for a concept scheme IRI redirects to the concept scheme page."""
+    scheme_iri = cn.scheme["@id"]
+
+    response = await anonymous_client.get(
+        "/web/search/",
+        params={"query": scheme_iri, "language": "en"},
+        follow_redirects=False,
+    )
+
+    # Should redirect with 303 See Other
+    assert response.status_code == 303
+
+    # Should redirect to the concept scheme view page
+    redirect_url = response.headers["location"]
+    assert "/web/concept_scheme/" in redirect_url
+    assert quote(scheme_iri) in redirect_url
+    assert "language=en" in redirect_url
+
+
+@pytest.mark.postgres
+async def test_web_search_with_nonexistent_iri_shows_search_page(
+    postgres, anonymous_client, cn_db_engine
+):
+    """Test that searching for an IRI that doesn't exist falls back to search (or error if not configured)."""
+    nonexistent_iri = "http://example.com/nonexistent/concept/12345"
+
+    response = await anonymous_client.get(
+        "/web/search/",
+        params={"query": nonexistent_iri, "language": "en"},
+        follow_redirects=True,
+    )
+
+    # Should show search page (200) if search engine configured
+    # or error (503) if search engine not configured
+    # Important: should NOT redirect (303) since concept doesn't exist
+    assert response.status_code in (200, 503)
+    if response.status_code == 503:
+        assert "Search engine not available" in response.text or "503" in response.text
+
+
+@pytest.mark.postgres
+@pytest.mark.typesense
+async def test_web_search_with_nonexistent_iri_falls_back_to_search(
+    postgres, typesense, anonymous_client, cn_db_engine, cn
+):
+    """Test that searching for an IRI that doesn't exist falls back to text search."""
+    nonexistent_iri = "http://example.com/nonexistent/concept/12345"
+
+    response = await anonymous_client.get(
+        "/web/search/",
+        params={"query": nonexistent_iri, "language": "en"},
+        follow_redirects=True,
+    )
+
+    # Should show search page (no redirect) since concept doesn't exist
+    assert response.status_code == 200
+    # Should show the search interface (may or may not have results from text search)
+    assert "Search" in response.text or "search" in response.text
+
+
+async def test_web_search_with_regular_text_not_treated_as_iri(anonymous_client):
+    """Test that regular search text is not treated as an IRI (no database required)."""
+    response = await anonymous_client.get(
+        "/web/search/",
+        params={"query": "test query", "language": "en"},
+        follow_redirects=True,
+    )
+
+    # Should get error because search engine not configured (503)
+    # or show search page if engine is configured (200)
+    # The important thing is it doesn't try to treat it as an IRI and redirect
+    assert response.status_code in (200, 503)
+    if response.status_code == 503:
+        assert "Search engine not available" in response.text or "503" in response.text

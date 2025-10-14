@@ -2,6 +2,7 @@ from enum import StrEnum
 from pathlib import Path as PathLib
 from urllib.parse import quote, unquote, urlencode
 
+import rfc3987
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -20,6 +21,15 @@ from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 logger = structlog.get_logger("py-semantic-taxonomy")
 
 router = APIRouter(prefix="/web", include_in_schema=False)
+
+
+def _is_iri(query: str) -> bool:
+    """Check if query string is a valid HTTP/HTTPS IRI."""
+    try:
+        parsed = rfc3987.parse(query.strip(), rule="IRI")
+        return parsed.get("scheme") in ("http", "https")
+    except ValueError:
+        return False
 
 
 def value_for_language(value: list[dict[str, str]], lang: str) -> str:
@@ -90,7 +100,9 @@ async def redirect_blank_web_page(
     return RedirectResponse(request.url_for("web_concept_schemes"))
 
 
-def concept_scheme_view_url(request: Request, concept_scheme_iri: str, language: str) -> str:
+def concept_scheme_view_url(
+    request: Request, concept_scheme_iri: str, language: str
+) -> str:
     params = {"language": language}
     return (
         str(request.url_for("web_concept_scheme_view", iri=quote(concept_scheme_iri)))
@@ -121,8 +133,13 @@ async def web_concept_schemes(
     for scheme in concept_schemes:
         scheme.url = concept_scheme_view_url(request, scheme.id_, language)
 
-    languages = [(request.url, Language.get(language).display_name(language).title())] + [
-        (str(request.url_for("web_concept_schemes")) + "?language=" + quote(code), label)
+    languages = [
+        (request.url, Language.get(language).display_name(language).title())
+    ] + [
+        (
+            str(request.url_for("web_concept_schemes")) + "?language=" + quote(code),
+            label,
+        )
         for code, label in format_languages(settings.languages)
         if code != language
     ]
@@ -164,9 +181,13 @@ async def web_concept_scheme_view(
             concept_scheme_iri=decoded_iri, top_concepts_only=True
         )
         for concept in concepts:
-            concept.url = concept_view_url(request, concept.id_, concept_scheme.id_, language)
+            concept.url = concept_view_url(
+                request, concept.id_, concept_scheme.id_, language
+            )
 
-        languages = [(request.url, Language.get(language).display_name(language).title())] + [
+        languages = [
+            (request.url, Language.get(language).display_name(language).title())
+        ] + [
             (
                 str(request.url_for("web_concept_scheme_view", iri=iri))
                 + "?language="
@@ -189,10 +210,16 @@ async def web_concept_scheme_view(
             },
         )
     except de.ConceptSchemeNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Concept Scheme with IRI `{iri}` not found")
+        raise HTTPException(
+            status_code=404, detail=f"Concept Scheme with IRI `{iri}` not found"
+        )
     except de.ConceptSchemesNotInDatabase as e:
-        logger.error("Database error while fetching concept scheme", iri=iri, error=str(e))
-        raise HTTPException(status_code=500, detail="Database error while fetching concept scheme")
+        logger.error(
+            "Database error while fetching concept scheme", iri=iri, error=str(e)
+        )
+        raise HTTPException(
+            status_code=500, detail="Database error while fetching concept scheme"
+        )
 
 
 def concept_view_url(
@@ -200,7 +227,9 @@ def concept_view_url(
 ) -> str:
     params = {"concept_scheme": concept_scheme_iri, "language": language}
     return (
-        str(request.url_for("web_concept_view", iri=quote(concept_iri))) + "?" + urlencode(params)
+        str(request.url_for("web_concept_view", iri=quote(concept_iri)))
+        + "?"
+        + urlencode(params)
     )
 
 
@@ -233,7 +262,10 @@ async def web_concept_view(
         if not language:
             return RedirectResponse(
                 concept_view_url(
-                    request, concept.id_, concept.schemes[0]["@id"], settings.languages[0]
+                    request,
+                    concept.id_,
+                    concept.schemes[0]["@id"],
+                    settings.languages[0],
                 )
             )
         concept = concept.filter_language(language)
@@ -245,7 +277,10 @@ async def web_concept_view(
                 concept_iri=concept.id_, concept_scheme_iri=scheme.id_
             )
         )[::-1]
-        hierarchy = [(concept_view_url(request, c.id_, scheme.id_, language), c) for c in hierarchy]
+        hierarchy = [
+            (concept_view_url(request, c.id_, scheme.id_, language), c)
+            for c in hierarchy
+        ]
 
         async def get_concept_and_link(iri: str) -> (str, de.Concept | str):
             try:
@@ -264,7 +299,9 @@ async def web_concept_view(
             except de.ConceptNotFoundError:
                 return iri, iri
 
-        relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
+        relationships = await service.relationships_get(
+            iri=decoded_iri, source=True, target=True
+        )
         broader = [
             (await get_concept_and_link(obj.target))
             for obj in relationships
@@ -277,7 +314,8 @@ async def web_concept_view(
         ]
 
         scheme_list = [
-            (request.url_for("web_concept_view", iri=quote(s["@id"])), s) for s in concept.schemes
+            (request.url_for("web_concept_view", iri=quote(s["@id"])), s)
+            for s in concept.schemes
         ]
 
         associations = await service.association_get_all(source_concept_iri=concept.id_)
@@ -286,29 +324,27 @@ async def web_concept_view(
             for target in obj.target_concepts:
                 try:
                     url, assoc_concept = await get_concept_and_link(target["@id"])
-                    formatted_associations.append(
-                        {
-                            "url": url,
-                            "obj": assoc_concept,
-                            "conditional": None,
-                            "conversion": target.get(
-                                "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
-                            ),
-                        }
-                    )
+                    formatted_associations.append({
+                        "url": url,
+                        "obj": assoc_concept,
+                        "conditional": None,
+                        "conversion": target.get(
+                            "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
+                        ),
+                    })
                 except de.ConceptNotFoundError:
-                    formatted_associations.append(
-                        {
-                            "url": target["@id"],
-                            "obj": target["@id"],
-                            "conditional": None,
-                            "conversion": target.get(
-                                "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
-                            ),
-                        }
-                    )
+                    formatted_associations.append({
+                        "url": target["@id"],
+                        "obj": target["@id"],
+                        "conditional": None,
+                        "conversion": target.get(
+                            "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
+                        ),
+                    })
 
-        languages = [(request.url, Language.get(language).display_name(language).title())] + [
+        languages = [
+            (request.url, Language.get(language).display_name(language).title())
+        ] + [
             (
                 concept_view_url(
                     request,
@@ -341,10 +377,16 @@ async def web_concept_view(
             },
         )
     except de.ConceptNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Concept with IRI `{iri}` not found")
+        raise HTTPException(
+            status_code=404, detail=f"Concept with IRI `{iri}` not found"
+        )
     except de.ConceptSchemesNotInDatabase as e:
-        logger.error("Database error while fetching concept", iri=decoded_iri, error=str(e))
-        raise HTTPException(status_code=500, detail="Database error while fetching concept")
+        logger.error(
+            "Database error while fetching concept", iri=decoded_iri, error=str(e)
+        )
+        raise HTTPException(
+            status_code=500, detail="Database error while fetching concept"
+        )
 
 
 @router.get(
@@ -357,15 +399,48 @@ async def web_search(
     language: str = "en",
     semantic: bool = True,
     search_service=Depends(get_search_service),
+    graph_service=Depends(get_graph_service),
     settings=Depends(get_settings),
 ) -> HTMLResponse:
     """Search for concepts."""
+    # Check if query is an IRI and attempt direct lookup
+    if query and _is_iri(query):
+        # Try to get concept directly
+        try:
+            concept = await graph_service.concept_get(iri=query)
+            # If found, redirect to concept page
+            return RedirectResponse(
+                url=concept_view_url(
+                    request,
+                    concept.id_,
+                    concept.schemes[0]["@id"],
+                    language,
+                ),
+                status_code=303,  # See Other
+            )
+        except de.ConceptNotFoundError:
+            # Not a concept, try concept scheme
+            try:
+                concept_scheme = await graph_service.concept_scheme_get(iri=query)
+                # If found, redirect to concept scheme page
+                return RedirectResponse(
+                    url=concept_scheme_view_url(request, concept_scheme.id_, language),
+                    status_code=303,  # See Other
+                )
+            except de.ConceptSchemeNotFoundError:
+                # IRI not found in database, fall through to regular search
+                pass
+
     try:
         results = []
         if query:
-            results = await search_service.search(query=query, language=language, semantic=semantic)
+            results = await search_service.search(
+                query=query, language=language, semantic=semantic
+            )
 
-        languages = [(request.url, Language.get(language).display_name(language).title())] + [
+        languages = [
+            (request.url, Language.get(language).display_name(language).title())
+        ] + [
             (
                 str(request.url_for("web_search"))
                 + "?"
