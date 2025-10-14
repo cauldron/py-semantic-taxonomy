@@ -119,11 +119,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         ${definition ? `
                             <div class="flex items-start">
                                 <i class="fas fa-info-circle mr-2 mt-0.5" style="color: var(--text-tertiary)"></i>
-                                <span class="text-xs" style="color: var(--text-secondary)">${definition}</span>
+                                <span class="text-xs mathjax-content" style="color: var(--text-secondary)">${definition}</span>
                             </div>
                         ` : ''}
                     </div>
                 `;
+                
+                // Render MathJax for dynamically loaded content
+                if (typeof MathJax !== 'undefined') {
+                    MathJax.typesetPromise([infoDiv.querySelector('.mathjax-content')]).catch(function (err) {
+                        console.log('MathJax rendering error:', err);
+                    });
+                }
             } else {
                 infoDiv.innerHTML = '<span class="text-red-500 text-xs">Failed to load concept details</span>';
             }

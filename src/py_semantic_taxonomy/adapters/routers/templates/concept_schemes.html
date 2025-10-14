@@ -50,7 +50,7 @@
                         </td>
                         <td class="px-6 py-4">
                             <a href="{{ scheme.url }}">
-                                <div class="text-sm line-clamp-2" style="color: var(--text-secondary)">
+                                <div class="text-sm line-clamp-2 mathjax-content" style="color: var(--text-secondary)">
                                     {% if scheme.definitions|lang(language) %}
                                         {{ scheme.definitions|lang(language)}}
                                     {% else %}
@@ -81,4 +81,15 @@
         </div>
     </div>
 </div>
+
+<script>
+// Render MathJax for definition content
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof MathJax !== 'undefined') {
+        MathJax.typesetPromise([document.querySelectorAll('.mathjax-content')]).catch(function (err) {
+            console.log('MathJax rendering error:', err);
+        });
+    }
+});
+</script>
 {% endblock %}

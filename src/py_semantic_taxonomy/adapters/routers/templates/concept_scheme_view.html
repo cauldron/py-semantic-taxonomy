@@ -60,7 +60,7 @@
                             </td>
                             <td class="px-6 py-4">
                                 <a href="{{ concept.url }}">
-                                    <div class="text-sm line-clamp-2" style="color: var(--text-secondary)">
+                                    <div class="text-sm line-clamp-2 mathjax-content" style="color: var(--text-secondary)">
                                         {% if concept.definitions|lang(language) %}
                                             {{ concept.definitions|lang(language)}}
                                         {% else %}
@@ -108,7 +108,7 @@
                 <!-- Description -->
                 <div>
                     <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Description</h3>
-                        <div class="mt-1 text-sm" style="color: var(--text-color)">
+                        <div class="mt-1 text-sm mathjax-content" style="color: var(--text-color)">
                             {% if concept_scheme.definitions|lang(language) %}
                                 {{ concept_scheme.definitions|lang(language)}}
                             {% else %}
@@ -170,5 +170,14 @@ var iri_clicker = document.getElementById("cs_iri_clicker");
 iri_clicker.onclick = function(){
     navigator.clipboard.writeText("{{ concept_scheme.id_ }}").then(this.querySelector('#cs_iri_clicker_icon').classList.replace("fa-copy", "fa-check"))
 };
+
+// Render MathJax for definition content
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof MathJax !== 'undefined') {
+        MathJax.typesetPromise([document.querySelectorAll('.mathjax-content')]).catch(function (err) {
+            console.log('MathJax rendering error:', err);
+        });
+    }
+});
 </script>
 {% endblock %}

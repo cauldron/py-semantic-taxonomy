@@ -26,7 +26,7 @@
                 <h2 class="text-lg font-medium" style="color: var(--text-color)">Definition</h2>
             </div>
             <div class="px-4 py-5 sm:p-6" style="background-color: var(--nav-bg)">
-                <div class="text-sm" style="color: var(--text-color)">
+                <div class="text-sm mathjax-content" style="color: var(--text-color)">
                     {% if concept.definitions|lang(language) %}
                     {{ concept.definitions|lang(language) }}
                     {% else %}
@@ -300,5 +300,14 @@ var iri_clicker = document.getElementById("concept_iri_clicker");
 iri_clicker.onclick = function(){
     navigator.clipboard.writeText("{{ concept.id_ }}").then(this.querySelector('#concept_iri_clicker_icon').classList.replace("fa-copy", "fa-check"))
 };
+
+// Render MathJax for definition content
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof MathJax !== 'undefined') {
+        MathJax.typesetPromise([document.querySelector('.mathjax-content')]).catch(function (err) {
+            console.log('MathJax rendering error:', err);
+        });
+    }
+});
 </script>
 {% endblock %}
