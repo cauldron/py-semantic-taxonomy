@@ -434,7 +434,7 @@ async def web_search(
                 "semantic": semantic,
                 "results": results,
                 "suggest_api_url": get_full_api_path("suggest"),
-                "concept_api_url": get_full_api_path("concept"),
+                "concept_api_base_url": get_full_api_path("concept_all"),
             },
         )
     except de.SearchNotConfigured:

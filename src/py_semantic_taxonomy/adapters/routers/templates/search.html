@@ -94,13 +94,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch concept details
     async function fetchConceptDetails(iri, elementId) {
         try {
-            const response = await fetch(`{{ concept_api_url }}?iri=${encodeURIComponent(iri)}`);
+            const url = `{{ concept_api_base_url }}${iri}`;
+            const response = await fetch(url);
             const concept = await response.json();
 
             const infoDiv = document.getElementById(elementId);
-            if (concept) {
+            if (concept && response.status === 200) {
                 const schemes = concept['http://www.w3.org/2004/02/skos/core#inScheme'] || [];
-                const definition = concept['http://www.w3.org/2004/02/skos/core#definition']?.find(d => d['@language'] === 'en')?.['@value'];
+                const definition = concept['http://www.w3.org/2004/02/skos/core#definition']?.find(d => d['@language'] === '{{ language }}')?.['@value'];
 
                 infoDiv.innerHTML = `
                     <div class="space-y-2">
@@ -109,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <i class="fas fa-layer-group mr-2" style="color: var(--text-tertiary)"></i>
                                 <div class="flex flex-wrap gap-1">
                                     ${schemes.map(scheme => `
-                                        <a href="/web/concept_scheme/${scheme['@id']}" class="text-primary hover:text-primary-hover text-xs">
+                                        <a href="/web/concept_scheme/${scheme['@id']}?language={{ language }}" class="text-primary hover:text-primary-hover text-xs">
                                             ${scheme['@id'].split('/').pop()}
                                         </a>
                                     `).join(', ')}
@@ -127,9 +128,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Render MathJax for dynamically loaded content
                 if (typeof MathJax !== 'undefined') {
-                    MathJax.typesetPromise([infoDiv.querySelector('.mathjax-content')]).catch(function (err) {
-                        console.log('MathJax rendering error:', err);
-                    });
+                    const mathContent = infoDiv.querySelector('.mathjax-content');
+                    if (mathContent) {
+                        MathJax.typesetPromise([mathContent]).catch(function (err) {
+                            console.log('MathJax rendering error:', err);
+                        });
+                    }
                 }
             } else {
                 infoDiv.innerHTML = '<span class="text-red-500 text-xs">Failed to load concept details</span>';
