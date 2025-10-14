@@ -188,3 +188,4 @@ async def test_web_search_with_regular_text_not_treated_as_iri(anonymous_client)
     assert response.status_code in (200, 503)
     if response.status_code == 503:
         assert "Search engine not available" in response.text or "503" in response.text
+
