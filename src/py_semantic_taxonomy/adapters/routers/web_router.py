@@ -100,9 +100,7 @@ async def redirect_blank_web_page(
     return RedirectResponse(request.url_for("web_concept_schemes"))
 
 
-def concept_scheme_view_url(
-    request: Request, concept_scheme_iri: str, language: str
-) -> str:
+def concept_scheme_view_url(request: Request, concept_scheme_iri: str, language: str) -> str:
     params = {"language": language}
     return (
         str(request.url_for("web_concept_scheme_view", iri=quote(concept_scheme_iri)))
@@ -133,13 +131,8 @@ async def web_concept_schemes(
     for scheme in concept_schemes:
         scheme.url = concept_scheme_view_url(request, scheme.id_, language)
 
-    languages = [
-        (request.url, Language.get(language).display_name(language).title())
-    ] + [
-        (
-            str(request.url_for("web_concept_schemes")) + "?language=" + quote(code),
-            label,
-        )
+    languages = [(request.url, Language.get(language).display_name(language).title())] + [
+        (str(request.url_for("web_concept_schemes")) + "?language=" + quote(code), label)
         for code, label in format_languages(settings.languages)
         if code != language
     ]
@@ -181,13 +174,9 @@ async def web_concept_scheme_view(
             concept_scheme_iri=decoded_iri, top_concepts_only=True
         )
         for concept in concepts:
-            concept.url = concept_view_url(
-                request, concept.id_, concept_scheme.id_, language
-            )
+            concept.url = concept_view_url(request, concept.id_, concept_scheme.id_, language)
 
-        languages = [
-            (request.url, Language.get(language).display_name(language).title())
-        ] + [
+        languages = [(request.url, Language.get(language).display_name(language).title())] + [
             (
                 str(request.url_for("web_concept_scheme_view", iri=iri))
                 + "?language="
@@ -227,9 +216,7 @@ def concept_view_url(
 ) -> str:
     params = {"concept_scheme": concept_scheme_iri, "language": language}
     return (
-        str(request.url_for("web_concept_view", iri=quote(concept_iri)))
-        + "?"
-        + urlencode(params)
+        str(request.url_for("web_concept_view", iri=quote(concept_iri))) + "?" + urlencode(params)
     )
 
 
@@ -262,10 +249,7 @@ async def web_concept_view(
         if not language:
             return RedirectResponse(
                 concept_view_url(
-                    request,
-                    concept.id_,
-                    concept.schemes[0]["@id"],
-                    settings.languages[0],
+                    request, concept.id_, concept.schemes[0]["@id"], settings.languages[0]
                 )
             )
         concept = concept.filter_language(language)
@@ -277,10 +261,7 @@ async def web_concept_view(
                 concept_iri=concept.id_, concept_scheme_iri=scheme.id_
             )
         )[::-1]
-        hierarchy = [
-            (concept_view_url(request, c.id_, scheme.id_, language), c)
-            for c in hierarchy
-        ]
+        hierarchy = [(concept_view_url(request, c.id_, scheme.id_, language), c) for c in hierarchy]
 
         async def get_concept_and_link(iri: str) -> (str, de.Concept | str):
             try:
@@ -377,16 +358,12 @@ async def web_concept_view(
             },
         )
     except de.ConceptNotFoundError:
-        raise HTTPException(
-            status_code=404, detail=f"Concept with IRI `{iri}` not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Concept with IRI `{iri}` not found")
     except de.ConceptSchemesNotInDatabase as e:
         logger.error(
             "Database error while fetching concept", iri=decoded_iri, error=str(e)
         )
-        raise HTTPException(
-            status_code=500, detail="Database error while fetching concept"
-        )
+        raise HTTPException(status_code=500, detail="Database error while fetching concept")
 
 
 @router.get(
@@ -434,13 +411,9 @@ async def web_search(
     try:
         results = []
         if query:
-            results = await search_service.search(
-                query=query, language=language, semantic=semantic
-            )
+            results = await search_service.search(query=query, language=language, semantic=semantic)
 
-        languages = [
-            (request.url, Language.get(language).display_name(language).title())
-        ] + [
+        languages = [(request.url, Language.get(language).display_name(language).title())] + [
             (
                 str(request.url_for("web_search"))
                 + "?"
