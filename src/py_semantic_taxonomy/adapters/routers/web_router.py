@@ -53,6 +53,21 @@ def best_label(obj: de.SKOS | str, lang: str) -> str:
             return label_obj["@value"]
     return "(label unavailable)"
 
+def scheme_list(obj: de.SKOS | str, cutoff: int = 40) -> str:
+    """Return a comma-separated list of scheme IRIs (shortened)."""
+    if isinstance(obj, str):
+        return ""
+
+    schemes = []
+    for s in obj.schemes:
+        iri = s.get("@id", "")
+        if iri:
+            # reuse your existing short_iri logic
+            if len(iri) > cutoff:
+                iri = iri[:20] + "..." + iri[-20:]
+            schemes.append(iri)
+
+    return ", ".join(schemes)
 
 def short_iri(iri: str) -> str:
     if len(iri) < 45:
@@ -82,6 +97,7 @@ templates.env.filters["lang"] = value_for_language
 templates.env.filters["best_label"] = best_label
 templates.env.filters["best_short_label"] = best_short_label
 templates.env.filters["short_iri"] = short_iri
+templates.env.filters["scheme_list"] = scheme_list
 
 
 def format_languages(languages: list[str]) -> list[tuple[str, str]]:

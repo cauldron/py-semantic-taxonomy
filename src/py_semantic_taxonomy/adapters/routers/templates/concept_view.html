@@ -6,10 +6,15 @@
 <div class="flex justify-between items-center">
     <div>
         <h1>{{ concept.pref_labels|lang(language) }}</h1>
-        <p style="color: var(--text-secondary)"> Hierarchy >> <a href="{{ scheme_url }} " class="text-primary hover:text-primary-hover">{{ scheme|best_short_label(language) }}</a>{% for obj in hierarchy %} >> <a href="{{ obj.0 }}" class="text-primary hover:text-primary-hover">{{ obj.1|best_short_label(language) }}</a>{% endfor %}</p>
+        <p style="color: var(--text-secondary)"> Hierarchy >> <a href="{{ scheme_url }} "
+                class="text-primary hover:text-primary-hover">{{ scheme|best_short_label(language) }}</a>{% for obj in
+            hierarchy %} >> <a href="{{ obj.0 }}" class="text-primary hover:text-primary-hover">{{
+                obj.1|best_short_label(language) }}</a>{% endfor %}</p>
     </div>
     <div class="flex space-x-3">
-        <a href="/web/concept_schemes/" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+        <a href="/web/concept_schemes/"
+            class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium"
+            style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
             <i class="fas fa-arrow-left mr-2"></i>Back to Schemes
         </a>
     </div>
@@ -22,7 +27,8 @@
     <div class="lg:col-span-2 space-y-6">
         <!-- Definition -->
         <div class="card">
-            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+            <div class="px-4 py-5 sm:px-6 border-b"
+                style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 <h2 class="text-lg font-medium" style="color: var(--text-color)">Definition</h2>
             </div>
             <div class="px-4 py-5 sm:p-6" style="background-color: var(--nav-bg)">
@@ -39,7 +45,8 @@
         <!-- Relationships -->
         {% if broader_concepts or narrower_concepts %}
         <div class="card">
-            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+            <div class="px-4 py-5 sm:px-6 border-b"
+                style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 <h2 class="text-lg font-medium flex items-center" style="color: var(--text-color)">
                     <i class="fas fa-sitemap text-primary mr-2"></i>
                     Concept Hierarchy
@@ -53,31 +60,40 @@
                         <h3 class="text-sm font-medium mb-3 flex items-center" style="color: var(--text-secondary)">
                             <i class="fas fa-arrow-up mr-2" style="color: var(--text-color)"></i>
                             Broader Concepts
-                            <span class="ml-2 text-xs px-2 py-0.5 rounded-full" style="background-color: var(--nav-bg); color: var(--text-secondary)">{{ broader_concepts|length }}</span>
+                            <span class="ml-2 text-xs px-2 py-0.5 rounded-full"
+                                style="background-color: var(--nav-bg); color: var(--text-secondary)">{{
+                                broader_concepts|length }}</span>
                         </h3>
                         <div class="space-y-2">
                             {% for rel in broader_concepts %}
-                                <a href="{{ rel.0 }}" class="block group">
-                                    <div class="bg-white border rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative" style="border-color: var(--border-color); background-color: var(--nav-bg)">
-                                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg"></div>
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex-1">
-                                                <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">{{ rel.1|best_label(language)}}
-                                                </div>
-                                                {% if rel.1.notations %}
-                                                <div class="text-xs mt-1 flex items-center" style="color: var(--text-secondary)">
-                                                    <i class="fas fa-hashtag mr-1" style="color: var(--text-tertiary)"></i>
-                                                    {{ rel.1.notations[0]['@value'] }}
-                                                </div>
-                                                {% endif %}
+                            <a href="{{ rel.0 }}" class="block group">
+                                <div class="bg-white border rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative"
+                                    style="border-color: var(--border-color); background-color: var(--nav-bg)">
+                                    <div
+                                        class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg">
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex-1">
+                                            <div class="font-medium group-hover:text-primary transition-colors duration-150"
+                                                style="color: var(--text-color)">{{ rel.1|best_label(language)}}
                                             </div>
-                                            <div class="flex items-center space-x-2">
-                                                <span class="text-xs group-hover:text-primary" style="color: var(--text-tertiary)">View details</span>
-                                                <i class="fas fa-chevron-right group-hover:text-primary transition-colors duration-150" style="color: var(--text-tertiary)"></i>
+                                            {% if rel.1.notations %}
+                                            <div class="text-xs mt-1 flex items-center"
+                                                style="color: var(--text-secondary)">
+                                                <i class="fas fa-hashtag mr-1" style="color: var(--text-tertiary)"></i>
+                                                {{ rel.1.notations[0]['@value'] }}
                                             </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs group-hover:text-primary"
+                                                style="color: var(--text-tertiary)">View details</span>
+                                            <i class="fas fa-chevron-right group-hover:text-primary transition-colors duration-150"
+                                                style="color: var(--text-tertiary)"></i>
                                         </div>
                                     </div>
-                                </a>
+                                </div>
+                            </a>
                             {% endfor %}
                         </div>
                     </div>
@@ -89,11 +105,12 @@
                             <div class="w-full border-t" style="border-color: var(--border-color)"></div>
                         </div>
                         <div class="relative flex justify-center">
-                            <div class="px-4 py-2 bg-white rounded-lg border shadow-sm" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+                            <div class="px-4 py-2 bg-white rounded-lg border shadow-sm"
+                                style="border-color: var(--border-color); background-color: var(--nav-bg)">
                                 <div class="flex items-center space-x-2">
                                     <i class="fas fa-circle text-primary text-xs"></i>
-                                    <span class="text-sm font-medium"
-style="color: var(--text-color)">Current Concept</span>
+                                    <span class="text-sm font-medium" style="color: var(--text-color)">Current
+                                        Concept</span>
                                 </div>
                             </div>
                         </div>
@@ -105,31 +122,40 @@ style="color: var(--text-color)">Current Concept</span>
                         <h3 class="text-sm font-medium mb-3 flex items-center" style="color: var(--text-secondary)">
                             <i class="fas fa-arrow-down mr-2" style="color: var(--text-tertiary)"></i>
                             Narrower Concepts
-                            <span class="ml-2 text-xs px-2 py-0.5 rounded-full" style="color: var(--text-secondary); background-color: var(--nav-bg)">{{ narrower_concepts|length }}</span>
+                            <span class="ml-2 text-xs px-2 py-0.5 rounded-full"
+                                style="color: var(--text-secondary); background-color: var(--nav-bg)">{{
+                                narrower_concepts|length }}</span>
                         </h3>
                         <div class="space-y-2">
                             {% for rel in narrower_concepts %}
-                                <a href="{{ rel.0 }}" class="block group">
-                                    <div class="bg-white border rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative" style="border-color: var(--border-color); background-color: var(--nav-bg)">
-                                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg"></div>
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex-1">
-                                                <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">{{ rel.1|best_label(language) }}
-                                                </div>
-                                                {% if rel.1.notations %}
-                                                <div class="text-xs mt-1 flex items-center" style="color: var(--text-secondary)">
-                                                    <i class="fas fa-hashtag mr-1" style="color: var(--text-tertiary)"></i>
-                                                    {{ rel.1.notations[0]['@value'] }}
-                                                </div>
-                                                {% endif %}
+                            <a href="{{ rel.0 }}" class="block group">
+                                <div class="bg-white border rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative"
+                                    style="border-color: var(--border-color); background-color: var(--nav-bg)">
+                                    <div
+                                        class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg">
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex-1">
+                                            <div class="font-medium group-hover:text-primary transition-colors duration-150"
+                                                style="color: var(--text-color)">{{ rel.1|best_label(language) }}
                                             </div>
-                                            <div class="flex items-center space-x-2">
-                                                <span class="text-xs group-hover:text-primary" style="color: var(--text-tertiary)">View details</span>
-                                                <i class="fas fa-chevron-right group-hover:text-primary transition-colors duration-150" style="color: var(--text-tertiary)"></i>
+                                            {% if rel.1.notations %}
+                                            <div class="text-xs mt-1 flex items-center"
+                                                style="color: var(--text-secondary)">
+                                                <i class="fas fa-hashtag mr-1" style="color: var(--text-tertiary)"></i>
+                                                {{ rel.1.notations[0]['@value'] }}
                                             </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs group-hover:text-primary"
+                                                style="color: var(--text-tertiary)">View details</span>
+                                            <i class="fas fa-chevron-right group-hover:text-primary transition-colors duration-150"
+                                                style="color: var(--text-tertiary)"></i>
                                         </div>
                                     </div>
-                                </a>
+                                </div>
+                            </a>
                             {% endfor %}
                         </div>
                     </div>
@@ -142,7 +168,8 @@ style="color: var(--text-color)">Current Concept</span>
         <!-- Associations -->
         {% if associations %}
         <div class="card">
-            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+            <div class="px-4 py-5 sm:px-6 border-b"
+                style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 <h2 class="text-lg font-medium flex items-center" style="color: var(--text-color)">
                     <i class="fas fa-heart text-primary mr-2"></i>
                     Associations
@@ -152,18 +179,27 @@ style="color: var(--text-color)">Current Concept</span>
                 <div class="space-y-8">
                     <div>
                         <div class="space-y-2">
-                        {% for ass in associations %}
+                            {% for ass in associations %}
                             <a href="{{ ass.url }}" class="block group">
-                                <div class="bg-white border rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative" style="border-color: var(--border-color); background-color: var(--nav-bg)">
-                                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg"></div>
-                                    <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">{{ ass.obj|best_label(language) }}</div>
+                                <div class="bg-white border rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative"
+                                    style="border-color: var(--border-color); background-color: var(--nav-bg)">
+                                    <div
+                                        class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg">
+                                    </div>
+                                    <div class="font-medium group-hover:text-primary transition-colors duration-150"
+                                        style="color: var(--text-color)">{{ ass.obj|best_label(language) }}</div>
+                                    {% set schemes = ass.obj|scheme_list %}
+                                    {% if schemes %}
+                                    <div class="text-xs mt-1" style="color: var(--text-tertiary)"> {{ schemes }}</div>
+                                    {% endif %}
                                     {% if ass.conversion %}
-                                        <div class="text-s mt-1" style="color: var(--text-secondary)">Conversion factor: {{ ass.conversion }}
-                                        </div>
+                                    <div class="text-s mt-1" style="color: var(--text-secondary)">Conversion factor: {{
+                                        ass.conversion }}
+                                    </div>
                                     {% endif %}
                                 </div>
                             </a>
-                        {% endfor %}
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
@@ -174,10 +210,12 @@ style="color: var(--text-color)">Current Concept</span>
         <!-- Notes -->
         {% if concept.editorial_notes or concept.change_notes or concept.history_notes %}
         <div class="card">
-            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+            <div class="px-4 py-5 sm:px-6 border-b"
+                style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 <h2 class="text-lg font-medium" style="color: var(--text-color)">Notes</h2>
             </div>
-            <div class="px-4 py-5 sm:p-6 space-y-4" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+            <div class="px-4 py-5 sm:p-6 space-y-4"
+                style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 {% if concept.editorial_notes %}
                 <div>
                     <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Editorial Notes</h3>
@@ -218,14 +256,17 @@ style="color: var(--text-color)">Current Concept</span>
     <!-- Right Column: Concept Information -->
     <div class="lg:col-span-1">
         <div class="card">
-            <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+            <div class="px-4 py-5 sm:px-6 border-b"
+                style="border-color: var(--border-color); background-color: var(--nav-bg)">
                 <h2 class="text-lg font-medium" style="color: var(--text-color)">Concept Information</h2>
             </div>
             <div class="px-4 py-5 sm:p-6 space-y-4" style="background-color: var(--nav-bg)">
                 <!-- IRI -->
                 <div>
                     <h3 class="text-sm font-medium" style="color: var(--text-secondary)">IRI</h3>
-                    <p class="mt-1 text-sm" style="color: var(--text-color)" title="{{ concept.id_ }}" id="concept_iri_clicker">{{ concept.id_|short_iri }} <i class="fas fa-copy mr-2" id="concept_iri_clicker_icon"></i></p>
+                    <p class="mt-1 text-sm" style="color: var(--text-color)" title="{{ concept.id_ }}"
+                        id="concept_iri_clicker">{{ concept.id_|short_iri }} <i class="fas fa-copy mr-2"
+                            id="concept_iri_clicker_icon"></i></p>
                 </div>
 
                 <!-- Notation -->
@@ -242,7 +283,9 @@ style="color: var(--text-color)">Current Concept</span>
                     <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Status</h3>
                     <div class="mt-1">
                         {% set status = concept.status[0]['@id']|split('/')|last|title %}
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if status == 'Accepted' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %} relationship-badge" style="color: var(--text-secondary)">
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if status == 'Accepted' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %} relationship-badge"
+                            style="color: var(--text-secondary)">
                             {{ status }}
                         </span>
                     </div>
@@ -269,8 +312,8 @@ style="color: var(--text-color)">Current Concept</span>
                     <h3 class="text-sm font-medium" style="color: var(--text-secondary)">Alternative Labels</h3>
                     <div class="mt-1 text-sm" style="color: var(--text-color)">
                         {% for label in concept.alt_labels %}
-                            <span style="color: var(--text-tertiary)" class="mr-2">{{ label['@language'] }}:</span>
-                            <span>{{ label['@value'] }}</span>
+                        <span style="color: var(--text-tertiary)" class="mr-2">{{ label['@language'] }}:</span>
+                        <span>{{ label['@value'] }}</span>
                         {% endfor %}
                     </div>
                 </div>
@@ -296,18 +339,18 @@ style="color: var(--text-color)">Current Concept</span>
 </div>
 
 <script>
-var iri_clicker = document.getElementById("concept_iri_clicker");
-iri_clicker.onclick = function(){
-    navigator.clipboard.writeText("{{ concept.id_ }}").then(this.querySelector('#concept_iri_clicker_icon').classList.replace("fa-copy", "fa-check"))
-};
+    var iri_clicker = document.getElementById("concept_iri_clicker");
+    iri_clicker.onclick = function () {
+        navigator.clipboard.writeText("{{ concept.id_ }}").then(this.querySelector('#concept_iri_clicker_icon').classList.replace("fa-copy", "fa-check"))
+    };
 
-// Render MathJax for definition content
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof MathJax !== 'undefined') {
-        MathJax.typesetPromise([document.querySelector('.mathjax-content')]).catch(function (err) {
-            console.log('MathJax rendering error:', err);
-        });
-    }
-});
+    // Render MathJax for definition content
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof MathJax !== 'undefined') {
+            MathJax.typesetPromise([document.querySelector('.mathjax-content')]).catch(function (err) {
+                console.log('MathJax rendering error:', err);
+            });
+        }
+    });
 </script>
 {% endblock %}
