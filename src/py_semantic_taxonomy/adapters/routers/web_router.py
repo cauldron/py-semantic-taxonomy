@@ -4,7 +4,7 @@ from urllib.parse import quote, unquote, urlencode
 
 import rfc3987
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Path, Request
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, Body
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from langcodes import Language
@@ -22,6 +22,9 @@ logger = structlog.get_logger("py-semantic-taxonomy")
 
 router = APIRouter(prefix="/web", include_in_schema=False)
 
+dynamic_text_store = {
+    "concept_schemes_description": "Browse and manage your semantic taxonomies"
+}
 
 def _is_iri(query: str) -> bool:
     """Check if query string is a valid HTTP/HTTPS IRI."""
@@ -144,6 +147,7 @@ async def web_concept_schemes(
             "language_selector": languages,
             "language": language,
             "suggest_api_url": get_full_api_path("suggest"),
+            "page_description": dynamic_text_store["concept_schemes_description"],
         },
     )
 
@@ -443,3 +447,11 @@ async def web_search(
         raise HTTPException(
             status_code=422, detail="Search engine not configured for given language"
         )
+
+@router.post("/update_description/")
+async def update_description(
+    new_text: str = Body(..., embed=True)
+):
+    dynamic_text_store["concept_schemes_description"] = new_text
+    return {"status": "ok", "new_text": new_text}
+
