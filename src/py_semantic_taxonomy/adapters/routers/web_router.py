@@ -110,6 +110,8 @@ class WebPaths(StrEnum):
     concept_scheme_view = "/concept_scheme/{iri:path}"
     concept_view = "/concept/{iri:path}"
     search = "/search/"
+    concept_children_fragment = "/fragment/concept/{iri:path}/children"
+    concept_detail_fragment = "/fragment/concept/{iri:path}/detail"
 
 
 @router.get("/")
@@ -384,6 +386,152 @@ async def web_concept_view(
             "Database error while fetching concept", iri=decoded_iri, error=str(e)
         )
         raise HTTPException(status_code=500, detail="Database error while fetching concept")
+
+
+@router.get(
+    WebPaths.concept_children_fragment,
+    response_class=HTMLResponse,
+)
+async def web_concept_children_fragment(
+    request: Request,
+    iri: str = Path(..., description="The IRI of the parent concept"),
+    concept_scheme: str | None = None,
+    language: str | None = None,
+    service=Depends(get_graph_service),
+) -> HTMLResponse:
+    """Return a partial HTML fragment listing the child concepts of a concept."""
+    if not concept_scheme or not language:
+        return HTMLResponse("Missing required parameters: concept_scheme and language", status_code=422)
+
+    decoded_iri = unquote(iri)
+    relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
+
+    children = []
+    for obj in relationships:
+        if obj.target == decoded_iri and obj.predicate == RelationshipVerbs.broader:
+            try:
+                child_concept = await service.concept_get(iri=obj.source)
+                child_concept = child_concept.filter_language(language)
+                children.append(child_concept)
+            except de.ConceptNotFoundError:
+                pass
+
+    return templates.TemplateResponse(
+        "_concept_tree_children.html",
+        {
+            "request": request,
+            "children": children,
+            "concept_scheme": concept_scheme,
+            "language": language,
+        },
+    )
+
+
+@router.get(
+    WebPaths.concept_detail_fragment,
+    response_class=HTMLResponse,
+)
+async def web_concept_detail_fragment(
+    request: Request,
+    iri: str = Path(..., description="The IRI of the concept"),
+    concept_scheme: str | None = None,
+    language: str | None = None,
+    service=Depends(get_graph_service),
+) -> HTMLResponse:
+    """Return a partial HTML fragment with the full detail of a concept."""
+    if not concept_scheme or not language:
+        return HTMLResponse("Missing required parameters: concept_scheme and language", status_code=422)
+
+    try:
+        decoded_iri = unquote(iri)
+        concept = await service.concept_get(iri=decoded_iri)
+        concept = concept.filter_language(language)
+
+        scheme = await service.concept_scheme_get(iri=unquote(concept_scheme))
+
+        hierarchy = (
+            await service.concept_broader_in_ascending_order(
+                concept_iri=concept.id_, concept_scheme_iri=scheme.id_
+            )
+        )[::-1]
+        hierarchy = [(concept_view_url(request, c.id_, scheme.id_, language), c) for c in hierarchy]
+
+        async def get_concept_and_link(concept_iri: str) -> tuple[str, de.Concept | str]:
+            try:
+                c = (await service.concept_get(iri=concept_iri)).filter_language(language)
+                url = concept_view_url(
+                    request,
+                    concept_iri,
+                    (
+                        scheme.id_
+                        if any(scheme.id_ == os["@id"] for os in c.schemes)
+                        else c.schemes[0]["@id"]
+                    ),
+                    language,
+                )
+                return url, c
+            except de.ConceptNotFoundError:
+                return concept_iri, concept_iri
+
+        relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
+        broader = [
+            (await get_concept_and_link(obj.target))
+            for obj in relationships
+            if obj.source == concept.id_ and obj.predicate == RelationshipVerbs.broader
+        ]
+        narrower = [
+            (await get_concept_and_link(obj.source))
+            for obj in relationships
+            if obj.target == concept.id_ and obj.predicate == RelationshipVerbs.broader
+        ]
+
+        scheme_list_data = [
+            (concept_scheme_view_url(request, s["@id"], language), s)
+            for s in concept.schemes
+        ]
+
+        associations = await service.association_get_all(source_concept_iri=concept.id_)
+        formatted_associations = []
+        for obj in filter(lambda x: x.kind == AssociationKind.simple, associations):
+            for target in obj.target_concepts:
+                url, assoc_concept = await get_concept_and_link(target["@id"])
+                formatted_associations.append({
+                    "url": url,
+                    "obj": assoc_concept,
+                    "conditional": None,
+                    "conversion": target.get(
+                        "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
+                    ),
+                })
+
+        return templates.TemplateResponse(
+            "_concept_detail_panel.html",
+            {
+                "request": request,
+                "scheme": scheme,
+                "scheme_url": concept_scheme_view_url(request, scheme.id_, language),
+                "hierarchy": hierarchy,
+                "scheme_list": scheme_list_data,
+                "broader_concepts": broader,
+                "narrower_concepts": narrower,
+                "concept": concept,
+                "language": language,
+                "associations": formatted_associations,
+                "concept_scheme_iri": concept_scheme,
+                "suggest_api_url": get_full_api_path("suggest"),
+            },
+        )
+    except de.ConceptNotFoundError:
+        return HTMLResponse(
+            "<div class='card px-4 py-5 text-center' style='color: var(--text-secondary)'>Concept not found.</div>",
+            status_code=404,
+        )
+    except de.ConceptSchemesNotInDatabase as e:
+        logger.error("Database error in detail fragment", iri=iri, error=str(e))
+        return HTMLResponse(
+            "<div class='card px-4 py-5 text-center' style='color: var(--text-secondary)'>Database error.</div>",
+            status_code=500,
+        )
 
 
 @router.get(

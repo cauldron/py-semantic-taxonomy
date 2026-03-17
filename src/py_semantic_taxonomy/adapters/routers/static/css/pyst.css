@@ -139,6 +139,11 @@ body {
 .hover-row:hover {
     background-color: var(--nav-bg);
 }
+.active-concept {
+    background-color: var(--nav-bg);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 0.375rem;
+}
 .relationship-badge {
     color: var(--text-color);
     border: 1px solid var(--border-color);

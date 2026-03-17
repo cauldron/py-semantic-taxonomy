@@ -1,0 +1,26 @@
+{% for concept in children %}
+<li class="concept-tree-node">
+    <div class="concept-tree-row flex items-center py-2 px-3 rounded-md hover-row cursor-pointer">
+        <button class="tree-expand-btn w-5 h-5 flex-shrink-0 mr-2 text-xs"
+                data-iri="{{ concept.id_ }}"
+                data-scheme="{{ concept_scheme }}"
+                aria-expanded="false"
+                style="background: none; border: none; color: var(--text-secondary)">
+            <i class="fas fa-chevron-right transition-transform duration-200"></i>
+        </button>
+        <span class="concept-label flex-1 text-sm font-medium text-primary"
+              data-iri="{{ concept.id_ }}"
+              data-scheme="{{ concept_scheme }}"
+              style="cursor: pointer;">
+            {{ concept|best_label(language) }}
+            {% if concept.notations %}
+            <span class="ml-2 text-xs" style="color: var(--text-tertiary)">
+                <i class="fas fa-hashtag mr-0.5"></i>{{ concept.notations[0]['@value'] }}
+            </span>
+            {% endif %}
+        </span>
+    </div>
+    <ul class="concept-tree-children pl-5 hidden"
+        style="border-left: 2px solid var(--border-color)"></ul>
+</li>
+{% endfor %}
