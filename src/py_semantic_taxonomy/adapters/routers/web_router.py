@@ -112,6 +112,13 @@ def format_languages(languages: list[str]) -> list[tuple[str, str]]:
     return [(code, Language.get(code).display_name(code).title()) for code in languages]
 
 
+def build_language_selector(
+    current_language: str,
+    options: list[tuple[str, str]],
+) -> list[tuple[str, str, bool]]:
+    return [(url, label, code == current_language) for code, label, url in options]
+
+
 class WebPaths(StrEnum):
     concept_schemes = "/concept_schemes/"
     concept_scheme_view = "/concept_scheme/{iri:path}"
@@ -159,11 +166,17 @@ async def web_concept_schemes(
     for scheme in concept_schemes:
         scheme.url = concept_scheme_view_url(request, scheme.id_, language)
 
-    languages = [(request.url, Language.get(language).display_name(language).title())] + [
-        (str(request.url_for("web_concept_schemes")) + "?language=" + quote(code), label)
-        for code, label in format_languages(settings.languages)
-        if code != language
-    ]
+    languages = build_language_selector(
+        language,
+        [
+            (
+                code,
+                label,
+                str(request.url_for("web_concept_schemes")) + "?language=" + quote(code),
+            )
+            for code, label in format_languages(settings.languages)
+        ],
+    )
     return templates.TemplateResponse(
         "concept_schemes.html",
         {
@@ -205,16 +218,19 @@ async def web_concept_scheme_view(
         for concept in concepts:
             concept.url = concept_view_url(request, concept.id_, concept_scheme.id_, language)
 
-        languages = [(request.url, Language.get(language).display_name(language).title())] + [
-            (
-                str(request.url_for("web_concept_scheme_view", iri=iri))
-                + "?language="
-                + quote(code),
-                label,
-            )
-            for code, label in format_languages(settings.languages)
-            if code != language
-        ]
+        languages = build_language_selector(
+            language,
+            [
+                (
+                    code,
+                    label,
+                    str(request.url_for("web_concept_scheme_view", iri=iri))
+                    + "?language="
+                    + quote(code),
+                )
+                for code, label in format_languages(settings.languages)
+            ],
+        )
 
         return templates.TemplateResponse(
             "concept_scheme_view.html",
@@ -352,21 +368,22 @@ async def web_concept_view(
                         ),
                     })
 
-        languages = [
-            (request.url, Language.get(language).display_name(language).title())
-        ] + [
-            (
-                concept_view_url(
-                    request,
-                    concept.id_,
-                    scheme.id_,
+        languages = build_language_selector(
+            language,
+            [
+                (
                     code,
-                ),
-                label,
-            )
-            for code, label in format_languages(settings.languages)
-            if code != language
-        ]
+                    label,
+                    concept_view_url(
+                        request,
+                        concept.id_,
+                        scheme.id_,
+                        code,
+                    ),
+                )
+                for code, label in format_languages(settings.languages)
+            ],
+        )
 
         return templates.TemplateResponse(
             "concept_view.html",
