@@ -30,6 +30,8 @@ dependencies = [
     "asyncpg",
     "fastapi",
     "fastapi_pagination",
+    "httpx",
+    "itsdangerous",
     "jinja2",
     "langcodes",
     "language-data",
@@ -38,6 +40,7 @@ dependencies = [
     "pydantic_settings",
     "rdflib",
     "rfc3987",
+    "python-multipart",
     "sqlalchemy>=2.0",
     "structlog",
     # Fork of typesense client with async support

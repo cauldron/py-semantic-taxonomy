@@ -98,6 +98,13 @@ templates.env.filters["best_label"] = best_label
 templates.env.filters["best_short_label"] = best_short_label
 templates.env.filters["short_iri"] = short_iri
 templates.env.filters["scheme_list"] = scheme_list
+templates.env.filters["urlencode"] = quote
+templates.env.globals["is_admin_request"] = (
+    lambda request: bool(getattr(request, "session", {}).get("admin_user"))
+)
+templates.env.globals["admin_user_name"] = (
+    lambda request: (getattr(request, "session", {}).get("admin_user") or {}).get("name", "Admin")
+)
 
 
 def format_languages(languages: list[str]) -> list[tuple[str, str]]:
@@ -618,4 +625,3 @@ async def update_description(
 ):
     dynamic_text_store["concept_schemes_description"] = new_text
     return {"status": "ok", "new_text": new_text}
-
