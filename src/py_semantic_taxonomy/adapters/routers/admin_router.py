@@ -17,13 +17,14 @@ from py_semantic_taxonomy.adapters.routers.web_router import (
 from py_semantic_taxonomy.cfg import Settings, get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service
 from py_semantic_taxonomy.domain import entities as de
-from py_semantic_taxonomy.domain.constants import BIBO, DCTERMS, OWL, SKOS, RDF_MAPPING
+from py_semantic_taxonomy.domain.constants import BIBO, DCTERMS, OWL, SKOS, XKOS, RDF_MAPPING
 from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.url_utils import get_full_api_path
 
 router = APIRouter(prefix="/web/admin", include_in_schema=False)
 
 DATETIME_TYPE = "http://www.w3.org/2001/XMLSchema#dateTime"
+CONVERSION_MULTIPLIER = "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
 STATUS_OPTIONS = [
     f"{BIBO}status/accepted",
     f"{BIBO}status/draft",
@@ -228,6 +229,29 @@ def _concept_form_data(
     }
 
 
+def _association_form_data(
+    association: de.Association | None = None,
+    *,
+    source_concept_iri: str = "",
+) -> dict[str, Any]:
+    if not association:
+        return {
+            "id_": "",
+            "source_concept_iri": source_concept_iri,
+            "target_concept_iri": "",
+            "conversion_multiplier": "",
+        }
+    target = association.target_concepts[0] if association.target_concepts else {}
+    return {
+        "id_": association.id_,
+        "source_concept_iri": (
+            association.source_concepts[0].get("@id", "") if association.source_concepts else source_concept_iri
+        ),
+        "target_concept_iri": target.get("@id", ""),
+        "conversion_multiplier": target.get(CONVERSION_MULTIPLIER, ""),
+    }
+
+
 def _concept_scheme_payload(form_data: dict[str, Any], *, extra: dict[str, Any] | None = None) -> dict[str, Any]:
     payload = {
         RDF_MAPPING["id_"]: form_data["id_"],
@@ -275,6 +299,18 @@ def _concept_payload(form_data: dict[str, Any], *, extra: dict[str, Any] | None 
     return payload
 
 
+def _association_payload(form_data: dict[str, Any]) -> dict[str, Any]:
+    target_node: dict[str, Any] = {"@id": form_data["target_concept_iri"]}
+    if form_data["conversion_multiplier"]:
+        target_node[CONVERSION_MULTIPLIER] = form_data["conversion_multiplier"]
+    return {
+        RDF_MAPPING["id_"]: form_data["id_"],
+        RDF_MAPPING["types"]: [f"{XKOS}ConceptAssociation"],
+        RDF_MAPPING["source_concepts"]: [{"@id": form_data["source_concept_iri"]}],
+        RDF_MAPPING["target_concepts"]: [target_node],
+    }
+
+
 async def _exchange_code_for_token(code: str, redirect_uri: str, settings: Settings) -> dict[str, Any]:
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.post(
@@ -312,6 +348,57 @@ async def _gitlab_group_member(user_id: int, access_token: str, settings: Settin
         return False
     response.raise_for_status()
     return True
+
+
+async def _concept_association_rows(
+    request: Request,
+    *,
+    concept_iri: str,
+    language: str,
+    service,
+) -> list[dict[str, Any]]:
+    associations = await service.association_get_all(source_concept_iri=concept_iri)
+    rows = []
+    for association in sorted(associations, key=lambda obj: obj.id_):
+        if association.kind != de.AssociationKind.simple:
+            continue
+        target = association.target_concepts[0] if association.target_concepts else {}
+        target_iri = target.get("@id", "")
+        target_label = target_iri
+        target_url = target_iri
+        try:
+            target_concept = await service.concept_get(target_iri)
+            target_label = next(
+                (
+                    obj.get("@value", "")
+                    for obj in target_concept.pref_labels
+                    if obj.get("@language") == language
+                ),
+                target_iri,
+            )
+            target_url = concept_view_url(
+                request,
+                target_concept.id_,
+                target_concept.schemes[0]["@id"],
+                language,
+            )
+        except de.ConceptNotFoundError:
+            pass
+        rows.append(
+            {
+                "id_": association.id_,
+                "target_iri": target_iri,
+                "target_label": target_label,
+                "target_url": target_url,
+                "conversion_multiplier": target.get(CONVERSION_MULTIPLIER),
+                "edit_url": (
+                    str(request.url_for("admin_edit_association", iri=quote(association.id_)))
+                    + "?"
+                    + urlencode({"language": language, "source_concept": concept_iri})
+                ),
+            }
+        )
+    return rows
 
 
 def _render_admin_dashboard(
@@ -376,6 +463,10 @@ def _render_concept_form(
     admin_user: dict[str, Any],
     form_data: dict[str, Any],
     concept_schemes: list[de.ConceptScheme],
+    associations: list[dict[str, Any]] | None = None,
+    association_form_data: dict[str, Any] | None = None,
+    concept_form_action: str | None = None,
+    association_form_action: str | None = None,
     form_mode: str,
     error: str | None = None,
     message: str | None = None,
@@ -390,6 +481,10 @@ def _render_concept_form(
             csrf_token=_ensure_csrf_token(request),
             form_data=form_data,
             concept_schemes=concept_schemes,
+            associations=associations or [],
+            association_form_data=association_form_data,
+            concept_form_action=concept_form_action,
+            association_form_action=association_form_action,
             form_mode=form_mode,
             status_options=STATUS_OPTIONS,
             error=error,
@@ -798,6 +893,9 @@ async def admin_edit_concept(
         if rel.source == concept.id_ and rel.predicate == RelationshipVerbs.broader
     ]
     concept_schemes = await service.concept_scheme_get_all()
+    associations = await _concept_association_rows(
+        request, concept_iri=concept.id_, language=language, service=service
+    )
     selected_scheme = concept_scheme or concept.schemes[0]["@id"]
     response = _render_concept_form(
         request,
@@ -806,6 +904,12 @@ async def admin_edit_concept(
         admin_user=admin_user,
         form_data=_concept_form_data(concept, scheme_hint=selected_scheme, broader_iris=broader_iris),
         concept_schemes=concept_schemes,
+        associations=associations,
+        association_form_data=_association_form_data(source_concept_iri=concept.id_),
+        concept_form_action=str(request.url_for("admin_update_concept", iri=quote(concept.id_))),
+        association_form_action=str(
+            request.url_for("admin_create_association", iri=quote(concept.id_))
+        ),
         form_mode="edit",
         message=request.query_params.get("message"),
     )
@@ -840,6 +944,9 @@ async def admin_update_concept(
     current = await service.concept_get(iri)
     current_relationships = await service.relationships_get(iri=iri, source=True, target=True)
     concept_schemes = await service.concept_scheme_get_all()
+    associations = await _concept_association_rows(
+        request, concept_iri=current.id_, language=language, service=service
+    )
     form_data = {
         "id_": id_,
         "pref_labels": pref_labels,
@@ -905,6 +1012,12 @@ async def admin_update_concept(
             admin_user=admin_user,
             form_data=form_data,
             concept_schemes=concept_schemes,
+            associations=associations,
+            association_form_data=_association_form_data(source_concept_iri=current.id_),
+            concept_form_action=str(request.url_for("admin_update_concept", iri=quote(current.id_))),
+            association_form_action=str(
+                request.url_for("admin_create_association", iri=quote(current.id_))
+            ),
             form_mode="edit",
             error=str(exc),
         )
@@ -918,6 +1031,234 @@ async def admin_update_concept(
                 "language": language,
                 "concept_scheme": redirect_scheme,
                 "message": "Concept updated",
+            }
+        ),
+        status_code=303,
+    )
+
+
+@router.post("/concepts/{iri:path}/associations/new", response_class=HTMLResponse)
+async def admin_create_association(
+    request: Request,
+    iri: str = Path(...),
+    csrf_token: str = Form(...),
+    id_: str = Form(...),
+    source_concept_iri: str = Form(...),
+    target_concept_iri: str = Form(...),
+    conversion_multiplier: str = Form(""),
+    language: str = Form("en"),
+    concept_scheme: str | None = Form(None),
+    settings: Settings = Depends(get_settings),
+    service=Depends(get_graph_service),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+    _validate_csrf(request, csrf_token)
+
+    concept = await service.concept_get(iri)
+    concept_schemes = await service.concept_scheme_get_all()
+    relationships = await service.relationships_get(iri=iri, source=True, target=True)
+    broader_iris = [
+        rel.target
+        for rel in relationships
+        if rel.source == concept.id_ and rel.predicate == RelationshipVerbs.broader
+    ]
+    associations = await _concept_association_rows(
+        request, concept_iri=concept.id_, language=language, service=service
+    )
+    assoc_form = {
+        "id_": id_,
+        "source_concept_iri": source_concept_iri,
+        "target_concept_iri": target_concept_iri,
+        "conversion_multiplier": conversion_multiplier,
+    }
+    try:
+        validated = req.Association.model_validate(_association_payload(assoc_form))
+        association = de.Association.from_json_ld(validated.model_dump(by_alias=True))
+        await service.association_create(association)
+    except (ValidationError, ValueError, de.DuplicateIRI) as exc:
+        return _render_concept_form(
+            request,
+            language=language,
+            settings=settings,
+            admin_user=admin_user,
+            form_data=_concept_form_data(
+                concept, scheme_hint=concept_scheme or concept.schemes[0]["@id"], broader_iris=broader_iris
+            ),
+            concept_schemes=concept_schemes,
+            associations=associations,
+            association_form_data=assoc_form,
+            concept_form_action=str(request.url_for("admin_update_concept", iri=quote(concept.id_))),
+            association_form_action=str(
+                request.url_for("admin_create_association", iri=quote(concept.id_))
+            ),
+            form_mode="edit",
+            error=str(exc),
+        )
+
+    return RedirectResponse(
+        str(request.url_for("admin_edit_concept", iri=quote(iri)))
+        + "?"
+        + urlencode(
+            {
+                "language": language,
+                "concept_scheme": concept_scheme or concept.schemes[0]["@id"],
+                "message": "Association created",
+            }
+        ),
+        status_code=303,
+    )
+
+
+@router.get("/associations/{iri:path}/edit", response_class=HTMLResponse, name="admin_edit_association")
+async def admin_edit_association(
+    request: Request,
+    iri: str = Path(...),
+    source_concept: str = "",
+    language: str | None = None,
+    concept_scheme: str | None = None,
+    settings: Settings = Depends(get_settings),
+    service=Depends(get_graph_service),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
+    language = _default_language(language, settings)
+    concept = await service.concept_get(source_concept)
+    association = await service.association_get(iri)
+    concept_schemes = await service.concept_scheme_get_all()
+    relationships = await service.relationships_get(iri=source_concept, source=True, target=True)
+    broader_iris = [
+        rel.target
+        for rel in relationships
+        if rel.source == concept.id_ and rel.predicate == RelationshipVerbs.broader
+    ]
+    associations = await _concept_association_rows(
+        request, concept_iri=concept.id_, language=language, service=service
+    )
+    return _render_concept_form(
+        request,
+        language=language,
+        settings=settings,
+        admin_user=admin_user,
+        form_data=_concept_form_data(
+            concept, scheme_hint=concept_scheme or concept.schemes[0]["@id"], broader_iris=broader_iris
+        ),
+        concept_schemes=concept_schemes,
+        associations=associations,
+        association_form_data=_association_form_data(association, source_concept_iri=concept.id_),
+        concept_form_action=str(request.url_for("admin_update_concept", iri=quote(concept.id_))),
+        association_form_action=str(request.url_for("admin_update_association", iri=quote(association.id_))),
+        form_mode="edit",
+        message="Editing association",
+    )
+
+
+@router.post("/associations/{iri:path}/edit", response_class=HTMLResponse)
+async def admin_update_association(
+    request: Request,
+    iri: str = Path(...),
+    csrf_token: str = Form(...),
+    id_: str = Form(...),
+    source_concept_iri: str = Form(...),
+    target_concept_iri: str = Form(...),
+    conversion_multiplier: str = Form(""),
+    language: str = Form("en"),
+    concept_scheme: str | None = Form(None),
+    settings: Settings = Depends(get_settings),
+    service=Depends(get_graph_service),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+    _validate_csrf(request, csrf_token)
+
+    concept = await service.concept_get(source_concept_iri)
+    current = await service.association_get(iri)
+    concept_schemes = await service.concept_scheme_get_all()
+    relationships = await service.relationships_get(iri=source_concept_iri, source=True, target=True)
+    broader_iris = [
+        rel.target
+        for rel in relationships
+        if rel.source == concept.id_ and rel.predicate == RelationshipVerbs.broader
+    ]
+    associations = await _concept_association_rows(
+        request, concept_iri=concept.id_, language=language, service=service
+    )
+    assoc_form = {
+        "id_": id_,
+        "source_concept_iri": source_concept_iri,
+        "target_concept_iri": target_concept_iri,
+        "conversion_multiplier": conversion_multiplier,
+    }
+    try:
+        validated = req.Association.model_validate(_association_payload(assoc_form))
+        association = de.Association.from_json_ld(validated.model_dump(by_alias=True))
+        if current.id_ != association.id_:
+            await service.association_create(association)
+            await service.association_delete(current.id_)
+        else:
+            await service.association_delete(current.id_)
+            await service.association_create(association)
+    except (ValidationError, ValueError, de.DuplicateIRI, de.AssociationNotFoundError) as exc:
+        return _render_concept_form(
+            request,
+            language=language,
+            settings=settings,
+            admin_user=admin_user,
+            form_data=_concept_form_data(
+                concept, scheme_hint=concept_scheme or concept.schemes[0]["@id"], broader_iris=broader_iris
+            ),
+            concept_schemes=concept_schemes,
+            associations=associations,
+            association_form_data=assoc_form,
+            concept_form_action=str(request.url_for("admin_update_concept", iri=quote(concept.id_))),
+            association_form_action=str(request.url_for("admin_update_association", iri=quote(iri))),
+            form_mode="edit",
+            error=str(exc),
+        )
+
+    return RedirectResponse(
+        str(request.url_for("admin_edit_concept", iri=quote(source_concept_iri)))
+        + "?"
+        + urlencode(
+            {
+                "language": language,
+                "concept_scheme": concept_scheme or concept.schemes[0]["@id"],
+                "message": "Association updated",
+            }
+        ),
+        status_code=303,
+    )
+
+
+@router.post("/associations/{iri:path}/delete")
+async def admin_delete_association(
+    request: Request,
+    iri: str = Path(...),
+    csrf_token: str = Form(...),
+    source_concept_iri: str = Form(...),
+    language: str = Form("en"),
+    concept_scheme: str | None = Form(None),
+    settings: Settings = Depends(get_settings),
+    service=Depends(get_graph_service),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+    _validate_csrf(request, csrf_token)
+    await service.association_delete(iri)
+    concept = await service.concept_get(source_concept_iri)
+    return RedirectResponse(
+        str(request.url_for("admin_edit_concept", iri=quote(source_concept_iri)))
+        + "?"
+        + urlencode(
+            {
+                "language": language,
+                "concept_scheme": concept_scheme or concept.schemes[0]["@id"],
+                "message": "Association deleted",
             }
         ),
         status_code=303,
