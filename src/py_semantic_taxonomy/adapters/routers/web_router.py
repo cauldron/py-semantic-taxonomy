@@ -1,5 +1,6 @@
 from enum import StrEnum
 from pathlib import Path as PathLib
+from secrets import token_urlsafe
 from urllib.parse import quote, unquote, urlencode
 
 import rfc3987
@@ -105,6 +106,14 @@ templates.env.globals["is_admin_request"] = (
 templates.env.globals["admin_user_name"] = (
     lambda request: (getattr(request, "session", {}).get("admin_user") or {}).get("name", "Admin")
 )
+
+
+def ensure_admin_csrf_token(request: Request) -> str:
+    csrf_token = request.session.get("admin_csrf_token")
+    if not csrf_token:
+        csrf_token = quote(token_urlsafe(32), safe="")
+        request.session["admin_csrf_token"] = csrf_token
+    return csrf_token
 
 
 def format_languages(languages: list[str]) -> list[tuple[str, str]]:
@@ -241,6 +250,7 @@ async def web_concept_scheme_view(
                 "language": language,
                 "language_selector": languages,
                 "suggest_api_url": get_full_api_path("suggest"),
+                "csrf_token": ensure_admin_csrf_token(request),
             },
         )
     except de.ConceptSchemeNotFoundError:
@@ -401,6 +411,7 @@ async def web_concept_view(
                 "associations": formatted_associations,
                 # "conditional_associations": conditional_associations,
                 "suggest_api_url": get_full_api_path("suggest"),
+                "csrf_token": ensure_admin_csrf_token(request),
             },
         )
     except de.ConceptNotFoundError:
@@ -543,6 +554,7 @@ async def web_concept_detail_fragment(
                 "associations": formatted_associations,
                 "concept_scheme_iri": concept_scheme,
                 "suggest_api_url": get_full_api_path("suggest"),
+                "csrf_token": ensure_admin_csrf_token(request),
             },
         )
     except de.ConceptNotFoundError:

@@ -68,6 +68,12 @@
                                 Scheme</a>
                             <a href="{{ scheme.new_concept_url }}" class="text-primary hover:text-primary-hover">Add
                                 Concept</a>
+                            <form method="post" action="{{ scheme.delete_url }}" class="inline"
+                                onsubmit="return confirm('Delete this concept scheme and its concepts?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="language" value="{{ language }}">
+                                <button type="submit" class="text-primary hover:text-primary-hover">Delete</button>
+                            </form>
                         </td>
                     </tr>
                     {% else %}

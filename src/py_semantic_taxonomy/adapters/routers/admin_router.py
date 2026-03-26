@@ -634,6 +634,86 @@ async def _concept_mapping_rows(
     return rows
 
 
+async def _concept_relationship_rows(
+    request: Request,
+    *,
+    concept_iri: str,
+    language: str,
+    concept_scheme: str,
+    service,
+) -> list[dict[str, Any]]:
+    relationships = await service.relationships_get(iri=concept_iri, source=True, target=True)
+    rows = []
+    seen = set()
+    for rel in relationships:
+        key = (rel.source, rel.target, str(rel.predicate))
+        if key in seen or rel.predicate in MAPPING_VERBS:
+            continue
+        seen.add(key)
+
+        related_iri = rel.target if rel.source == concept_iri else rel.source
+        related_label = related_iri
+        related_url = related_iri
+        try:
+            related_concept = await service.concept_get(related_iri)
+            related_label = next(
+                (
+                    obj.get("@value", "")
+                    for obj in related_concept.pref_labels
+                    if obj.get("@language") == language
+                ),
+                related_iri,
+            )
+            related_url = concept_view_url(
+                request,
+                related_concept.id_,
+                related_concept.schemes[0]["@id"],
+                language,
+            )
+        except de.ConceptNotFoundError:
+            pass
+
+        predicate_label = str(rel.predicate).split("#")[-1]
+        if rel.source != concept_iri and rel.predicate == RelationshipVerbs.broader:
+            predicate_label = "narrower"
+        elif rel.source != concept_iri:
+            predicate_label = f"incoming {predicate_label}"
+
+        rows.append(
+            {
+                "source_iri": rel.source,
+                "target_iri": rel.target,
+                "predicate": str(rel.predicate),
+                "predicate_label": predicate_label,
+                "related_iri": related_iri,
+                "related_label": related_label,
+                "related_url": related_url,
+                "edit_url": (
+                    str(request.url_for("admin_edit_concept", iri=quote(concept_iri)))
+                    + "?"
+                    + urlencode({"language": language, "concept_scheme": concept_scheme})
+                ),
+            }
+        )
+    return sorted(rows, key=lambda row: (row["predicate_label"], row["related_iri"]))
+
+
+async def _delete_concept_dependencies(*, concept_iri: str, service) -> None:
+    relationships = await service.relationships_get(iri=concept_iri, source=True, target=True)
+    unique_relationships = {
+        (rel.source, rel.target, rel.predicate): rel for rel in relationships
+    }
+    if unique_relationships:
+        await service.relationships_delete(list(unique_relationships.values()))
+
+    associations = [
+        *(await service.association_get_all(source_concept_iri=concept_iri)),
+        *(await service.association_get_all(target_concept_iri=concept_iri)),
+    ]
+    for association_id in {association.id_ for association in associations}:
+        await service.association_delete(association_id)
+
+
 def _render_admin_dashboard(
     request: Request,
     *,
@@ -696,6 +776,7 @@ def _render_concept_form(
     admin_user: dict[str, Any],
     form_data: dict[str, Any],
     concept_schemes: list[de.ConceptScheme],
+    relationship_rows: list[dict[str, Any]] | None = None,
     mappings: list[dict[str, Any]] | None = None,
     mapping_form_data: dict[str, Any] | None = None,
     associations: list[dict[str, Any]] | None = None,
@@ -717,6 +798,7 @@ def _render_concept_form(
             csrf_token=_ensure_csrf_token(request),
             form_data=form_data,
             concept_schemes=concept_schemes,
+            relationship_rows=relationship_rows or [],
             mappings=mappings or [],
             mapping_form_data=mapping_form_data,
             associations=associations or [],
@@ -830,6 +912,7 @@ async def admin_dashboard(
             + "?"
             + urlencode({"language": language})
         )
+        scheme.delete_url = str(request.url_for("admin_delete_concept_scheme", iri=quote(scheme.id_)))
         scheme.new_concept_url = (
             str(request.url_for("admin_new_concept"))
             + "?"
@@ -1012,6 +1095,53 @@ async def admin_update_concept_scheme(
     )
 
 
+@router.post("/concept_schemes/{iri:path}/delete", name="admin_delete_concept_scheme")
+async def admin_delete_concept_scheme(
+    request: Request,
+    iri: str = Path(...),
+    csrf_token: str = Form(...),
+    language: str = Form("en"),
+    settings: Settings = Depends(get_settings),
+    service=Depends(get_graph_service),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+    _validate_csrf(request, csrf_token)
+
+    concepts = await service.concept_get_all(concept_scheme_iri=iri)
+    shared_concepts = [concept.id_ for concept in concepts if len(concept.schemes) > 1]
+    if shared_concepts:
+        preview = ", ".join(shared_concepts[:3])
+        if len(shared_concepts) > 3:
+            preview += ", ..."
+        return RedirectResponse(
+            str(request.url_for("admin_dashboard"))
+            + "?"
+            + urlencode(
+                {
+                    "language": language,
+                    "error": (
+                        "Concept scheme cannot be deleted while shared concepts still reference it: "
+                        + preview
+                    ),
+                }
+            ),
+            status_code=303,
+        )
+
+    for concept in concepts:
+        await _delete_concept_dependencies(concept_iri=concept.id_, service=service)
+        await service.concept_delete(concept.id_)
+    await service.concept_scheme_delete(iri)
+    return RedirectResponse(
+        str(request.url_for("admin_dashboard"))
+        + "?"
+        + urlencode({"language": language, "message": "Concept scheme deleted"}),
+        status_code=303,
+    )
+
+
 @router.get("/concepts/new", response_class=HTMLResponse, name="admin_new_concept")
 async def admin_new_concept(
     request: Request,
@@ -1140,6 +1270,13 @@ async def admin_edit_concept(
     ]
     concept_schemes = await service.concept_scheme_get_all()
     selected_scheme = concept_scheme or concept.schemes[0]["@id"]
+    relationship_rows = await _concept_relationship_rows(
+        request,
+        concept_iri=concept.id_,
+        language=language,
+        concept_scheme=selected_scheme,
+        service=service,
+    )
     associations = await _concept_association_rows(
         request,
         concept_iri=concept.id_,
@@ -1168,6 +1305,7 @@ async def admin_edit_concept(
             concept, language=language, scheme_hint=selected_scheme, broader_iris=broader_iris
         ),
         concept_schemes=concept_schemes,
+        relationship_rows=relationship_rows,
         mappings=mappings,
         mapping_form_data=mapping_form,
         associations=associations,
@@ -1212,6 +1350,13 @@ async def admin_update_concept(
     current_relationships = await service.relationships_get(iri=iri, source=True, target=True)
     concept_schemes = await service.concept_scheme_get_all()
     selected_scheme = concept_scheme or current.schemes[0]["@id"]
+    relationship_rows = await _concept_relationship_rows(
+        request,
+        concept_iri=current.id_,
+        language=language,
+        concept_scheme=selected_scheme,
+        service=service,
+    )
     associations = await _concept_association_rows(
         request,
         concept_iri=current.id_,
@@ -1293,6 +1438,7 @@ async def admin_update_concept(
             admin_user=admin_user,
             form_data=form_data,
             concept_schemes=concept_schemes,
+            relationship_rows=relationship_rows,
             mappings=mappings,
             mapping_form_data=_mapping_form_data(),
             associations=associations,
@@ -1317,6 +1463,31 @@ async def admin_update_concept(
                 "message": "Concept updated",
             }
         ),
+        status_code=303,
+    )
+
+
+@router.post("/concepts/{iri:path}/delete", name="admin_delete_concept")
+async def admin_delete_concept(
+    request: Request,
+    iri: str = Path(...),
+    csrf_token: str = Form(...),
+    language: str = Form("en"),
+    settings: Settings = Depends(get_settings),
+    service=Depends(get_graph_service),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+    _validate_csrf(request, csrf_token)
+
+    await _delete_concept_dependencies(concept_iri=iri, service=service)
+    await service.concept_delete(iri)
+
+    return RedirectResponse(
+        str(request.url_for("admin_dashboard"))
+        + "?"
+        + urlencode({"language": language, "message": "Concept deleted"}),
         status_code=303,
     )
 
@@ -1475,6 +1646,47 @@ async def admin_delete_mapping(
     )
 
 
+@router.post("/concepts/{iri:path}/relationships/delete", name="admin_delete_relationship")
+async def admin_delete_relationship(
+    request: Request,
+    iri: str = Path(...),
+    csrf_token: str = Form(...),
+    source_iri: str = Form(...),
+    predicate: str = Form(...),
+    target_iri: str = Form(...),
+    language: str = Form("en"),
+    concept_scheme: str | None = Form(None),
+    settings: Settings = Depends(get_settings),
+    service=Depends(get_graph_service),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+    _validate_csrf(request, csrf_token)
+    await service.relationships_delete(
+        [
+            de.Relationship(
+                source=source_iri,
+                target=target_iri,
+                predicate=RelationshipVerbs(predicate),
+            )
+        ]
+    )
+    concept = await service.concept_get(iri)
+    return RedirectResponse(
+        str(request.url_for("admin_edit_concept", iri=quote(iri)))
+        + "?"
+        + urlencode(
+            {
+                "language": language,
+                "concept_scheme": concept_scheme or concept.schemes[0]["@id"],
+                "message": "Relationship deleted",
+            }
+        ),
+        status_code=303,
+    )
+
+
 @router.post("/concepts/{iri:path}/associations/new", response_class=HTMLResponse)
 async def admin_create_association(
     request: Request,
@@ -1508,6 +1720,13 @@ async def admin_create_association(
         concept_scheme=concept_scheme or concept.schemes[0]["@id"],
         service=service,
     )
+    relationship_rows = await _concept_relationship_rows(
+        request,
+        concept_iri=concept.id_,
+        language=language,
+        concept_scheme=concept_scheme or concept.schemes[0]["@id"],
+        service=service,
+    )
     if not id_.strip():
         id_ = _generate_association_iri(source_concept_iri, target_concept_iri)
     assoc_form = {
@@ -1532,6 +1751,7 @@ async def admin_create_association(
                 broader_iris=broader_iris,
             ),
             concept_schemes=concept_schemes,
+            relationship_rows=relationship_rows,
             associations=associations,
             association_form_data=assoc_form,
             concept_form_action=str(request.url_for("admin_update_concept", iri=quote(concept.id_))),
@@ -1587,6 +1807,13 @@ async def admin_edit_association(
         concept_scheme=concept_scheme or concept.schemes[0]["@id"],
         service=service,
     )
+    relationship_rows = await _concept_relationship_rows(
+        request,
+        concept_iri=concept.id_,
+        language=language,
+        concept_scheme=concept_scheme or concept.schemes[0]["@id"],
+        service=service,
+    )
     return _render_concept_form(
         request,
         language=language,
@@ -1599,6 +1826,7 @@ async def admin_edit_association(
             broader_iris=broader_iris,
         ),
         concept_schemes=concept_schemes,
+        relationship_rows=relationship_rows,
         associations=associations,
         association_form_data=_association_form_data(association, source_concept_iri=concept.id_),
         concept_form_action=str(request.url_for("admin_update_concept", iri=quote(concept.id_))),
@@ -1642,6 +1870,13 @@ async def admin_update_association(
         concept_scheme=concept_scheme or concept.schemes[0]["@id"],
         service=service,
     )
+    relationship_rows = await _concept_relationship_rows(
+        request,
+        concept_iri=concept.id_,
+        language=language,
+        concept_scheme=concept_scheme or concept.schemes[0]["@id"],
+        service=service,
+    )
     if not id_.strip():
         id_ = _generate_association_iri(source_concept_iri, target_concept_iri)
     assoc_form = {
@@ -1673,6 +1908,7 @@ async def admin_update_association(
                 broader_iris=broader_iris,
             ),
             concept_schemes=concept_schemes,
+            relationship_rows=relationship_rows,
             associations=associations,
             association_form_data=assoc_form,
             concept_form_action=str(request.url_for("admin_update_concept", iri=quote(concept.id_))),

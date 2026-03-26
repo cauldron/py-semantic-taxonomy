@@ -16,6 +16,15 @@
         <a href="/web/admin/concepts/{{ concept.id_ | urlencode }}/edit?language={{ language }}&concept_scheme={{ scheme.id_ | urlencode }}" class="btn-primary">
             <i class="fas fa-pen mr-2"></i>Edit Concept
         </a>
+        <form method="post" action="/web/admin/concepts/{{ concept.id_ | urlencode }}/delete" class="inline"
+            onsubmit="return confirm('Delete this concept and all of its links?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="language" value="{{ language }}">
+            <button type="submit" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium"
+                style="color: #9f1239; background-color: #fff1f2; border-color: #fecdd3">
+                <i class="fas fa-trash mr-2"></i>Delete Concept
+            </button>
+        </form>
         {% endif %}
         <a href="/web/concept_schemes/"
             class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium"
@@ -175,10 +184,16 @@
         <div class="card">
             <div class="px-4 py-5 sm:px-6 border-b"
                 style="border-color: var(--border-color); background-color: var(--nav-bg)">
-                <h2 class="text-lg font-medium flex items-center" style="color: var(--text-color)">
-                    <i class="fas fa-heart text-primary mr-2"></i>
-                    Associations
-                </h2>
+                <div class="flex items-center justify-between gap-4">
+                    <h2 class="text-lg font-medium flex items-center" style="color: var(--text-color)">
+                        <i class="fas fa-heart text-primary mr-2"></i>
+                        Associations
+                    </h2>
+                    {% if is_admin_request(request) %}
+                    <a href="/web/admin/concepts/{{ concept.id_ | urlencode }}/edit?language={{ language }}&concept_scheme={{ scheme.id_ | urlencode }}"
+                        class="text-sm text-primary hover:text-primary-hover">Manage links</a>
+                    {% endif %}
+                </div>
             </div>
             <div class="px-4 py-5 sm:p-6" style="background-color: var(--nav-bg)">
                 <div class="space-y-8">

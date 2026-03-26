@@ -25,6 +25,13 @@
     <div class="card px-4 py-3 mb-4" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
     {% endif %}
 
+    {% if form_mode == "edit" %}
+    <form id="delete-scheme-form" method="post" action="/web/admin/concept_schemes/{{ form_data.id_|urlencode }}/delete">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="language" value="{{ language }}">
+    </form>
+    {% endif %}
+
     <form method="post" class="card p-6 space-y-6" style="background-color: var(--nav-bg)">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="language" value="{{ language }}">
@@ -77,7 +84,17 @@
             </div>
         </div>
 
-        <div class="flex justify-end">
+        <div class="flex justify-between items-center">
+            {% if form_mode == "edit" %}
+            <button type="submit" form="delete-scheme-form"
+                onclick="return confirm('Delete this concept scheme and its concepts?');"
+                class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium"
+                style="color: #9f1239; background-color: #fff1f2; border-color: #fecdd3">
+                <i class="fas fa-trash mr-2"></i>Delete Scheme
+            </button>
+            {% else %}
+            <div></div>
+            {% endif %}
             <button type="submit" class="btn-primary">
                 <i class="fas fa-save mr-2"></i>{% if form_mode == "create" %}Create Scheme{% else %}Save Changes{% endif %}
             </button>
