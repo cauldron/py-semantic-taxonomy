@@ -86,6 +86,13 @@ def _validate_csrf(request: Request, csrf_token: str) -> None:
         raise HTTPException(status_code=403, detail="Invalid CSRF token")
 
 
+def _public_url_for(request: Request, route_name: str, settings: Settings) -> str:
+    path = str(request.url_for(route_name).path)
+    if settings.public_base_url:
+        return f"{settings.public_base_url.rstrip('/')}{path}"
+    return str(request.url_for(route_name))
+
+
 def _language_selector(request: Request, language: str, settings: Settings) -> list[tuple[str, str]]:
     return build_language_selector(
         language,
@@ -490,7 +497,18 @@ async def _exchange_code_for_token(code: str, redirect_uri: str, settings: Setti
                 "redirect_uri": redirect_uri,
             },
         )
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        detail = response.text.strip()
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "GitLab OAuth token exchange failed. "
+                "Check that the configured callback URL exactly matches the GitLab application "
+                f"redirect URI and that the authorization code was not reused. GitLab said: {detail}"
+            ),
+        ) from exc
     return response.json()
 
 
@@ -832,7 +850,7 @@ async def admin_login(
 
     state = quote(datetime.now(tz=timezone.utc).isoformat(), safe="")
     request.session["gitlab_oauth_state"] = state
-    redirect_uri = str(request.url_for("admin_gitlab_callback"))
+    redirect_uri = _public_url_for(request, "admin_gitlab_callback", settings)
     authorization_url = (
         f"{settings.gitlab_url.rstrip('/')}/oauth/authorize?"
         + urlencode(
@@ -860,7 +878,7 @@ async def admin_gitlab_callback(
     if state != request.session.get("gitlab_oauth_state"):
         raise HTTPException(status_code=400, detail="Invalid GitLab OAuth state")
 
-    redirect_uri = str(request.url_for("admin_gitlab_callback"))
+    redirect_uri = _public_url_for(request, "admin_gitlab_callback", settings)
     token = await _exchange_code_for_token(code, redirect_uri, settings)
     access_token = token["access_token"]
     user = await _gitlab_user(access_token, settings)

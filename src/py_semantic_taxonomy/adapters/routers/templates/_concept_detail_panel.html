@@ -153,6 +153,9 @@
                 <div class="text-sm font-medium group-hover:text-primary" style="color: var(--text-color)">
                     {{ ass.obj|best_label(language) }}
                 </div>
+                {% if ass.direction %}
+                <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ ass.direction }} association</div>
+                {% endif %}
                 {% set schemes = ass.obj|scheme_list %}
                 {% if schemes %}
                 <div class="text-xs mt-1" style="color: var(--text-tertiary)">{{ schemes }}</div>

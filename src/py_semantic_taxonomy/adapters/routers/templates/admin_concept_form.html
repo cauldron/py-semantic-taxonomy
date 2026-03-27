@@ -125,13 +125,13 @@
     <div class="card p-6 space-y-6 mt-6" style="background-color: var(--nav-bg)">
         <div>
             <h2 class="text-lg font-medium" style="color: var(--text-color)">Concept Links</h2>
-            <p class="text-sm mt-1" style="color: var(--text-secondary)">Manage SKOS mappings and richer XKOS associations from this concept.</p>
+            <p class="text-sm mt-1" style="color: var(--text-secondary)">Manage hierarchical relationships within the scheme and cross-scheme links to concepts in other schemes.</p>
         </div>
 
         <div class="space-y-4">
             <div>
-                <h3 class="text-base font-medium" style="color: var(--text-color)">Relationships and Associations</h3>
-                <p class="text-sm mt-1" style="color: var(--text-secondary)">Choose the association type here. SKOS mapping types create direct concept-to-concept links, while <code>association</code> creates a separate XKOS association resource.</p>
+                <h3 class="text-base font-medium" style="color: var(--text-color)">Relationships</h3>
+                <p class="text-sm mt-1" style="color: var(--text-secondary)">Relationships capture the concept structure, such as <code>broader</code> and incoming narrower links inside a concept scheme.</p>
             </div>
 
             <div>
@@ -179,75 +179,110 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y" style="border-color: var(--border-color)">
-                    <thead style="background-color: var(--header-bg)">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Type</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Identifier</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Target</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y" style="background-color: var(--nav-bg); border-color: var(--border-color)">
-                        {% for mapping in mappings %}
-                        <tr>
-                            <td class="px-4 py-3 text-sm" style="color: var(--text-color)">{{ mapping.predicate_label }}</td>
-                            <td class="px-4 py-3 text-sm" style="color: var(--text-secondary)">Relationship</td>
-                            <td class="px-4 py-3 text-sm">
-                                <a href="{{ mapping.target_url }}" class="text-primary hover:text-primary-hover">{{ mapping.target_label }}</a>
-                                <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ mapping.target_iri }}</div>
-                            </td>
-                            <td class="px-4 py-3 text-right text-sm">
-                                <a href="{{ mapping.edit_url }}" class="text-primary hover:text-primary-hover mr-3">Edit</a>
-                                <form method="post" action="/web/admin/concepts/{{ form_data.id_|urlencode }}/mappings/delete" class="inline"
-                                    onsubmit="return confirm('Delete this mapping?');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <input type="hidden" name="predicate" value="{{ mapping.predicate }}">
-                                    <input type="hidden" name="target_iri" value="{{ mapping.target_iri }}">
-                                    <input type="hidden" name="language" value="{{ language }}">
-                                    {% if request.query_params.get('concept_scheme') %}
-                                    <input type="hidden" name="concept_scheme" value="{{ request.query_params.get('concept_scheme') }}">
-                                    {% endif %}
-                                    <button type="submit" class="text-primary hover:text-primary-hover">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        {% for association in associations %}
-                        <tr>
-                            <td class="px-4 py-3 text-sm" style="color: var(--text-color)">association</td>
-                            <td class="px-4 py-3 text-sm" style="color: var(--text-secondary)">{{ association.id_ }}</td>
-                            <td class="px-4 py-3 text-sm">
-                                <a href="{{ association.target_url }}" class="text-primary hover:text-primary-hover">{{ association.target_label }}</a>
-                                <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ association.target_iri }}</div>
-                            </td>
-                            <td class="px-4 py-3 text-right text-sm">
-                                <a href="{{ association.edit_url }}" class="text-primary hover:text-primary-hover mr-3">Edit</a>
-                                <form method="post" action="/web/admin/associations/{{ association.id_|urlencode }}/delete" class="inline"
-                                    onsubmit="return confirm('Delete this association?');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <input type="hidden" name="source_concept_iri" value="{{ form_data.id_ }}">
-                                    <input type="hidden" name="language" value="{{ language }}">
-                                    {% if request.query_params.get('concept_scheme') %}
-                                    <input type="hidden" name="concept_scheme" value="{{ request.query_params.get('concept_scheme') }}">
-                                    {% endif %}
-                                    <button type="submit" class="text-primary hover:text-primary-hover">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        {% if not mappings and not associations %}
-                        <tr>
-                            <td colspan="4" class="px-4 py-6 text-center text-sm" style="color: var(--text-secondary)">No links yet.</td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
+            <div class="border-t pt-6" style="border-color: var(--border-color)">
+                <h3 class="text-base font-medium" style="color: var(--text-color)">Mappings And Associations</h3>
+                <p class="text-sm mt-1" style="color: var(--text-secondary)">Use this section for links between concepts in different schemes. SKOS mapping predicates describe the mapping quality, while XKOS concept associations create explicit <code>xkos:ConceptAssociation</code> resources.</p>
+                <p class="text-sm mt-2" style="color: var(--text-secondary)">The current admin UI edits one representation at a time: either a direct SKOS mapping or a standalone XKOS association.</p>
+            </div>
+
+            <div>
+                <h3 class="text-base font-medium mb-3" style="color: var(--text-color)">SKOS Mappings</h3>
+                <p class="text-sm mt-1 mb-3" style="color: var(--text-secondary)">These direct predicates express mapping quality, for example <code>exactMatch</code>, <code>closeMatch</code>, or <code>broadMatch</code>.</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y" style="border-color: var(--border-color)">
+                        <thead style="background-color: var(--header-bg)">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Mapping Quality</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Representation</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Target</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y" style="background-color: var(--nav-bg); border-color: var(--border-color)">
+                            {% for mapping in mappings %}
+                            <tr>
+                                <td class="px-4 py-3 text-sm" style="color: var(--text-color)">{{ mapping.predicate_label }}</td>
+                                <td class="px-4 py-3 text-sm" style="color: var(--text-secondary)">SKOS mapping predicate</td>
+                                <td class="px-4 py-3 text-sm">
+                                    <a href="{{ mapping.target_url }}" class="text-primary hover:text-primary-hover">{{ mapping.target_label }}</a>
+                                    <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ mapping.target_iri }}</div>
+                                </td>
+                                <td class="px-4 py-3 text-right text-sm">
+                                    <a href="{{ mapping.edit_url }}" class="text-primary hover:text-primary-hover mr-3">Edit</a>
+                                    <form method="post" action="/web/admin/concepts/{{ form_data.id_|urlencode }}/mappings/delete" class="inline"
+                                        onsubmit="return confirm('Delete this mapping?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <input type="hidden" name="predicate" value="{{ mapping.predicate }}">
+                                        <input type="hidden" name="target_iri" value="{{ mapping.target_iri }}">
+                                        <input type="hidden" name="language" value="{{ language }}">
+                                        {% if request.query_params.get('concept_scheme') %}
+                                        <input type="hidden" name="concept_scheme" value="{{ request.query_params.get('concept_scheme') }}">
+                                        {% endif %}
+                                        <button type="submit" class="text-primary hover:text-primary-hover">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not mappings %}
+                            <tr>
+                                <td colspan="4" class="px-4 py-6 text-center text-sm" style="color: var(--text-secondary)">No SKOS mappings yet.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-base font-medium mb-3" style="color: var(--text-color)">XKOS Associations</h3>
+                <p class="text-sm mt-1 mb-3" style="color: var(--text-secondary)">These are explicit <code>xkos:ConceptAssociation</code> resources between schemes.</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y" style="border-color: var(--border-color)">
+                        <thead style="background-color: var(--header-bg)">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Association</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Identifier</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Target</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y" style="background-color: var(--nav-bg); border-color: var(--border-color)">
+                            {% for association in associations %}
+                            <tr>
+                                <td class="px-4 py-3 text-sm" style="color: var(--text-color)">XKOS concept association</td>
+                                <td class="px-4 py-3 text-sm" style="color: var(--text-secondary)">{{ association.id_ }}</td>
+                                <td class="px-4 py-3 text-sm">
+                                    <a href="{{ association.target_url }}" class="text-primary hover:text-primary-hover">{{ association.target_label }}</a>
+                                    <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ association.target_iri }}</div>
+                                </td>
+                                <td class="px-4 py-3 text-right text-sm">
+                                    <a href="{{ association.edit_url }}" class="text-primary hover:text-primary-hover mr-3">Edit</a>
+                                    <form method="post" action="/web/admin/associations/{{ association.id_|urlencode }}/delete" class="inline"
+                                        onsubmit="return confirm('Delete this association?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <input type="hidden" name="source_concept_iri" value="{{ form_data.id_ }}">
+                                        <input type="hidden" name="language" value="{{ language }}">
+                                        {% if request.query_params.get('concept_scheme') %}
+                                        <input type="hidden" name="concept_scheme" value="{{ request.query_params.get('concept_scheme') }}">
+                                        {% endif %}
+                                        <button type="submit" class="text-primary hover:text-primary-hover">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not associations %}
+                            <tr>
+                                <td colspan="4" class="px-4 py-6 text-center text-sm" style="color: var(--text-secondary)">No XKOS associations yet.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="border-t pt-6" style="border-color: var(--border-color)">
-                <h3 class="text-base font-medium mb-4" style="color: var(--text-color)">Add Or Edit Association</h3>
+                <h3 class="text-base font-medium mb-1" style="color: var(--text-color)">Add Or Edit Cross-Scheme Link</h3>
+                <p class="text-sm mb-4" style="color: var(--text-secondary)">Choose whether to create a SKOS mapping predicate or an XKOS concept association resource.</p>
                 <form method="post" action="{{ mapping_form_action or ('/web/admin/concepts/' ~ (form_data.id_|urlencode) ~ '/mappings') }}" class="space-y-4">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="language" value="{{ language }}">
@@ -259,13 +294,14 @@
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Association Type</label>
+                            <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Representation</label>
                             <select name="link_type" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-color)">
                                 {% for verb in mapping_verbs %}
-                                <option value="{{ verb }}" {% if mapping_form_data and mapping_form_data.link_type == verb %}selected{% endif %}>{{ verb|split('#')|last }}</option>
+                                <option value="{{ verb }}" {% if mapping_form_data and mapping_form_data.link_type == verb %}selected{% endif %}>SKOS mapping: {{ verb|split('#')|last }}</option>
                                 {% endfor %}
-                                <option value="association" {% if mapping_form_data and mapping_form_data.link_type == 'association' %}selected{% endif %}>association</option>
+                                <option value="association" {% if mapping_form_data and mapping_form_data.link_type == 'association' %}selected{% endif %}>XKOS concept association resource</option>
                             </select>
+                            <p class="text-xs mt-2" style="color: var(--text-secondary)">SKOS options express mapping quality directly. The XKOS option creates a standalone association resource.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Target Concept IRI</label>
@@ -277,13 +313,13 @@
                         <div>
                             <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Association IRI</label>
                             <input type="text" name="association_id" value="{{ mapping_form_data.association_id if mapping_form_data else '' }}" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-color)">
-                            <p class="text-xs mt-2" style="color: var(--text-secondary)">Only used for <code>association</code>. Leave blank to generate automatically.</p>
+                            <p class="text-xs mt-2" style="color: var(--text-secondary)">Only used for the <code>XKOS concept association resource</code> option. Leave blank to generate automatically.</p>
                         </div>
                     </div>
 
                     <div class="flex justify-end">
                         <button type="submit" class="btn-primary">
-                            <i class="fas fa-project-diagram mr-2"></i>Save Association
+                            <i class="fas fa-project-diagram mr-2"></i>Save Link
                         </button>
                     </div>
                 </form>

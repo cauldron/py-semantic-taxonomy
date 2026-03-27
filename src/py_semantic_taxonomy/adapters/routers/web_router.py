@@ -128,6 +128,58 @@ def build_language_selector(
     return [(url, label, code == current_language) for code, label, url in options]
 
 
+async def _format_simple_associations(
+    *,
+    concept: de.Concept,
+    service,
+    get_concept_and_link,
+) -> list[dict[str, str | de.Concept | None]]:
+    outgoing = await service.association_get_all(source_concept_iri=concept.id_)
+    incoming = await service.association_get_all(target_concept_iri=concept.id_)
+
+    formatted = []
+    seen = set()
+
+    async def add_entry(
+        association: de.Association,
+        related_node: dict[str, str],
+        *,
+        direction: str,
+    ) -> None:
+        related_iri = related_node.get("@id")
+        if not related_iri:
+            return
+
+        dedupe_key = (association.id_, related_iri, direction)
+        if dedupe_key in seen:
+            return
+        seen.add(dedupe_key)
+
+        url, assoc_concept = await get_concept_and_link(related_iri)
+        formatted.append(
+            {
+                "url": url,
+                "obj": assoc_concept,
+                "conditional": None,
+                "conversion": related_node.get(
+                    "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
+                ),
+                "direction": direction,
+            }
+        )
+
+    for association in filter(lambda x: x.kind == AssociationKind.simple, outgoing):
+        for target in association.target_concepts:
+            await add_entry(association, target, direction="Outgoing")
+
+    for association in filter(lambda x: x.kind == AssociationKind.simple, incoming):
+        for source in association.source_concepts:
+            if source.get("@id") != concept.id_:
+                await add_entry(association, source, direction="Incoming")
+
+    return formatted
+
+
 class WebPaths(StrEnum):
     concept_schemes = "/concept_schemes/"
     concept_scheme_view = "/concept_scheme/{iri:path}"
@@ -354,29 +406,11 @@ async def web_concept_view(
             for s in concept.schemes
         ]
 
-        associations = await service.association_get_all(source_concept_iri=concept.id_)
-        formatted_associations = []
-        for obj in filter(lambda x: x.kind == AssociationKind.simple, associations):
-            for target in obj.target_concepts:
-                try:
-                    url, assoc_concept = await get_concept_and_link(target["@id"])
-                    formatted_associations.append({
-                        "url": url,
-                        "obj": assoc_concept,
-                        "conditional": None,
-                        "conversion": target.get(
-                            "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
-                        ),
-                    })
-                except de.ConceptNotFoundError:
-                    formatted_associations.append({
-                        "url": target["@id"],
-                        "obj": target["@id"],
-                        "conditional": None,
-                        "conversion": target.get(
-                            "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
-                        ),
-                    })
+        formatted_associations = await _format_simple_associations(
+            concept=concept,
+            service=service,
+            get_concept_and_link=get_concept_and_link,
+        )
 
         languages = build_language_selector(
             language,
@@ -525,19 +559,11 @@ async def web_concept_detail_fragment(
             for s in concept.schemes
         ]
 
-        associations = await service.association_get_all(source_concept_iri=concept.id_)
-        formatted_associations = []
-        for obj in filter(lambda x: x.kind == AssociationKind.simple, associations):
-            for target in obj.target_concepts:
-                url, assoc_concept = await get_concept_and_link(target["@id"])
-                formatted_associations.append({
-                    "url": url,
-                    "obj": assoc_concept,
-                    "conditional": None,
-                    "conversion": target.get(
-                        "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
-                    ),
-                })
+        formatted_associations = await _format_simple_associations(
+            concept=concept,
+            service=service,
+            get_concept_and_link=get_concept_and_link,
+        )
 
         return templates.TemplateResponse(
             "_concept_detail_panel.html",

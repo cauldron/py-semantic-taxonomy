@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     auth_token: str = "missing"
     admin_session_secret: str = "change-me"
+    public_base_url: str | None = None
     gitlab_url: str = "https://gitlab.com"
     gitlab_client_id: str = "missing"
     gitlab_client_secret: str = "missing"
