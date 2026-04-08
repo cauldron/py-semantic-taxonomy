@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form_mode == "create" %}Create Concept Scheme{% else %}Edit Concept Scheme{% endif %} - PyST{% endblock %}
+
+{% block page_header %}
+<div class="flex justify-between items-center">
+    <div>
+        <h1>{% if form_mode == "create" %}Create Concept Scheme{% else %}Edit Concept Scheme{% endif %}</h1>
+        <p style="color: var(--text-secondary)">Editing the {{ language|upper }} label and definition. Existing translations in other languages are preserved.</p>
+    </div>
+    <div class="flex space-x-3">
+        <a href="/web/admin/?language={{ language }}" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+            <i class="fas fa-arrow-left mr-2"></i>Admin
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+    {% if message %}
+    <div class="card px-4 py-3 mb-4" style="background-color: var(--nav-bg); color: var(--text-color)">{{ message }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="card px-4 py-3 mb-4" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
+    {% endif %}
+
+    {% if form_mode == "edit" %}
+    <form id="delete-scheme-form" method="post" action="/web/admin/concept_schemes/{{ form_data.id_|urlencode }}/delete">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="language" value="{{ language }}">
+    </form>
+    {% endif %}
+
+    <form method="post" class="card p-6 space-y-6" style="background-color: var(--nav-bg)">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="language" value="{{ language }}">
+
+        <div>
+            <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">IRI</label>
+            <input type="text" name="id_" value="{{ form_data.id_ }}" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-color)" {% if form_mode == "edit" %}readonly{% endif %}>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Preferred Label ({{ language|upper }})</label>
+                <input type="text" name="pref_label_text" value="{{ form_data.pref_label_text }}" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-color)">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Definition ({{ language|upper }})</label>
+                <textarea name="definition_text" rows="6" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-color)">{{ form_data.definition_text }}</textarea>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Notation</label>
+                <textarea name="notations" rows="3" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-color)">{{ form_data.notations }}</textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Status</label>
+                <select name="status" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-color)">
+                    {% for option in status_options %}
+                    <option value="{{ option }}" {% if form_data.status == option %}selected{% endif %}>{{ option|split('/')|last|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <input type="hidden" name="created" value="{{ form_data.created }}">
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Created</label>
+                <div class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-secondary)">{{ form_data.created }}</div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Version</label>
+                <input type="text" name="version" value="{{ form_data.version }}" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-color)">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Creators</label>
+                <textarea name="creators" rows="3" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-color)">{{ form_data.creators }}</textarea>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+            {% if form_mode == "edit" %}
+            <button type="submit" form="delete-scheme-form"
+                onclick="return confirm('Delete this concept scheme and its concepts?');"
+                class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium"
+                style="color: #9f1239; background-color: #fff1f2; border-color: #fecdd3">
+                <i class="fas fa-trash mr-2"></i>Delete Scheme
+            </button>
+            {% else %}
+            <div></div>
+            {% endif %}
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-save mr-2"></i>{% if form_mode == "create" %}Create Scheme{% else %}Save Changes{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

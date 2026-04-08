@@ -67,6 +67,20 @@
                     <a href="/web/concept_schemes/?language={{ language }}" class="nav-link {% if request.url.path == '/web/concept_schemes/' %}active{% endif %}">
                         <i class="fas fa-list mr-2"></i>Concept Schemes
                     </a>
+                    {% if is_admin_request(request) %}
+                    <a href="/web/admin/?language={{ language }}" class="nav-link {% if request.url.path.startswith('/web/admin') %}active{% endif %}">
+                        <i class="fas fa-shield-alt mr-2"></i>{{ admin_user_name(request) }}
+                    </a>
+                    <form action="/web/admin/logout" method="post" class="inline">
+                        <button type="submit" class="nav-link">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="/web/admin/login" class="nav-link">
+                        <i class="fas fa-user-shield mr-2"></i>Admin
+                    </a>
+                    {% endif %}
 <!--                     <a href="/web/concept_scheme/create/" class="nav-link disabled opacity-50 cursor-not-allowed" aria-disabled="true">
                         <i class="fas fa-plus mr-2"></i>Create Scheme
                     </a>
@@ -78,7 +92,7 @@
                         <i class="fas fa-globe mr-2" style="color: var(--text-secondary)"></i>
                         <select id="language" class="mt-1 w-24 pl-3 pr-3 py-2 text-base border rounded-md text-sm" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
                             {% for row in language_selector %}
-                            <option value="{{ row.0 }}">{{ row.1 }}</option>
+                            <option value="{{ row.0 }}" {% if row.2 %}selected{% endif %}>{{ row.1 }}</option>
                             {% endfor %}
                         </select>
                     </span>

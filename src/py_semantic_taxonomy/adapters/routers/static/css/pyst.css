@@ -12,6 +12,7 @@
     --nav-bg: #f8fafc;
     --border-color: #e5e7eb;
 }
+
 [data-theme="dark"] {
     --primary-color: #ef5552;
     --primary-hover: #dc2626;
@@ -23,12 +24,14 @@
     --nav-bg: #374151;
     --border-color: #4b5563;
 }
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: var(--text-color);
     background-color: var(--bg-color);
     transition: background-color 0.3s, color 0.3s;
 }
+
 .header {
     background-color: var(--header-bg);
     border-bottom: 1px solid #e5e7eb;
@@ -37,13 +40,16 @@ body {
     z-index: 50;
     transition: background-color 0.3s;
 }
+
 [data-theme="dark"] .header {
     border-bottom-color: #374151;
 }
+
 .logo {
     height: 32px;
     width: auto;
 }
+
 .nav-link {
     color: var(--text-color);
     text-decoration: none;
@@ -52,14 +58,17 @@ body {
     transition: all 0.2s;
     font-weight: 500;
 }
+
 .nav-link:hover {
     background-color: var(--nav-bg);
     color: var(--primary-color);
 }
+
 .nav-link.active {
     color: var(--primary-color);
     background-color: var(--nav-bg);
 }
+
 .btn-primary {
     background-color: var(--primary-color);
     color: white;
@@ -71,75 +80,130 @@ body {
     align-items: center;
     justify-content: center;
 }
+
 .btn-primary:hover {
     background-color: var(--primary-hover);
     transform: translateY(-1px);
 }
+
 .text-primary {
     color: var(--primary-color);
 }
+
 .text-primary-hover:hover {
     color: var(--primary-hover);
 }
+
 .focus-ring-primary:focus {
     outline: none;
     ring-color: var(--primary-color);
 }
+
 .page-header {
     background-color: var(--nav-bg);
     border-bottom: 1px solid #e5e7eb;
     padding: 2rem 0;
     transition: background-color 0.3s;
 }
+
 [data-theme="dark"] .page-header {
     border-bottom-color: #374151;
 }
+
 .page-header h1 {
     font-size: 2.25rem;
     font-weight: 700;
     color: var(--text-color);
     margin-bottom: 0.5rem;
 }
+
 .page-header p {
     color: #6b7280;
     font-size: 1.125rem;
 }
+
 .card {
     background-color: var(--header-bg);
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     transition: all 0.2s;
 }
+
 .card:hover {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
+
 [data-theme="dark"] .card {
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
 }
+
 [data-theme="dark"] .card:hover {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
 }
+
 [data-theme="dark"] input {
     background-color: var(--nav-bg);
     border-color: #4b5563;
     color: var(--text-color);
 }
+
 [data-theme="dark"] input::placeholder {
     color: #9ca3af;
 }
+
 [data-theme="dark"] .bg-gray-50 {
     background-color: #1f2937;
 }
+
 [data-theme="dark"] .border-gray-200 {
     border-color: #374151;
 }
+
 [data-theme="dark"] .text-gray-500 {
     color: #9ca3af;
 }
+
 .hover-row:hover {
     background-color: var(--nav-bg);
 }
+
+.active-concept {
+    background-color: var(--nav-bg);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 0.375rem;
+}
+
 .relationship-badge {
     color: var(--text-color);
     border: 1px solid var(--border-color);
+}
+
+/* Base tree */
+.concept-tree {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+/* Nested children */
+.concept-tree-children {
+    padding-left: 1.25rem;
+    /* 5 units in Tailwind-like spacing */
+}
+
+/* Hover/focus styling */
+.concept-tree-row:hover,
+.concept-tree-row:focus {
+    background-color: var(--nav-hover-bg);
+    outline: none;
+}
+
+/* Chevron rotation */
+.tree-expand-btn i.rotate-90 {
+    transform: rotate(90deg);
+}
+
+/* Disabled/empty chevron */
+.tree-expand-btn:disabled i {
+    color: var(--text-tertiary);
 }

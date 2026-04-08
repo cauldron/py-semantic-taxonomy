@@ -12,6 +12,13 @@ class Settings(BaseSettings):
     db_name: str = "PyST"
 
     auth_token: str = "missing"
+    admin_session_secret: str = "change-me"
+    public_base_url: str | None = None
+    gitlab_url: str = "https://gitlab.com"
+    gitlab_client_id: str = "missing"
+    gitlab_client_secret: str = "missing"
+    gitlab_admin_group: str = "missing"
+    gitlab_oauth_scope: str = "read_api"
 
     typesense_url: str = "missing"
     typesense_api_key: str = "missing"

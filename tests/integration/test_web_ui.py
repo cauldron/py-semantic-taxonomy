@@ -189,3 +189,32 @@ async def test_web_search_with_regular_text_not_treated_as_iri(anonymous_client)
     if response.status_code == 503:
         assert "Search engine not available" in response.text or "503" in response.text
 
+
+@pytest.mark.postgres
+async def test_concept_detail_fragment_shows_incoming_associations(
+    postgres, anonymous_client, cn_db_engine, cn
+):
+    response = await anonymous_client.get(
+        f"/web/fragment/concept/{quote(cn.concept_top['@id'])}/detail",
+        params={"concept_scheme": cn.scheme["@id"], "language": "en"},
+    )
+
+    assert response.status_code == 200
+    assert "Associations" in response.text
+    assert "Incoming association" in response.text
+    assert f'data-iri="{cn.concept_2023_top["@id"]}"' in response.text
+
+
+@pytest.mark.postgres
+async def test_concept_view_shows_incoming_associations(
+    postgres, anonymous_client, cn_db_engine, cn
+):
+    response = await anonymous_client.get(
+        f"/web/concept/{quote(cn.concept_top['@id'])}",
+        params={"concept_scheme": cn.scheme["@id"], "language": "en"},
+    )
+
+    assert response.status_code == 200
+    assert "Associations" in response.text
+    assert "Incoming association" in response.text
+    assert quote(cn.concept_2023_top["@id"]) in response.text

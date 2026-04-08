@@ -319,13 +319,18 @@ async def typesense_with_prefix(typesense_container_with_prefix, entities):
 
 
 @pytest.fixture
-async def client() -> TestClient:
-    from httpx import ASGITransport, AsyncClient
-
+def test_app_instance():
     from py_semantic_taxonomy.app import test_app
 
+    return test_app()
+
+
+@pytest.fixture
+async def client(test_app_instance) -> TestClient:
+    from httpx import ASGITransport, AsyncClient
+
     async with AsyncClient(
-        transport=ASGITransport(app=test_app()),
+        transport=ASGITransport(app=test_app_instance),
         base_url="http://test.ninja",
         headers={"X-PyST-Auth-Token": "testrunner"},
     ) as ac:
@@ -333,13 +338,11 @@ async def client() -> TestClient:
 
 
 @pytest.fixture
-async def anonymous_client() -> TestClient:
+async def anonymous_client(test_app_instance) -> TestClient:
     from httpx import ASGITransport, AsyncClient
 
-    from py_semantic_taxonomy.app import test_app
-
     async with AsyncClient(
-        transport=ASGITransport(app=test_app()),
+        transport=ASGITransport(app=test_app_instance),
         base_url="http://test.ninja",
     ) as ac:
         yield ac
