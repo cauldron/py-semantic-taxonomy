@@ -532,7 +532,8 @@ async def _gitlab_group_member(user_id: int, access_token: str, settings: Settin
     if response.status_code == 404:
         return False
     response.raise_for_status()
-    return True
+    member = response.json()
+    return member.get("access_level", 0) >= settings.gitlab_admin_min_access_level
 
 
 async def _concept_association_rows(
@@ -884,7 +885,13 @@ async def admin_gitlab_callback(
     user = await _gitlab_user(access_token, settings)
     is_group_member = await _gitlab_group_member(user["id"], access_token, settings)
     if not is_group_member:
-        raise HTTPException(status_code=403, detail="GitLab user is not in the configured admin group")
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "GitLab user is not in the configured admin group with the required "
+                "access level"
+            ),
+        )
 
     request.session.pop("gitlab_oauth_state", None)
     request.session["admin_user"] = {

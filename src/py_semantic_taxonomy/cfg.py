@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     gitlab_client_id: str = "missing"
     gitlab_client_secret: str = "missing"
     gitlab_admin_group: str = "missing"
+    gitlab_admin_min_access_level: int = 40
     gitlab_oauth_scope: str = "read_api"
 
     typesense_url: str = "missing"
