@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Review Claim {{ claim.id }} - PyST{% endblock %}
+
+{% block page_header %}
+<div>
+    <h1>{{ claim.title }}</h1>
+    <p style="color: var(--text-secondary)">Status: {{ claim.status }}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="card px-6 py-6">
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <dt class="text-sm font-medium" style="color: var(--text-secondary)">Type</dt>
+                <dd style="color: var(--text-color)">{{ claim.kind }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium" style="color: var(--text-secondary)">Contributor</dt>
+                <dd style="color: var(--text-color)">{{ claim.submitted_by.name }}{% if claim.submitted_by.username %} (@{{ claim.submitted_by.username }}){% endif %}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium" style="color: var(--text-secondary)">Target IRI</dt>
+                <dd style="color: var(--text-color)">{{ claim.target_iri or "" }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium" style="color: var(--text-secondary)">Submitted</dt>
+                <dd style="color: var(--text-color)">{{ claim.created_at }}</dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Payload</h2>
+        <pre class="overflow-x-auto text-sm">{{ claim.payload | tojson(indent=2) }}</pre>
+    </div>
+
+    {% if claim.status == "pending" %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Review</h2>
+        <form method="post" action="/web/admin/claims/{{ claim.id }}/review" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="language" value="{{ language }}">
+            <div>
+                <label for="comment" class="block text-sm font-medium" style="color: var(--text-color)">Comment</label>
+                <textarea id="comment" name="comment" rows="4" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button type="submit" name="decision" value="reject" class="btn-secondary">Reject</button>
+                <button type="submit" name="decision" value="accept" class="btn-primary">Accept</button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Review</h2>
+        <p style="color: var(--text-secondary)">Reviewed by {{ claim.review.reviewer.name }} at {{ claim.reviewed_at }}</p>
+        <p class="mt-3" style="color: var(--text-color)">{{ claim.review.comment }}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

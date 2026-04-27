@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Review Claims - PyST{% endblock %}
+
+{% block page_header %}
+<div class="flex justify-between items-center">
+    <div>
+        <h1>Contributor claims</h1>
+        <p style="color: var(--text-secondary)">Review proposed changes before any taxonomy data is changed.</p>
+    </div>
+    <div class="flex space-x-3">
+        <a href="/web/admin/claims?language={{ language }}&status=pending" class="btn-secondary">Pending</a>
+        <a href="/web/admin/claims?language={{ language }}&status=" class="btn-secondary">All</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {% if message %}
+    <div class="card px-4 py-3" style="background-color: var(--nav-bg); color: var(--text-color)">{{ message }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="card px-4 py-3" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
+    {% endif %}
+
+    <div class="card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y" style="border-color: var(--border-color)">
+                <thead style="background-color: var(--nav-bg)">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Claim</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Contributor</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Target</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y" style="background-color: var(--header-bg); border-color: var(--border-color)">
+                    {% for claim in claims %}
+                    <tr class="transition-colors hover-row">
+                        <td class="px-6 py-4">
+                            <a href="/web/admin/claims/{{ claim.id }}?language={{ language }}" class="text-primary hover:text-primary-hover">{{ claim.title }}</a>
+                            <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ claim.kind }} · {{ claim.created_at }}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm" style="color: var(--text-secondary)">{{ claim.submitted_by.name }}</td>
+                        <td class="px-6 py-4 text-sm" style="color: var(--text-secondary)">{{ claim.status }}</td>
+                        <td class="px-6 py-4 text-sm" style="color: var(--text-secondary)">{{ claim.target_iri or "" }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-8 text-center text-sm" style="color: var(--text-secondary)">No claims found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

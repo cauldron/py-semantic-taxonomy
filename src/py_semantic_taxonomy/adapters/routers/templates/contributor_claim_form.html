@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}New Claim - PyST{% endblock %}
+
+{% block page_header %}
+<div>
+    <h1>New contributor claim</h1>
+    <p style="color: var(--text-secondary)">Describe the change you want an admin to review.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card px-6 py-6">
+    {% if error %}
+    <div class="mb-4 px-4 py-3" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/web/contributor/claims/new" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="language" value="{{ language }}">
+
+        <div>
+            <label for="kind" class="block text-sm font-medium" style="color: var(--text-color)">Claim type</label>
+            <select id="kind" name="kind" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                {% for value, label in claim_kinds %}
+                <option value="{{ value }}" {% if form_data.kind == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="title" class="block text-sm font-medium" style="color: var(--text-color)">Title</label>
+            <input id="title" name="title" type="text" required value="{{ form_data.title }}" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+        </div>
+
+        <div>
+            <label for="target_iri" class="block text-sm font-medium" style="color: var(--text-color)">Target IRI</label>
+            <input id="target_iri" name="target_iri" type="text" value="{{ form_data.target_iri }}" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+        </div>
+
+        <div>
+            <label for="rationale" class="block text-sm font-medium" style="color: var(--text-color)">Rationale</label>
+            <textarea id="rationale" name="rationale" rows="4" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">{{ form_data.rationale }}</textarea>
+        </div>
+
+        <div>
+            <label for="payload" class="block text-sm font-medium" style="color: var(--text-color)">Proposed change JSON</label>
+            <textarea id="payload" name="payload" rows="12" class="mt-1 block w-full border rounded-md px-3 py-2 font-mono text-sm" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">{{ form_data.payload }}</textarea>
+        </div>
+
+        <div class="flex justify-end space-x-3">
+            <a href="/web/contributor/?language={{ language }}" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">Submit Claim</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

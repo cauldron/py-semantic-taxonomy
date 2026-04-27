@@ -86,6 +86,25 @@ body {
     transform: translateY(-1px);
 }
 
+.btn-secondary {
+    background-color: var(--nav-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-secondary:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
 .text-primary {
     color: var(--primary-color);
 }

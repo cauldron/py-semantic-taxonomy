@@ -106,6 +106,14 @@ templates.env.globals["is_admin_request"] = (
 templates.env.globals["admin_user_name"] = (
     lambda request: (getattr(request, "session", {}).get("admin_user") or {}).get("name", "Admin")
 )
+templates.env.globals["is_contributor_request"] = (
+    lambda request: bool(getattr(request, "session", {}).get("contributor_user"))
+)
+templates.env.globals["contributor_user_name"] = (
+    lambda request: (getattr(request, "session", {}).get("contributor_user") or {}).get(
+        "name", "Contributor"
+    )
+)
 
 
 def ensure_admin_csrf_token(request: Request) -> str:

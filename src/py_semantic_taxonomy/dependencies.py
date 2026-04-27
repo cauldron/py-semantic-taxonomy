@@ -38,3 +38,10 @@ def get_search_service() -> SearchServiceProtocol:
     from py_semantic_taxonomy.application.search_service import SearchService
 
     return SearchService()
+
+
+@lru_cache(maxsize=1)
+def get_claim_store():
+    from py_semantic_taxonomy.adapters.persistence.claims import ContributorClaimStore
+
+    return ContributorClaimStore()

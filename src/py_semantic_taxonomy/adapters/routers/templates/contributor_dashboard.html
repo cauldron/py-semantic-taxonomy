@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Contributor - PyST{% endblock %}
+
+{% block page_header %}
+<div class="flex justify-between items-center">
+    <div>
+        <h1>Contributor user interface</h1>
+        <p style="color: var(--text-secondary)">Submit proposed taxonomy changes for admin review.
+            Contributor access is provided by GitLab group <code>{{ gitlab_contributor_group }}</code>.
+        </p>
+    </div>
+    <a href="/web/contributor/claims/new?language={{ language }}" class="btn-primary">
+        <i class="fas fa-plus mr-2"></i>New Claim
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {% if message %}
+    <div class="card px-4 py-3" style="background-color: var(--nav-bg); color: var(--text-color)">{{ message }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="card px-4 py-3" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
+    {% endif %}
+
+    <div class="card overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+            <h2 class="text-lg font-medium" style="color: var(--text-color)">My Claims</h2>
+            <p class="text-sm" style="color: var(--text-secondary)">Claims are review records only; they do not change taxonomy data directly.</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y" style="border-color: var(--border-color)">
+                <thead style="background-color: var(--nav-bg)">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Title</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Type</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">Target</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y" style="background-color: var(--header-bg); border-color: var(--border-color)">
+                    {% for claim in claims %}
+                    <tr class="transition-colors hover-row">
+                        <td class="px-6 py-4">
+                            <a href="/web/contributor/claims/{{ claim.id }}?language={{ language }}" class="text-primary hover:text-primary-hover">{{ claim.title }}</a>
+                            <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ claim.created_at }}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm" style="color: var(--text-secondary)">{{ claim.kind }}</td>
+                        <td class="px-6 py-4 text-sm" style="color: var(--text-secondary)">{{ claim.status }}</td>
+                        <td class="px-6 py-4 text-sm" style="color: var(--text-secondary)">{{ claim.target_iri or "" }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-8 text-center text-sm" style="color: var(--text-secondary)">No claims submitted yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

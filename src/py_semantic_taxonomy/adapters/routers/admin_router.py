@@ -16,7 +16,7 @@ from py_semantic_taxonomy.adapters.routers.web_router import (
     templates,
 )
 from py_semantic_taxonomy.cfg import Settings, get_settings
-from py_semantic_taxonomy.dependencies import get_graph_service
+from py_semantic_taxonomy.dependencies import get_claim_store, get_graph_service
 from py_semantic_taxonomy.domain import entities as de
 from py_semantic_taxonomy.domain.constants import BIBO, DCTERMS, OWL, SKOS, XKOS, RDF_MAPPING
 from py_semantic_taxonomy.domain.hash_utils import hash_fnv64
@@ -740,6 +740,7 @@ def _render_admin_dashboard(
     settings: Settings,
     admin_user: dict[str, Any],
     concept_schemes: list[de.ConceptScheme],
+    pending_claim_count: int = 0,
     message: str | None = None,
     error: str | None = None,
 ) -> HTMLResponse:
@@ -752,6 +753,7 @@ def _render_admin_dashboard(
             settings,
             admin_user=admin_user,
             concept_schemes=concept_schemes,
+            pending_claim_count=pending_claim_count,
             csrf_token=_ensure_csrf_token(request),
             message=message,
             error=error,
@@ -926,6 +928,7 @@ async def admin_dashboard(
     language: str | None = None,
     settings: Settings = Depends(get_settings),
     service=Depends(get_graph_service),
+    claim_store=Depends(get_claim_store),
 ):
     admin_user = _ensure_admin(request, language, settings)
     if isinstance(admin_user, RedirectResponse):
@@ -933,6 +936,7 @@ async def admin_dashboard(
 
     language = _default_language(language, settings)
     concept_schemes = await service.concept_scheme_get_all()
+    pending_claims = await claim_store.get_all(status="pending")
     for scheme in concept_schemes:
         scheme.url = concept_scheme_view_url(request, scheme.id_, language)
         scheme.edit_url = (
@@ -953,8 +957,116 @@ async def admin_dashboard(
         settings=settings,
         admin_user=admin_user,
         concept_schemes=concept_schemes,
+        pending_claim_count=len(pending_claims),
         message=request.query_params.get("message"),
         error=request.query_params.get("error"),
+    )
+
+
+@router.get("/claims", response_class=HTMLResponse, name="admin_claims")
+async def admin_claims(
+    request: Request,
+    status: str | None = "pending",
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+    claim_store=Depends(get_claim_store),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
+    language = _default_language(language, settings)
+    claims = await claim_store.get_all(status=status or None)
+    return templates.TemplateResponse(
+        request,
+        "admin_claims.html",
+        context=_base_context(
+            request,
+            language,
+            settings,
+            admin_user=admin_user,
+            claims=claims,
+            status=status or "",
+            csrf_token=_ensure_csrf_token(request),
+            message=request.query_params.get("message"),
+            error=request.query_params.get("error"),
+        ),
+    )
+
+
+@router.get("/claims/{claim_id}", response_class=HTMLResponse, name="admin_claim_detail")
+async def admin_claim_detail(
+    request: Request,
+    claim_id: int,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+    claim_store=Depends(get_claim_store),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
+    claim = await claim_store.get(claim_id)
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+
+    language = _default_language(language, settings)
+    return templates.TemplateResponse(
+        request,
+        "admin_claim_detail.html",
+        context=_base_context(
+            request,
+            language,
+            settings,
+            admin_user=admin_user,
+            claim=claim,
+            csrf_token=_ensure_csrf_token(request),
+        ),
+    )
+
+
+@router.post("/claims/{claim_id}/review", name="admin_review_claim")
+async def admin_review_claim(
+    request: Request,
+    claim_id: int,
+    csrf_token: str = Form(...),
+    decision: str = Form(...),
+    comment: str = Form(""),
+    language: str = Form("en"),
+    settings: Settings = Depends(get_settings),
+    claim_store=Depends(get_claim_store),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+    _validate_csrf(request, csrf_token)
+
+    status = {"accept": "accepted", "reject": "rejected"}.get(decision)
+    if not status:
+        raise HTTPException(status_code=422, detail="Unknown review decision")
+
+    claim = await claim_store.get(claim_id)
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+    if claim["status"] != "pending":
+        return RedirectResponse(
+            str(request.url_for("admin_claim_detail", claim_id=claim_id))
+            + "?"
+            + urlencode({"language": language, "error": "Claim has already been reviewed"}),
+            status_code=303,
+        )
+
+    await claim_store.review(
+        claim_id=claim_id,
+        status=status,
+        reviewer=admin_user,
+        comment=comment.strip(),
+    )
+    return RedirectResponse(
+        str(request.url_for("admin_claims"))
+        + "?"
+        + urlencode({"language": language, "status": "pending", "message": f"Claim {status}"}),
+        status_code=303,
     )
 
 
