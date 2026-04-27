@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login - PyST{% endblock %}
+
+{% block page_header %}
+<div>
+    <h1>Admin login</h1>
+    <p style="color: var(--text-secondary)">Sign in to manage taxonomy data directly.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {% if error %}
+    <div class="card px-4 py-3" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
+    {% endif %}
+
+    {% if backend_configured %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Backend admin ({{ backend_name }})</h2>
+        <p class="text-sm mb-6" style="color: var(--text-secondary)">Use a backend account. PyST grants admin access only when the backend marks the user as staff/admin or their email is allow-listed.</p>
+
+        <div class="mb-6">
+            <h3 class="text-sm font-medium mb-2" style="color: var(--text-color)">Backend GitLab login</h3>
+            <a href="/web/admin/backend/login?language={{ language }}" class="btn-secondary">
+                <i class="fab fa-gitlab mr-2"></i>Sign in with GitLab via {{ backend_name }}
+            </a>
+        </div>
+
+        <div class="border-t pt-6" style="border-color: var(--border-color)">
+            <h3 class="text-sm font-medium mb-2" style="color: var(--text-color)">Backend email login</h3>
+            <form method="post" action="/web/admin/backend/token-login" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="language" value="{{ language }}">
+                <div>
+                    <label for="admin-email" class="block text-sm font-medium" style="color: var(--text-color)">Email</label>
+                    <input id="admin-email" name="email" type="email" required class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                </div>
+                <div>
+                    <label for="admin-password" class="block text-sm font-medium" style="color: var(--text-color)">Password</label>
+                    <input id="admin-password" name="password" type="password" required class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="btn-secondary">Sign in with backend account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if gitlab_configured %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">GitLab admin group</h2>
+        <p class="text-sm mb-4" style="color: var(--text-secondary)">Use the admin group configured directly in PyST.</p>
+        <a href="/web/admin/gitlab/login?language={{ language }}" class="btn-secondary">
+            <i class="fab fa-gitlab mr-2"></i>Sign in via GitLab admin group
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

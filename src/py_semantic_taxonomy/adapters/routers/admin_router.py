@@ -53,6 +53,17 @@ def _admin_configured(settings: Settings) -> bool:
     )
 
 
+def _backend_configured(settings: Settings) -> bool:
+    return bool(
+        settings.contributor_backend_base_url
+        and settings.contributor_backend_base_url != "missing"
+    )
+
+
+def _backend_url(settings: Settings, path: str) -> str:
+    return settings.contributor_backend_base_url.rstrip("/") + path
+
+
 def _default_language(language: str | None, settings: Settings) -> str:
     return language or settings.languages[0]
 
@@ -536,6 +547,36 @@ async def _gitlab_group_member(user_id: int, access_token: str, settings: Settin
     return member.get("access_level", 0) >= settings.gitlab_admin_min_access_level
 
 
+def _backend_user_from_payload(
+    payload: dict[str, Any],
+    *,
+    fallback_email: str | None = None,
+) -> tuple[dict[str, Any], str | None]:
+    user = payload.get("user") if isinstance(payload.get("user"), dict) else payload
+    email = user.get("email") or fallback_email
+    username = user.get("username") or user.get("name") or email or str(user.get("id", "backend-user"))
+    admin_user = {
+        "provider": "backend",
+        "id": str(user.get("id") or user.get("sub") or email or username),
+        "username": username,
+        "name": user.get("name") or username or "Admin",
+        "email": email,
+    }
+    return admin_user, payload.get("token")
+
+
+def _backend_user_is_admin(user: dict[str, Any], payload: dict[str, Any], settings: Settings) -> bool:
+    email = user.get("email")
+    if email and email in settings.admin_backend_allowed_emails:
+        return True
+
+    candidate = payload.get("user") if isinstance(payload.get("user"), dict) else payload
+    return any(
+        bool(candidate.get(key))
+        for key in ("is_admin", "is_staff", "is_superuser", "admin")
+    )
+
+
 async def _concept_association_rows(
     request: Request,
     *,
@@ -851,6 +892,32 @@ async def admin_login(
             str(request.url_for("admin_dashboard")) + "?" + urlencode({"language": language}),
             status_code=303,
         )
+    if not _admin_configured(settings) and not _backend_configured(settings):
+        raise HTTPException(status_code=503, detail="Admin authentication is not configured")
+
+    return templates.TemplateResponse(
+        request,
+        "admin_login.html",
+        context=_base_context(
+            request,
+            language,
+            settings,
+            csrf_token=_ensure_csrf_token(request),
+            gitlab_configured=_admin_configured(settings),
+            backend_configured=_backend_configured(settings),
+            backend_name=settings.contributor_backend_name,
+            error=request.query_params.get("error"),
+        ),
+    )
+
+
+@router.get("/gitlab/login", name="admin_gitlab_login")
+async def admin_gitlab_login(
+    request: Request,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+):
+    language = _default_language(language, settings)
     if not _admin_configured(settings):
         raise HTTPException(status_code=503, detail="GitLab admin authentication is not configured")
 
@@ -870,6 +937,113 @@ async def admin_login(
         )
     )
     return RedirectResponse(authorization_url, status_code=303)
+
+
+@router.get("/backend/login", name="admin_backend_login")
+async def admin_backend_login(
+    request: Request,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+):
+    if not _backend_configured(settings):
+        raise HTTPException(status_code=503, detail="Admin backend is not configured")
+
+    next_url = _public_url_for(request, "admin_backend_callback", settings)
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(
+            _backend_url(settings, "/api/user/auth/gitlab/login/"),
+            json={"next": next_url},
+        )
+    response.raise_for_status()
+    payload = response.json()
+    authorization_url = payload.get("authorization_url") or payload.get("next")
+    if not authorization_url:
+        raise HTTPException(status_code=502, detail="Admin backend did not return an authorization URL")
+    return RedirectResponse(authorization_url, status_code=303)
+
+
+@router.get("/backend/callback", name="admin_backend_callback")
+async def admin_backend_callback(
+    request: Request,
+    code: str | None = None,
+    handoff_code: str | None = None,
+    error: str | None = None,
+    settings: Settings = Depends(get_settings),
+):
+    if error:
+        raise HTTPException(status_code=403, detail=error)
+    if not _backend_configured(settings):
+        raise HTTPException(status_code=503, detail="Admin backend is not configured")
+
+    exchange_code = code or handoff_code or request.query_params.get("handoff")
+    if not exchange_code:
+        raise HTTPException(status_code=400, detail="Missing backend handoff code")
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(
+            _backend_url(settings, "/api/user/auth/exchange/"),
+            json={"code": exchange_code},
+        )
+    response.raise_for_status()
+    payload = response.json()
+    admin_user, _token = _backend_user_from_payload(payload)
+    if not _backend_user_is_admin(admin_user, payload, settings):
+        raise HTTPException(status_code=403, detail="Backend user is not allowed to administer PyST")
+
+    request.session["admin_user"] = admin_user
+    return RedirectResponse(str(request.url_for("admin_dashboard")), status_code=303)
+
+
+@router.post("/backend/token-login", name="admin_backend_token_login")
+async def admin_backend_token_login(
+    request: Request,
+    csrf_token: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    language: str = Form("en"),
+    settings: Settings = Depends(get_settings),
+):
+    if not _backend_configured(settings):
+        raise HTTPException(status_code=503, detail="Admin backend is not configured")
+    _validate_csrf(request, csrf_token)
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        token_response = await client.post(
+            _backend_url(settings, "/api/user/token/"),
+            json={"email": email, "password": password},
+        )
+        if token_response.status_code >= 400:
+            return RedirectResponse(
+                str(request.url_for("admin_login"))
+                + "?"
+                + urlencode({"language": language, "error": "Backend login failed"}),
+                status_code=303,
+            )
+        token_payload = token_response.json()
+        token = token_payload.get("token")
+        user_payload: dict[str, Any] = token_payload
+        if token:
+            me_response = await client.get(
+                _backend_url(settings, "/api/user/me/"),
+                headers={"Authorization": f"Token {token}"},
+            )
+            if me_response.status_code < 400:
+                user_payload = {"user": me_response.json(), "token": token}
+
+    admin_user, _token = _backend_user_from_payload(user_payload, fallback_email=email)
+    if not _backend_user_is_admin(admin_user, user_payload, settings):
+        return RedirectResponse(
+            str(request.url_for("admin_login"))
+            + "?"
+            + urlencode({"language": language, "error": "Backend user is not allowed to administer PyST"}),
+            status_code=303,
+        )
+
+    request.session["admin_user"] = admin_user
+    return RedirectResponse(
+        str(request.url_for("admin_dashboard")) + "?" + urlencode({"language": language}),
+        status_code=303,
+    )
 
 
 @router.get("/callback", name="admin_gitlab_callback")

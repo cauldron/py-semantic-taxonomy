@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     gitlab_oauth_scope: str = "read_api"
     contributor_backend_base_url: str = "missing"
     contributor_backend_name: str = "BONSAI"
+    admin_backend_allowed_emails: list[str] = []
 
     typesense_url: str = "missing"
     typesense_api_key: str = "missing"
