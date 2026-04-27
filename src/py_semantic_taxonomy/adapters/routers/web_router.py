@@ -239,8 +239,9 @@ async def web_concept_schemes(
         ],
     )
     return templates.TemplateResponse(
+        request,
         "concept_schemes.html",
-        {
+        context={
             "request": request,
             "concept_schemes": concept_schemes,
             "language_selector": languages,
@@ -294,8 +295,9 @@ async def web_concept_scheme_view(
         )
 
         return templates.TemplateResponse(
+            request,
             "concept_scheme_view.html",
-            {
+            context={
                 "request": request,
                 "concept_scheme": concept_scheme,
                 "concepts": concepts,
@@ -430,8 +432,9 @@ async def web_concept_view(
         )
 
         return templates.TemplateResponse(
+            request,
             "concept_view.html",
-            {
+            context={
                 "request": request,
                 "scheme": scheme,
                 "scheme_url": concept_scheme_view_url(request, scheme.id_, language),
@@ -486,8 +489,9 @@ async def web_concept_children_fragment(
                 pass
 
     return templates.TemplateResponse(
+        request,
         "_concept_tree_children.html",
-        {
+        context={
             "request": request,
             "children": children,
             "concept_scheme": concept_scheme,
@@ -566,8 +570,9 @@ async def web_concept_detail_fragment(
         )
 
         return templates.TemplateResponse(
+            request,
             "_concept_detail_panel.html",
-            {
+            context={
                 "request": request,
                 "scheme": scheme,
                 "scheme_url": concept_scheme_view_url(request, scheme.id_, language),
@@ -655,8 +660,9 @@ async def web_search(
         ]
 
         return templates.TemplateResponse(
+            request,
             "search.html",
-            {
+            context={
                 "request": request,
                 "query": query,
                 "language": language,

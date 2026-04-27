@@ -744,8 +744,9 @@ def _render_admin_dashboard(
     error: str | None = None,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
+        request,
         "admin_dashboard.html",
-        _base_context(
+        context=_base_context(
             request,
             language,
             settings,
@@ -771,8 +772,9 @@ def _render_concept_scheme_form(
     message: str | None = None,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
+        request,
         "admin_concept_scheme_form.html",
-        _base_context(
+        context=_base_context(
             request,
             language,
             settings,
@@ -808,8 +810,9 @@ def _render_concept_form(
     message: str | None = None,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
+        request,
         "admin_concept_form.html",
-        _base_context(
+        context=_base_context(
             request,
             language,
             settings,
