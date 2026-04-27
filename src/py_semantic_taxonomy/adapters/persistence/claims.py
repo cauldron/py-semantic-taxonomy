@@ -35,7 +35,7 @@ class ContributorClaimStore:
         self,
         *,
         status: str | None = None,
-        submitted_by_id: int | None = None,
+        submitted_by_id: Any | None = None,
     ) -> list[dict[str, Any]]:
         stmt = select(contributor_claim_table).order_by(desc(contributor_claim_table.c.created_at))
         if status:

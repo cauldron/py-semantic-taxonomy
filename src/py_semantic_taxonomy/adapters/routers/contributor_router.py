@@ -44,6 +44,17 @@ def _contributor_configured(settings: Settings) -> bool:
     )
 
 
+def _backend_configured(settings: Settings) -> bool:
+    return bool(
+        settings.contributor_backend_base_url
+        and settings.contributor_backend_base_url != "missing"
+    )
+
+
+def _backend_url(settings: Settings, path: str) -> str:
+    return settings.contributor_backend_base_url.rstrip("/") + path
+
+
 def _contributor_redirect(request: Request, language: str) -> RedirectResponse:
     return RedirectResponse(
         str(request.url_for("contributor_login")) + "?" + urlencode({"language": language}),
@@ -92,6 +103,23 @@ async def _gitlab_group_member(
     response.raise_for_status()
     member = response.json()
     return member.get("access_level", 0) >= min_access_level
+
+
+def _backend_user_from_payload(
+    payload: dict[str, Any],
+    *,
+    fallback_email: str | None = None,
+) -> dict[str, Any]:
+    user = payload.get("user") if isinstance(payload.get("user"), dict) else payload
+    email = user.get("email") or fallback_email
+    username = user.get("username") or user.get("name") or email or str(user.get("id", "backend-user"))
+    return {
+        "provider": "backend",
+        "id": str(user.get("id") or user.get("sub") or email or username),
+        "username": username,
+        "name": user.get("name") or username or "Contributor",
+        "email": email,
+    }
 
 
 def _render_contributor_dashboard(
@@ -158,6 +186,34 @@ async def contributor_login(
             str(request.url_for("contributor_dashboard")) + "?" + urlencode({"language": language}),
             status_code=303,
         )
+    if not _contributor_configured(settings) and not _backend_configured(settings):
+        raise HTTPException(
+            status_code=503, detail="Contributor authentication is not configured"
+        )
+
+    return templates.TemplateResponse(
+        request,
+        "contributor_login.html",
+        context=_base_context(
+            request,
+            language,
+            settings,
+            csrf_token=_ensure_contributor_csrf_token(request),
+            gitlab_configured=_contributor_configured(settings),
+            backend_configured=_backend_configured(settings),
+            backend_name=settings.contributor_backend_name,
+            error=request.query_params.get("error"),
+        ),
+    )
+
+
+@router.get("/gitlab/login", name="contributor_gitlab_login")
+async def contributor_gitlab_login(
+    request: Request,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+):
+    language = _default_language(language, settings)
     if not _contributor_configured(settings):
         raise HTTPException(
             status_code=503, detail="GitLab contributor authentication is not configured"
@@ -179,6 +235,95 @@ async def contributor_login(
         )
     )
     return RedirectResponse(authorization_url, status_code=303)
+
+
+@router.get("/backend/login", name="contributor_backend_login")
+async def contributor_backend_login(
+    request: Request,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+):
+    if not _backend_configured(settings):
+        raise HTTPException(status_code=503, detail="Contributor backend is not configured")
+
+    next_url = _public_url_for(request, "contributor_backend_callback", settings)
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(
+            _backend_url(settings, "/api/user/auth/gitlab/login/"),
+            json={"next": next_url},
+        )
+    response.raise_for_status()
+    payload = response.json()
+    authorization_url = payload.get("authorization_url") or payload.get("next")
+    if not authorization_url:
+        raise HTTPException(
+            status_code=502,
+            detail="Contributor backend did not return an authorization URL",
+        )
+    return RedirectResponse(authorization_url, status_code=303)
+
+
+@router.get("/backend/callback", name="contributor_backend_callback")
+async def contributor_backend_callback(
+    request: Request,
+    code: str | None = None,
+    handoff_code: str | None = None,
+    error: str | None = None,
+    settings: Settings = Depends(get_settings),
+):
+    if error:
+        raise HTTPException(status_code=403, detail=error)
+    if not _backend_configured(settings):
+        raise HTTPException(status_code=503, detail="Contributor backend is not configured")
+
+    exchange_code = code or handoff_code or request.query_params.get("handoff")
+    if not exchange_code:
+        raise HTTPException(status_code=400, detail="Missing backend handoff code")
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(
+            _backend_url(settings, "/api/user/auth/exchange/"),
+            json={"code": exchange_code},
+        )
+    response.raise_for_status()
+    request.session["contributor_user"] = _backend_user_from_payload(response.json())
+    return RedirectResponse(str(request.url_for("contributor_dashboard")), status_code=303)
+
+
+@router.post("/backend/token-login", name="contributor_backend_token_login")
+async def contributor_backend_token_login(
+    request: Request,
+    csrf_token: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    language: str = Form("en"),
+    settings: Settings = Depends(get_settings),
+):
+    if not _backend_configured(settings):
+        raise HTTPException(status_code=503, detail="Contributor backend is not configured")
+    _validate_contributor_csrf(request, csrf_token)
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(
+            _backend_url(settings, "/api/user/token/"),
+            json={"email": email, "password": password},
+        )
+    if response.status_code >= 400:
+        return RedirectResponse(
+            str(request.url_for("contributor_login"))
+            + "?"
+            + urlencode({"language": language, "error": "Backend login failed"}),
+            status_code=303,
+        )
+
+    request.session["contributor_user"] = _backend_user_from_payload(
+        response.json(),
+        fallback_email=email,
+    )
+    return RedirectResponse(
+        str(request.url_for("contributor_dashboard")) + "?" + urlencode({"language": language}),
+        status_code=303,
+    )
 
 
 @router.get("/callback", name="contributor_gitlab_callback")

@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     gitlab_contributor_group: str = "missing"
     gitlab_contributor_min_access_level: int = 30
     gitlab_oauth_scope: str = "read_api"
+    contributor_backend_base_url: str = "missing"
+    contributor_backend_name: str = "BONSAI"
 
     typesense_url: str = "missing"
     typesense_api_key: str = "missing"

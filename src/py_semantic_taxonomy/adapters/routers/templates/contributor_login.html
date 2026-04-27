@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Contributor Login - PyST{% endblock %}
+
+{% block page_header %}
+<div>
+    <h1>Contributor login</h1>
+    <p style="color: var(--text-secondary)">Sign in to submit proposed taxonomy changes for admin review.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {% if error %}
+    <div class="card px-4 py-3" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
+    {% endif %}
+
+    {% if backend_configured %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Backend group ({{ backend_name }})</h2>
+        <p class="text-sm mb-6" style="color: var(--text-secondary)">Use an account managed by the backend user registry. You can sign in with backend credentials or let the backend resolve your GitLab identity.</p>
+
+        <div class="mb-6">
+            <h3 class="text-sm font-medium mb-2" style="color: var(--text-color)">Backend GitLab login</h3>
+            <a href="/web/contributor/backend/login?language={{ language }}" class="btn-secondary">
+                <i class="fab fa-gitlab mr-2"></i>Sign in with GitLab via {{ backend_name }}
+            </a>
+        </div>
+
+        <div class="border-t pt-6" style="border-color: var(--border-color)">
+            <h3 class="text-sm font-medium mb-2" style="color: var(--text-color)">Backend email login</h3>
+            <p class="text-sm mb-4" style="color: var(--text-secondary)">Use an email and password managed by the backend.</p>
+            <form method="post" action="/web/contributor/backend/token-login" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="language" value="{{ language }}">
+                <div>
+                    <label for="email" class="block text-sm font-medium" style="color: var(--text-color)">Email</label>
+                    <input id="email" name="email" type="email" required class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium" style="color: var(--text-color)">Password</label>
+                    <input id="password" name="password" type="password" required class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="btn-secondary">Sign in with backend account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if gitlab_configured %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">GitLab group</h2>
+        <p class="text-sm mb-4" style="color: var(--text-secondary)">Use the contributor group configured directly in PyST.</p>
+        <a href="/web/contributor/gitlab/login?language={{ language }}" class="btn-secondary">
+            <i class="fab fa-gitlab mr-2"></i>Sign in via GitLab group
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
