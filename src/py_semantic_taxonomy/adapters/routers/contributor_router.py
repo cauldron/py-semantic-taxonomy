@@ -99,6 +99,8 @@ def _blank_claim_form_data(target_iri: str = "") -> dict[str, Any]:
         "csv_text": "",
         "csv_import_name": "",
         "csv_file_name": "",
+        "source_scheme_iri": "",
+        "target_scheme_iri": "",
     }
 
 
@@ -197,9 +199,11 @@ def _csv_change_from_form(
     csv_text: str,
     csv_file_name: str,
     import_name: str,
+    source_scheme_iri: str = "",
+    target_scheme_iri: str = "",
 ) -> dict[str, Any]:
     columns, rows = _parse_csv_rows(csv_text)
-    return {
+    change = {
         "entity_type": "csv_import",
         "import_kind": "tree" if kind == "bulk_tree_import" else "concordance",
         "import_name": import_name.strip(),
@@ -207,6 +211,11 @@ def _csv_change_from_form(
         "columns": columns,
         "rows": rows,
     }
+    if source_scheme_iri.strip():
+        change["source_scheme_iri"] = source_scheme_iri.strip()
+    if target_scheme_iri.strip():
+        change["target_scheme_iri"] = target_scheme_iri.strip()
+    return change
 
 
 def _build_claim_payload(
@@ -228,6 +237,8 @@ def _build_claim_payload(
             csv_text=csv_text,
             csv_file_name=csv_file_name,
             import_name=csv_import_name,
+            source_scheme_iri=form_data.get("source_scheme_iri", ""),
+            target_scheme_iri=form_data.get("target_scheme_iri", ""),
         )
         mode = "csv"
     elif payload_text:
@@ -495,6 +506,7 @@ def _render_csv_import_form(
     settings: Settings,
     contributor_user: dict[str, Any],
     form_data: dict[str, Any],
+    concept_schemes: list[de.ConceptScheme],
     error: str | None = None,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
@@ -510,6 +522,7 @@ def _render_csv_import_form(
             form_data=_normalize_claim_form_data(form_data),
             relationship_predicates=RELATIONSHIP_PREDICATE_OPTIONS,
             csv_import_examples=CSV_IMPORT_EXAMPLES,
+            concept_schemes=concept_schemes,
             error=error,
         ),
     )
@@ -1295,17 +1308,28 @@ async def contributor_csv_import(
     request: Request,
     language: str | None = None,
     settings: Settings = Depends(get_settings),
+    service=Depends(get_graph_service),
 ):
     contributor_user = _ensure_contributor(request, language, settings)
     if isinstance(contributor_user, RedirectResponse):
         return contributor_user
     language = _default_language(language, settings)
+    concept_schemes = await service.concept_scheme_get_all()
     return _render_csv_import_form(
         request,
         language=language,
         settings=settings,
         contributor_user=contributor_user,
-        form_data={"kind": "bulk_tree_import", "title": "", "rationale": "", "csv_text": "", "csv_import_name": ""},
+        form_data={
+            "kind": "bulk_tree_import",
+            "title": "",
+            "rationale": "",
+            "csv_text": "",
+            "csv_import_name": "",
+            "source_scheme_iri": "",
+            "target_scheme_iri": "",
+        },
+        concept_schemes=concept_schemes,
     )
 
 
@@ -1318,22 +1342,41 @@ async def contributor_csv_import_claim(
     rationale: str = Form(""),
     csv_text: str = Form(""),
     csv_import_name: str = Form(""),
+    source_scheme_iri: str = Form(""),
+    target_scheme_iri: str = Form(""),
     csv_file: UploadFile | None = File(None),
     language: str = Form("en"),
     settings: Settings = Depends(get_settings),
     claim_store=Depends(get_claim_store),
+    service=Depends(get_graph_service),
 ):
     contributor_user = _ensure_contributor(request, language, settings)
     if isinstance(contributor_user, RedirectResponse):
         return contributor_user
     _validate_contributor_csrf(request, csrf_token)
-    form_data = {"kind": kind, "title": title, "rationale": rationale, "csv_text": csv_text, "csv_import_name": csv_import_name}
+    concept_schemes = await service.concept_scheme_get_all()
+    form_data = {
+        "kind": kind,
+        "title": title,
+        "rationale": rationale,
+        "csv_text": csv_text,
+        "csv_import_name": csv_import_name,
+        "source_scheme_iri": source_scheme_iri,
+        "target_scheme_iri": target_scheme_iri,
+    }
     try:
         uploaded_csv_text, csv_file_name = _read_csv_upload(csv_file)
         if uploaded_csv_text:
             csv_text = uploaded_csv_text
             form_data["csv_text"] = csv_text
-        change = _csv_change_from_form(kind, csv_text=csv_text, csv_file_name=csv_file_name, import_name=csv_import_name)
+        change = _csv_change_from_form(
+            kind,
+            csv_text=csv_text,
+            csv_file_name=csv_file_name,
+            import_name=csv_import_name,
+            source_scheme_iri=source_scheme_iri,
+            target_scheme_iri=target_scheme_iri,
+        )
         await _submit_claim(
             claim_store=claim_store,
             kind=kind,
@@ -1350,6 +1393,7 @@ async def contributor_csv_import_claim(
             settings=settings,
             contributor_user=contributor_user,
             form_data=form_data,
+            concept_schemes=concept_schemes,
             error=str(exc),
         )
     return RedirectResponse(

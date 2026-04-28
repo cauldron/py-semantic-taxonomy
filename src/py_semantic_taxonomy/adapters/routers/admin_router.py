@@ -212,6 +212,17 @@ def _find_scheme_by_notation(
     raise ValueError(f"Could not resolve concept scheme with notation `{notation}`")
 
 
+def _find_scheme_by_iri(
+    schemes: list[de.ConceptScheme],
+    scheme_iri: str,
+) -> de.ConceptScheme:
+    scheme_iri = scheme_iri.strip()
+    for scheme in schemes:
+        if scheme.id_ == scheme_iri:
+            return scheme
+    raise ValueError(f"Could not resolve concept scheme with IRI `{scheme_iri}`")
+
+
 def _find_concept_by_notation(
     concepts: list[de.Concept],
     notation: str,
@@ -465,12 +476,30 @@ async def _apply_concordance_import_claim(
     all_concepts = await service.concept_get_all(concept_scheme_iri=None, top_concepts_only=False)
     scheme_cache: dict[str, tuple[de.ConceptScheme, list[de.Concept]]] = {}
     relationships: list[de.Relationship] = []
+    associations_to_create: list[de.Association] = []
     predicate_map = {verb.value: verb for verb in RelationshipVerbs if verb not in {RelationshipVerbs.broader, RelationshipVerbs.narrower}}
+    explicit_source_scheme_iri = change.get("source_scheme_iri", "").strip() if isinstance(change, dict) else ""
+    explicit_target_scheme_iri = change.get("target_scheme_iri", "").strip() if isinstance(change, dict) else ""
+
+    if explicit_source_scheme_iri:
+        from_scheme = _find_scheme_by_iri(schemes, explicit_source_scheme_iri)
+        scheme_cache[f"iri:{explicit_source_scheme_iri}"] = (
+            from_scheme,
+            await service.concept_get_all(concept_scheme_iri=from_scheme.id_, top_concepts_only=False),
+        )
+    if explicit_target_scheme_iri:
+        to_scheme = _find_scheme_by_iri(schemes, explicit_target_scheme_iri)
+        scheme_cache[f"iri:{explicit_target_scheme_iri}"] = (
+            to_scheme,
+            await service.concept_get_all(concept_scheme_iri=to_scheme.id_, top_concepts_only=False),
+        )
 
     for row in rows:
         classification_from = row.get("classification_from", "").strip()
         classification_to = row.get("classification_to", "").strip()
-        if not classification_from or not classification_to:
+        if (not classification_from and not explicit_source_scheme_iri) or (
+            not classification_to and not explicit_target_scheme_iri
+        ):
             raise ValueError("Concordance import rows require `classification_from` and `classification_to`")
 
         from_columns = [key for key in row if key.endswith("_from") and key != "classification_from"]
@@ -485,7 +514,10 @@ async def _apply_concordance_import_claim(
         if not source_code or not target_code:
             raise ValueError("Concordance import rows require non-empty source and target codes")
 
-        if classification_from not in scheme_cache:
+        source_cache_key = f"iri:{explicit_source_scheme_iri}" if explicit_source_scheme_iri else classification_from
+        target_cache_key = f"iri:{explicit_target_scheme_iri}" if explicit_target_scheme_iri else classification_to
+
+        if source_cache_key not in scheme_cache:
             try:
                 from_scheme = _find_scheme_by_notation(schemes, classification_from)
             except ValueError:
@@ -495,11 +527,11 @@ async def _apply_concordance_import_claim(
                     code=source_code,
                     classification_label=classification_from,
                 )
-            scheme_cache[classification_from] = (
+            scheme_cache[source_cache_key] = (
                 from_scheme,
                 await service.concept_get_all(concept_scheme_iri=from_scheme.id_, top_concepts_only=False),
             )
-        if classification_to not in scheme_cache:
+        if target_cache_key not in scheme_cache:
             try:
                 to_scheme = _find_scheme_by_notation(schemes, classification_to)
             except ValueError:
@@ -509,19 +541,32 @@ async def _apply_concordance_import_claim(
                     code=target_code,
                     classification_label=classification_to,
                 )
-            scheme_cache[classification_to] = (
+            scheme_cache[target_cache_key] = (
                 to_scheme,
                 await service.concept_get_all(concept_scheme_iri=to_scheme.id_, top_concepts_only=False),
             )
 
-        from_scheme, from_concepts = scheme_cache[classification_from]
-        to_scheme, to_concepts = scheme_cache[classification_to]
+        from_scheme, from_concepts = scheme_cache[source_cache_key]
+        to_scheme, to_concepts = scheme_cache[target_cache_key]
         source_concept = _find_concept_by_notation(from_concepts, source_code, scheme_iri=from_scheme.id_)
         target_concept = _find_concept_by_notation(to_concepts, target_code, scheme_iri=to_scheme.id_)
 
         skos_uri = row.get("skos_uri", "").strip()
         if skos_uri not in predicate_map:
             raise ValueError(f"Unsupported `skos_uri` in concordance import: `{skos_uri}`")
+        association_iri = _generate_association_iri(source_concept.id_, target_concept.id_)
+        validated_association = req.Association.model_validate(
+            _association_payload(
+                {
+                    "id_": association_iri,
+                    "source_concept_iri": source_concept.id_,
+                    "target_concept_iri": target_concept.id_,
+                }
+            )
+        )
+        associations_to_create.append(
+            de.Association.from_json_ld(validated_association.model_dump(by_alias=True))
+        )
         relationships.append(
             de.Relationship(
                 source=source_concept.id_,
@@ -529,6 +574,16 @@ async def _apply_concordance_import_claim(
                 predicate=predicate_map[skos_uri],
             )
         )
+
+    if associations_to_create:
+        existing_association_ids = {
+            association.id_
+            for association in await service.association_get_all(kind=de.AssociationKind.simple)
+        }
+        for association in associations_to_create:
+            if association.id_ in existing_association_ids:
+                continue
+            await service.association_create(association)
 
     if relationships:
         existing = set()

@@ -55,6 +55,37 @@
                 </div>
             </div>
 
+            <div id="concordance-scheme-selectors" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label for="source_scheme_iri" class="block text-sm font-medium" style="color: var(--text-color)">Source classification</label>
+                    <select id="source_scheme_iri" name="source_scheme_iri" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                        <option value="">Resolve from CSV values</option>
+                        {% for concept_scheme in concept_schemes %}
+                        {% set scheme_label = concept_scheme.pref_labels[0]["@value"] if concept_scheme.pref_labels else concept_scheme.id_ %}
+                        {% set scheme_notation = concept_scheme.notations[0]["@value"] if concept_scheme.notations else "" %}
+                        <option value="{{ concept_scheme.id_ }}" {% if form_data.source_scheme_iri == concept_scheme.id_ %}selected{% endif %}>
+                            {{ scheme_label }}{% if scheme_notation %} ({{ scheme_notation }}){% endif %} - {{ concept_scheme.id_ }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs mt-2" style="color: var(--text-secondary)">Optional. If selected, all `*_from` codes in this CSV will be resolved inside this concept scheme.</p>
+                </div>
+                <div>
+                    <label for="target_scheme_iri" class="block text-sm font-medium" style="color: var(--text-color)">Target classification</label>
+                    <select id="target_scheme_iri" name="target_scheme_iri" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                        <option value="">Resolve from CSV values</option>
+                        {% for concept_scheme in concept_schemes %}
+                        {% set scheme_label = concept_scheme.pref_labels[0]["@value"] if concept_scheme.pref_labels else concept_scheme.id_ %}
+                        {% set scheme_notation = concept_scheme.notations[0]["@value"] if concept_scheme.notations else "" %}
+                        <option value="{{ concept_scheme.id_ }}" {% if form_data.target_scheme_iri == concept_scheme.id_ %}selected{% endif %}>
+                            {{ scheme_label }}{% if scheme_notation %} ({{ scheme_notation }}){% endif %} - {{ concept_scheme.id_ }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs mt-2" style="color: var(--text-secondary)">Optional. If selected, all `*_to` codes in this CSV will be resolved inside this concept scheme.</p>
+                </div>
+            </div>
+
             <div>
                 <label for="rationale" class="block text-sm font-medium" style="color: var(--text-color)">Description</label>
                 <textarea id="rationale" name="rationale" rows="3" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">{{ form_data.rationale }}</textarea>
@@ -78,11 +109,13 @@
 document.addEventListener('DOMContentLoaded', function () {
     const kindSelect = document.getElementById('kind');
     const csvExample = document.getElementById('csv-example');
+    const concordanceSchemeSelectors = document.getElementById('concordance-scheme-selectors');
     const csvExamples = {{ csv_import_examples | tojson }};
 
     function updateExample() {
         const selected = kindSelect.value;
         csvExample.textContent = csvExamples[selected] ? 'Example header:\n' + csvExamples[selected] : '';
+        concordanceSchemeSelectors.style.display = selected === 'bulk_concordance_import' ? 'grid' : 'none';
     }
 
     kindSelect.addEventListener('change', updateExample);

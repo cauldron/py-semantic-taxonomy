@@ -156,6 +156,9 @@
                 {% if ass.direction %}
                 <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ ass.direction }} association</div>
                 {% endif %}
+                {% if ass.mapping_types %}
+                <div class="text-xs mt-1" style="color: var(--text-secondary)">Mapping type: {{ ass.mapping_types|join(', ') }}</div>
+                {% endif %}
                 {% set schemes = ass.obj|scheme_list %}
                 {% if schemes %}
                 <div class="text-xs mt-1" style="color: var(--text-tertiary)">{{ schemes }}</div>

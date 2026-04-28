@@ -144,6 +144,14 @@ async def _format_simple_associations(
 ) -> list[dict[str, str | de.Concept | None]]:
     outgoing = await service.association_get_all(source_concept_iri=concept.id_)
     incoming = await service.association_get_all(target_concept_iri=concept.id_)
+    relationships = await service.relationships_get(iri=concept.id_, source=True, target=True)
+    mapping_verbs = {
+        RelationshipVerbs.exact_match,
+        RelationshipVerbs.close_match,
+        RelationshipVerbs.broad_match,
+        RelationshipVerbs.narrow_match,
+        RelationshipVerbs.related_match,
+    }
 
     formatted = []
     seen = set()
@@ -164,6 +172,15 @@ async def _format_simple_associations(
         seen.add(dedupe_key)
 
         url, assoc_concept = await get_concept_and_link(related_iri)
+        mapping_types = sorted(
+            str(rel.predicate).split("#")[-1]
+            for rel in relationships
+            if rel.predicate in mapping_verbs
+            and (
+                (direction == "Outgoing" and rel.source == concept.id_ and rel.target == related_iri)
+                or (direction == "Incoming" and rel.target == concept.id_ and rel.source == related_iri)
+            )
+        )
         formatted.append(
             {
                 "url": url,
@@ -173,6 +190,7 @@ async def _format_simple_associations(
                     "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
                 ),
                 "direction": direction,
+                "mapping_types": mapping_types,
             }
         )
 
@@ -425,7 +443,6 @@ async def web_concept_view(
             service=service,
             get_concept_and_link=get_concept_and_link,
         )
-
         languages = build_language_selector(
             language,
             [
@@ -580,7 +597,6 @@ async def web_concept_detail_fragment(
             service=service,
             get_concept_and_link=get_concept_and_link,
         )
-
         return templates.TemplateResponse(
             request,
             "_concept_detail_panel.html",
