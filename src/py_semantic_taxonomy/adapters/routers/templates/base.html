@@ -26,14 +26,14 @@
     <!-- Header -->
     <header class="header">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <a href="/" class="flex items-center">
+            <div class="header-shell flex justify-between items-center">
+                <div class="header-brand flex items-center">
+                    <a href="/" class="flex items-center brand-link">
                         <img src="/static/img/logo.png" alt="PyST Logo" class="logo mr-3">
-                        <span class="text-xl font-semibold" style="color: var(--text-color)">PyST</span>
+                        <span class="brand-wordmark text-xl font-semibold" style="color: var(--text-color)">PyST</span>
                     </a>
                 </div>
-                <div class="flex-1 max-w-md mx-4">
+                <div class="header-search flex-1 max-w-md mx-4">
                     <form id="searchForm" class="relative" action="/web/search/" method="get">
                         <div class="relative">
                             <input
@@ -60,7 +60,7 @@
                         </div>
                     </form>
                 </div>
-                <nav class="flex items-center space-x-4">
+                <nav class="header-nav flex items-center space-x-4">
                     <button id="theme-toggle" class="nav-link" aria-label="Toggle dark mode">
                         <i class="fas fa-moon"></i>
                     </button>
