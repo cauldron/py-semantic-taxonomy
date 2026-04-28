@@ -74,6 +74,10 @@
                                 class="text-primary hover:text-primary-hover inline-flex items-center">
                                 <i class="fas fa-eye mr-1"></i>View
                             </a>
+                            <a href="/web/concept_scheme/{{ scheme.id_ | urlencode }}/export/tree.csv?language={{ language }}"
+                                class="ml-3 text-primary hover:text-primary-hover inline-flex items-center">
+                                <i class="fas fa-file-csv mr-1"></i>Export
+                            </a>
                             {% if is_admin_request(request) %}
                             <a href="/web/admin/concept_schemes/{{ scheme.id_ | urlencode }}/edit?language={{ language }}"
                                 class="ml-3 text-primary hover:text-primary-hover inline-flex items-center">

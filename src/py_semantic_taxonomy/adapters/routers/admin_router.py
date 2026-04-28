@@ -191,6 +191,17 @@ def _tree_import_scheme_iri(
     return f"{base}/scheme/{slug}"
 
 
+def _concordance_import_correspondence_iri(
+    *,
+    import_name: str,
+    title: str,
+    settings: Settings,
+) -> str:
+    base = (settings.public_base_url or "http://example.com").rstrip("/")
+    slug = _slugify_claim_value(import_name or title)
+    return f"{base}/correspondence/{slug}"
+
+
 def _find_scheme_by_notation(
     schemes: list[de.ConceptScheme],
     notation: str,
@@ -314,6 +325,41 @@ def _tree_import_concept_iri(scheme_iri: str, row: dict[str, str]) -> str:
         return explicit
     code = row.get("code", "").strip()
     return f"{scheme_iri}/{quote(code, safe='')}"
+
+
+def _concordance_import_correspondence_payload(
+    *,
+    claim: dict[str, Any],
+    change: dict[str, Any],
+    compared_scheme_ids: list[str],
+    settings: Settings,
+) -> dict[str, Any]:
+    import_name = change.get("import_name", "").strip()
+    file_name = change.get("file_name", "").strip()
+    identifier = _import_identifier(import_name, file_name, claim.get("title", ""))
+    label = import_name or identifier or claim.get("title", "").strip() or "Imported correspondence"
+    correspondence_iri = _concordance_import_correspondence_iri(
+        import_name=identifier,
+        title=claim.get("title", ""),
+        settings=settings,
+    )
+    created = datetime.now(tz=timezone.utc).replace(microsecond=0).isoformat()
+    definition = claim.get("payload", {}).get("rationale", "").strip() or (
+        f"Imported from accepted CSV claim `{claim.get('title', 'bulk concordance import')}`."
+    )
+    notation = identifier or _slugify_claim_value(label)
+    return {
+        RDF_MAPPING["id_"]: correspondence_iri,
+        RDF_MAPPING["types"]: [f"{XKOS}Correspondence"],
+        RDF_MAPPING["pref_labels"]: [{"@language": "en", "@value": label}],
+        RDF_MAPPING["definitions"]: [{"@language": "en", "@value": definition}],
+        RDF_MAPPING["notations"]: [{"@value": notation, "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"}],
+        RDF_MAPPING["status"]: [{"@id": f"{BIBO}status/accepted"}],
+        f"{DCTERMS}created": [{"@type": DATETIME_TYPE, "@value": created}],
+        f"{DCTERMS}creator": [_claim_actor_node(claim.get("submitted_by", {}))],
+        f"{OWL}versionInfo": [{"@value": notation}],
+        f"{XKOS}compares": [{"@id": scheme_id} for scheme_id in compared_scheme_ids],
+    }
 
 
 def _tree_import_concept_payload(
@@ -465,6 +511,7 @@ async def _apply_tree_import_claim(
 async def _apply_concordance_import_claim(
     *,
     claim: dict[str, Any],
+    settings: Settings,
     service,
 ) -> None:
     change = claim.get("payload", {}).get("change", {})
@@ -477,6 +524,7 @@ async def _apply_concordance_import_claim(
     scheme_cache: dict[str, tuple[de.ConceptScheme, list[de.Concept]]] = {}
     relationships: list[de.Relationship] = []
     associations_to_create: list[de.Association] = []
+    compared_scheme_ids: set[str] = set()
     predicate_map = {verb.value: verb for verb in RelationshipVerbs if verb not in {RelationshipVerbs.broader, RelationshipVerbs.narrower}}
     explicit_source_scheme_iri = change.get("source_scheme_iri", "").strip() if isinstance(change, dict) else ""
     explicit_target_scheme_iri = change.get("target_scheme_iri", "").strip() if isinstance(change, dict) else ""
@@ -548,6 +596,7 @@ async def _apply_concordance_import_claim(
 
         from_scheme, from_concepts = scheme_cache[source_cache_key]
         to_scheme, to_concepts = scheme_cache[target_cache_key]
+        compared_scheme_ids.update({from_scheme.id_, to_scheme.id_})
         source_concept = _find_concept_by_notation(from_concepts, source_code, scheme_iri=from_scheme.id_)
         target_concept = _find_concept_by_notation(to_concepts, target_code, scheme_iri=to_scheme.id_)
 
@@ -580,10 +629,33 @@ async def _apply_concordance_import_claim(
             association.id_
             for association in await service.association_get_all(kind=de.AssociationKind.simple)
         }
+        created_association_ids: list[str] = []
         for association in associations_to_create:
+            created_association_ids.append(association.id_)
             if association.id_ in existing_association_ids:
                 continue
             await service.association_create(association)
+        correspondence_payload = _concordance_import_correspondence_payload(
+            claim=claim,
+            change=change,
+            compared_scheme_ids=sorted(compared_scheme_ids),
+            settings=settings,
+        )
+        validated_correspondence = req.Correspondence.model_validate(correspondence_payload)
+        correspondence = de.Correspondence.from_json_ld(validated_correspondence.model_dump(by_alias=True))
+        try:
+            await service.correspondence_create(correspondence)
+        except de.DuplicateIRI:
+            existing = await service.correspondence_get(correspondence.id_)
+            if sorted(item.get("@id", "") for item in existing.compares) != sorted(compared_scheme_ids):
+                existing.compares = [{"@id": scheme_id} for scheme_id in sorted(compared_scheme_ids)]
+                await service.correspondence_update(existing)
+        await service.made_of_add(
+            de.MadeOf(
+                id_=correspondence.id_,
+                made_ofs=[{"@id": association_id} for association_id in sorted(set(created_association_ids))],
+            )
+        )
 
     if relationships:
         existing = set()
@@ -618,7 +690,7 @@ async def _apply_claim_on_accept(
         await _apply_tree_import_claim(claim=claim, settings=settings, service=service)
         return
     if claim.get("kind") == "bulk_concordance_import":
-        await _apply_concordance_import_claim(claim=claim, service=service)
+        await _apply_concordance_import_claim(claim=claim, settings=settings, service=service)
         return
 
     payload = change.get("payload") if isinstance(change, dict) else None

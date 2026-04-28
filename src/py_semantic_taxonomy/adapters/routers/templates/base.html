@@ -67,6 +67,9 @@
                     <a href="/web/concept_schemes/?language={{ language }}" class="nav-link {% if request.url.path == '/web/concept_schemes/' %}active{% endif %}">
                         <i class="fas fa-list mr-2"></i>Concept Schemes
                     </a>
+                    <a href="/web/correspondences/?language={{ language }}" class="nav-link {% if request.url.path == '/web/correspondences/' or request.url.path.startswith('/web/correspondence/') %}active{% endif %}">
+                        <i class="fas fa-project-diagram mr-2"></i>Correspondences
+                    </a>
                     {% if is_admin_request(request) %}
                     <a href="/web/admin/?language={{ language }}" class="nav-link {% if request.url.path.startswith('/web/admin') %}active{% endif %}">
                         <i class="fas fa-shield-alt mr-2"></i>{{ admin_user_name(request) }}

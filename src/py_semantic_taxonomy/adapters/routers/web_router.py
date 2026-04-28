@@ -1,3 +1,6 @@
+import csv
+import io
+import re
 from enum import StrEnum
 from pathlib import Path as PathLib
 from secrets import token_urlsafe
@@ -6,7 +9,7 @@ from urllib.parse import quote, unquote, urlencode
 import rfc3987
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Body
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from langcodes import Language
 
@@ -115,6 +118,14 @@ templates.env.globals["contributor_user_name"] = (
     )
 )
 
+MAPPING_EXPORT_VERBS = {
+    RelationshipVerbs.exact_match,
+    RelationshipVerbs.close_match,
+    RelationshipVerbs.broad_match,
+    RelationshipVerbs.narrow_match,
+    RelationshipVerbs.related_match,
+}
+
 
 def ensure_admin_csrf_token(request: Request) -> str:
     csrf_token = request.session.get("admin_csrf_token")
@@ -206,10 +217,221 @@ async def _format_simple_associations(
     return formatted
 
 
+def _csv_safe_identifier(text: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", text.strip())
+    return cleaned.strip("._-") or "export"
+
+
+def _notation_or_iri(obj: de.SKOS) -> str:
+    if obj.notations and obj.notations[0].get("@value"):
+        return obj.notations[0]["@value"]
+    return obj.id_
+
+
+def _definition_for_language(values: list[dict[str, str]], language: str) -> str:
+    for item in values:
+        if item.get("@language") == language and item.get("@value"):
+            return item["@value"]
+    for item in values:
+        if item.get("@value"):
+            return item["@value"]
+    return ""
+
+
+def _csv_response(*, content: str, file_name: str) -> Response:
+    return Response(
+        content=content,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{file_name}"'},
+    )
+
+
+async def _concept_scheme_tree_csv(
+    *,
+    concept_scheme: de.ConceptScheme,
+    concepts: list[de.Concept],
+    language: str,
+    service,
+) -> str:
+    concept_by_id = {concept.id_: concept for concept in concepts}
+    parent_by_id: dict[str, str] = {}
+
+    for concept in concepts:
+        broader_relationships = await service.relationships_get(
+            iri=concept.id_,
+            source=True,
+            target=False,
+            verb=RelationshipVerbs.broader,
+        )
+        direct_parents = sorted(
+            {
+                rel.target
+                for rel in broader_relationships
+                if rel.target in concept_by_id and rel.target != concept.id_
+            }
+        )
+        if len(direct_parents) > 1:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "This concept scheme cannot be exported as BONSAI `tree_` CSV because "
+                    f"concept `{_notation_or_iri(concept)}` has multiple broader parents in the scheme."
+                ),
+            )
+        if direct_parents:
+            parent_by_id[concept.id_] = direct_parents[0]
+
+    level_cache: dict[str, int] = {}
+
+    def level_for(concept_id: str, stack: set[str] | None = None) -> int:
+        if concept_id in level_cache:
+            return level_cache[concept_id]
+        stack = stack or set()
+        if concept_id in stack:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "This concept scheme cannot be exported as BONSAI `tree_` CSV because "
+                    f"a broader cycle was detected around concept `{_notation_or_iri(concept_by_id[concept_id])}`."
+                ),
+            )
+        parent_id = parent_by_id.get(concept_id)
+        if not parent_id:
+            level_cache[concept_id] = 0
+            return 0
+        stack.add(concept_id)
+        level = level_for(parent_id, stack) + 1
+        stack.remove(concept_id)
+        level_cache[concept_id] = level
+        return level
+
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=["code", "parent_code", "name", "level", f"definition_{language}"],
+    )
+    writer.writeheader()
+
+    for concept in sorted(concepts, key=lambda obj: (level_for(obj.id_), _notation_or_iri(obj))):
+        code = _notation_or_iri(concept)
+        parent_id = parent_by_id.get(concept.id_)
+        parent_code = _notation_or_iri(concept_by_id[parent_id]) if parent_id else ""
+        writer.writerow(
+            {
+                "code": code,
+                "parent_code": parent_code,
+                "name": value_for_language(concept.pref_labels, language)
+                or best_label(concept, language)
+                or code,
+                "level": level_for(concept.id_),
+                f"definition_{language}": _definition_for_language(concept.definitions, language),
+            }
+        )
+    return output.getvalue()
+
+
+def _relationship_predicate_for_association(
+    *,
+    source_concept_id: str,
+    target_concept_id: str,
+    relationships: list[de.Relationship],
+) -> str:
+    matches = sorted(
+        {
+            str(rel.predicate)
+            for rel in relationships
+            if rel.source == source_concept_id
+            and rel.target == target_concept_id
+            and rel.predicate in MAPPING_EXPORT_VERBS
+        }
+    )
+    return matches[0] if matches else ""
+
+
+async def _correspondence_conc_csv(
+    *,
+    correspondence: de.Correspondence,
+    service,
+) -> str:
+    associations = await service.association_get_all(
+        correspondence_iri=correspondence.id_,
+        source_concept_iri=None,
+        target_concept_iri=None,
+        kind=de.AssociationKind.simple,
+    )
+    compared_scheme_ids = [item.get("@id", "") for item in correspondence.compares if item.get("@id")]
+    schemes = {scheme.id_: scheme for scheme in await service.concept_scheme_get_all()}
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=[
+            "code_from",
+            "code_to",
+            "classification_from",
+            "classification_to",
+            "comment",
+            "skos_uri",
+        ],
+    )
+    writer.writeheader()
+
+    for association in sorted(associations, key=lambda obj: obj.id_):
+        if not association.source_concepts or not association.target_concepts:
+            continue
+        source_id = association.source_concepts[0].get("@id", "")
+        target_id = association.target_concepts[0].get("@id", "")
+        if not source_id or not target_id:
+            continue
+        source_concept = await service.concept_get(source_id)
+        target_concept = await service.concept_get(target_id)
+        source_relationships = await service.relationships_get(
+            iri=source_id, source=True, target=False
+        )
+
+        source_scheme_id = next(
+            (
+                scheme.get("@id", "")
+                for scheme in source_concept.schemes
+                if scheme.get("@id", "") in compared_scheme_ids
+            ),
+            source_concept.schemes[0].get("@id", "") if source_concept.schemes else "",
+        )
+        target_scheme_id = next(
+            (
+                scheme.get("@id", "")
+                for scheme in target_concept.schemes
+                if scheme.get("@id", "") in compared_scheme_ids
+            ),
+            target_concept.schemes[0].get("@id", "") if target_concept.schemes else "",
+        )
+        source_scheme = schemes.get(source_scheme_id)
+        target_scheme = schemes.get(target_scheme_id)
+
+        writer.writerow(
+            {
+                "code_from": _notation_or_iri(source_concept),
+                "code_to": _notation_or_iri(target_concept),
+                "classification_from": _notation_or_iri(source_scheme) if source_scheme else source_scheme_id,
+                "classification_to": _notation_or_iri(target_scheme) if target_scheme else target_scheme_id,
+                "comment": "",
+                "skos_uri": _relationship_predicate_for_association(
+                    source_concept_id=source_id,
+                    target_concept_id=target_id,
+                    relationships=source_relationships,
+                ),
+            }
+        )
+    return output.getvalue()
+
+
 class WebPaths(StrEnum):
     concept_schemes = "/concept_schemes/"
     concept_scheme_view = "/concept_scheme/{iri:path}"
+    concept_scheme_tree_export = "/concept_scheme/{iri:path}/export/tree.csv"
+    correspondences = "/correspondences/"
+    correspondence_view = "/correspondence/{iri:path}"
     concept_view = "/concept/{iri:path}"
+    correspondence_conc_export = "/correspondence/{iri:path}/export/conc.csv"
     search = "/search/"
     concept_children_fragment = "/fragment/concept/{iri:path}/children"
     concept_detail_fragment = "/fragment/concept/{iri:path}/detail"
@@ -226,6 +448,15 @@ def concept_scheme_view_url(request: Request, concept_scheme_iri: str, language:
     params = {"language": language}
     return (
         str(request.url_for("web_concept_scheme_view", iri=quote(concept_scheme_iri)))
+        + "?"
+        + urlencode(params)
+    )
+
+
+def correspondence_view_url(request: Request, correspondence_iri: str, language: str) -> str:
+    params = {"language": language}
+    return (
+        str(request.url_for("web_correspondence_view", iri=quote(correspondence_iri)))
         + "?"
         + urlencode(params)
     )
@@ -274,6 +505,234 @@ async def web_concept_schemes(
             "language": language,
             "suggest_api_url": get_full_api_path("suggest"),
             "page_description": dynamic_text_store["concept_schemes_description"],
+        },
+    )
+
+
+@router.get(
+    WebPaths.concept_scheme_tree_export,
+    response_class=Response,
+    name="web_concept_scheme_tree_export",
+)
+async def web_concept_scheme_tree_export(
+    iri: str = Path(..., description="The IRI of the concept scheme"),
+    language: str | None = None,
+    service=Depends(get_graph_service),
+    settings=Depends(get_settings),
+) -> Response:
+    language = language or settings.languages[0]
+    decoded_iri = unquote(iri)
+    try:
+        concept_scheme = await service.concept_scheme_get(iri=decoded_iri)
+        concepts = await service.concept_get_all(
+            concept_scheme_iri=decoded_iri, top_concepts_only=False
+        )
+    except de.ConceptSchemeNotFoundError:
+        raise HTTPException(
+            status_code=404, detail=f"Concept Scheme with IRI `{iri}` not found"
+        )
+    csv_text = await _concept_scheme_tree_csv(
+        concept_scheme=concept_scheme,
+        concepts=concepts,
+        language=language,
+        service=service,
+    )
+    file_stem = _csv_safe_identifier(_notation_or_iri(concept_scheme))
+    return _csv_response(content=csv_text, file_name=f"tree_{file_stem}.csv")
+
+
+@router.get(
+    WebPaths.correspondence_conc_export,
+    response_class=Response,
+    name="web_correspondence_conc_export",
+)
+async def web_correspondence_conc_export(
+    iri: str = Path(..., description="The IRI of the correspondence"),
+    service=Depends(get_graph_service),
+) -> Response:
+    decoded_iri = unquote(iri)
+    try:
+        correspondence = await service.correspondence_get(iri=decoded_iri)
+    except de.CorrespondenceNotFoundError:
+        raise HTTPException(
+            status_code=404, detail=f"Correspondence with IRI `{iri}` not found"
+        )
+    csv_text = await _correspondence_conc_csv(
+        correspondence=correspondence,
+        service=service,
+    )
+    file_stem = _csv_safe_identifier(_notation_or_iri(correspondence))
+    return _csv_response(content=csv_text, file_name=f"conc_{file_stem}.csv")
+
+
+@router.get(
+    WebPaths.correspondences,
+    response_class=HTMLResponse,
+    name="web_correspondences",
+)
+async def web_correspondences(
+    request: Request,
+    language: str | None = None,
+    service=Depends(get_graph_service),
+    settings=Depends(get_settings),
+) -> HTMLResponse:
+    if not language:
+        return RedirectResponse(
+            str(request.url_for("web_correspondences"))
+            + "?language="
+            + quote(settings.languages[0])
+        )
+
+    correspondences = await service.correspondence_get_all()
+    concept_schemes = {scheme.id_: scheme for scheme in await service.concept_scheme_get_all()}
+    rows = []
+    for correspondence in correspondences:
+        compared = []
+        for item in correspondence.compares:
+            scheme_iri = item.get("@id", "")
+            scheme = concept_schemes.get(scheme_iri)
+            compared.append(
+                {
+                    "iri": scheme_iri,
+                    "label": best_label(scheme, language) if scheme else short_iri(scheme_iri),
+                    "url": concept_scheme_view_url(request, scheme_iri, language) if scheme else None,
+                }
+            )
+        rows.append(
+            {
+                "obj": correspondence,
+                "url": correspondence_view_url(request, correspondence.id_, language),
+                "compared": compared,
+                "association_count": len(correspondence.made_ofs),
+            }
+        )
+
+    languages = build_language_selector(
+        language,
+        [
+            (
+                code,
+                label,
+                str(request.url_for("web_correspondences")) + "?language=" + quote(code),
+            )
+            for code, label in format_languages(settings.languages)
+        ],
+    )
+    return templates.TemplateResponse(
+        request,
+        "correspondences.html",
+        context={
+            "request": request,
+            "correspondences": rows,
+            "language_selector": languages,
+            "language": language,
+            "suggest_api_url": get_full_api_path("suggest"),
+        },
+    )
+
+
+@router.get(
+    WebPaths.correspondence_view,
+    response_class=HTMLResponse,
+    name="web_correspondence_view",
+)
+async def web_correspondence_view(
+    request: Request,
+    iri: str = Path(..., description="The IRI of the correspondence"),
+    language: str | None = None,
+    service=Depends(get_graph_service),
+    settings=Depends(get_settings),
+) -> HTMLResponse:
+    if not language:
+        return RedirectResponse(
+            str(request.url_for("web_correspondence_view", iri=iri))
+            + "?language="
+            + quote(settings.languages[0])
+        )
+
+    decoded_iri = unquote(iri)
+    try:
+        correspondence = await service.correspondence_get(iri=decoded_iri)
+    except de.CorrespondenceNotFoundError:
+        raise HTTPException(
+            status_code=404, detail=f"Correspondence with IRI `{iri}` not found"
+        )
+
+    concept_schemes = {scheme.id_: scheme for scheme in await service.concept_scheme_get_all()}
+    compared = []
+    for item in correspondence.compares:
+        scheme_iri = item.get("@id", "")
+        scheme = concept_schemes.get(scheme_iri)
+        compared.append(
+            {
+                "iri": scheme_iri,
+                "label": best_label(scheme, language) if scheme else short_iri(scheme_iri),
+                "url": concept_scheme_view_url(request, scheme_iri, language) if scheme else None,
+            }
+        )
+
+    associations = await service.association_get_all(
+        correspondence_iri=decoded_iri,
+        source_concept_iri=None,
+        target_concept_iri=None,
+        kind=de.AssociationKind.simple,
+    )
+    association_rows = []
+    for association in associations:
+        if not association.source_concepts or not association.target_concepts:
+            continue
+        source_iri = association.source_concepts[0].get("@id", "")
+        target_iri = association.target_concepts[0].get("@id", "")
+        if not source_iri or not target_iri:
+            continue
+        source = await service.concept_get(source_iri)
+        target = await service.concept_get(target_iri)
+        source_relationships = await service.relationships_get(
+            iri=source_iri,
+            source=True,
+            target=False,
+        )
+        mapping_type = _relationship_predicate_for_association(
+            source_concept_id=source_iri,
+            target_concept_id=target_iri,
+            relationships=source_relationships,
+        )
+        source_scheme_iri = source.schemes[0].get("@id", "") if source.schemes else ""
+        target_scheme_iri = target.schemes[0].get("@id", "") if target.schemes else ""
+        association_rows.append(
+            {
+                "source_label": best_label(source, language),
+                "source_notation": _notation_or_iri(source),
+                "source_url": concept_view_url(request, source.id_, source_scheme_iri, language),
+                "target_label": best_label(target, language),
+                "target_notation": _notation_or_iri(target),
+                "target_url": concept_view_url(request, target.id_, target_scheme_iri, language),
+                "mapping_type": mapping_type.split("#")[-1] if mapping_type else "",
+            }
+        )
+
+    languages = build_language_selector(
+        language,
+        [
+            (
+                code,
+                label,
+                correspondence_view_url(request, decoded_iri, code),
+            )
+            for code, label in format_languages(settings.languages)
+        ],
+    )
+    return templates.TemplateResponse(
+        request,
+        "correspondence_view.html",
+        context={
+            "request": request,
+            "correspondence": correspondence,
+            "compared": compared,
+            "association_rows": association_rows,
+            "language_selector": languages,
+            "language": language,
+            "suggest_api_url": get_full_api_path("suggest"),
         },
     )
 
