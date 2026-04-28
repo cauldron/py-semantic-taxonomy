@@ -1,35 +1,270 @@
+import csv
+import io
 import json
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import quote, urlencode
 
 import httpx
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from py_semantic_taxonomy.adapters.routers.admin_router import (
     _base_context,
+    _build_concept_form_data,
+    _build_concept_scheme_form_data,
+    _concept_association_rows,
+    _concept_form_data_for_language,
+    _concept_mapping_rows,
+    _concept_payload,
+    _concept_relationship_rows,
+    _concept_scheme_form_data_for_language,
+    _concept_scheme_payload,
     _default_language,
     _exchange_code_for_token,
     _gitlab_user,
+    _mapping_form_data,
+    _modified_extra,
+    _parse_nodes,
     _language_selector,
     _public_url_for,
+    STATUS_OPTIONS,
 )
+from py_semantic_taxonomy.adapters.routers import request_dto as req
 from py_semantic_taxonomy.adapters.routers.web_router import templates
 from py_semantic_taxonomy.cfg import Settings, get_settings
-from py_semantic_taxonomy.dependencies import get_claim_store
+from py_semantic_taxonomy.dependencies import get_claim_store, get_graph_service
+from py_semantic_taxonomy.domain import entities as de
+from py_semantic_taxonomy.domain.constants import RelationshipVerbs
 from py_semantic_taxonomy.domain.url_utils import get_full_api_path
+from pydantic import ValidationError
 
 router = APIRouter(prefix="/web/contributor", include_in_schema=False)
 
 CLAIM_KINDS = [
+    ("add_concept_scheme", "Add concept scheme"),
     ("add_concept", "Add concept"),
     ("edit_concept", "Edit concept"),
     ("add_relationship", "Add relationship"),
     ("edit_concept_scheme", "Edit concept scheme"),
     ("deprecate_concept", "Deprecate concept"),
+    ("bulk_tree_import", "Bulk tree import"),
+    ("bulk_concordance_import", "Bulk concordance import"),
     ("other", "Other"),
 ]
+
+RELATIONSHIP_PREDICATE_OPTIONS = [
+    (RelationshipVerbs.broader, "broader"),
+    (RelationshipVerbs.narrower, "narrower"),
+    (RelationshipVerbs.exact_match, "exactMatch"),
+    (RelationshipVerbs.close_match, "closeMatch"),
+    (RelationshipVerbs.broad_match, "broadMatch"),
+    (RelationshipVerbs.narrow_match, "narrowMatch"),
+    (RelationshipVerbs.related_match, "relatedMatch"),
+]
+
+CSV_IMPORT_EXAMPLES = {
+    "bulk_tree_import": "code,parent_code,name,level\nROOT,,Root node,0\nCHILD,ROOT,Child node,1",
+    "bulk_concordance_import": (
+        "activitytype_from,activitytype_to,classification_from,classification_to,comment,skos_uri\n"
+        "A_IRON,ai_0710,bonsut,bonsai,ambiguous one-to-many correspondence,"
+        "http://www.w3.org/2004/02/skos/core#narrowMatch"
+    ),
+}
+
+
+def _blank_claim_form_data(target_iri: str = "") -> dict[str, Any]:
+    return {
+        "kind": CLAIM_KINDS[0][0],
+        "title": "",
+        "target_iri": target_iri,
+        "rationale": "",
+        "payload": "",
+        "concept_iri": target_iri,
+        "scheme_iri": "",
+        "concept_label": "",
+        "concept_language": "en",
+        "concept_notation": "",
+        "concept_definition": "",
+        "broader_iri": "",
+        "relationship_source_iri": target_iri,
+        "relationship_target_iri": "",
+        "relationship_predicate": str(RelationshipVerbs.broader),
+        "scheme_label": "",
+        "scheme_notation": "",
+        "scheme_definition": "",
+        "scheme_version": "",
+        "replacement_iri": "",
+        "deprecation_note": "",
+        "csv_text": "",
+        "csv_import_name": "",
+        "csv_file_name": "",
+    }
+
+
+def _normalize_claim_form_data(form_data: dict[str, Any]) -> dict[str, Any]:
+    normalized = _blank_claim_form_data(form_data.get("target_iri", ""))
+    normalized.update(form_data)
+    return normalized
+
+
+def _read_csv_upload(upload: UploadFile | None) -> tuple[str, str]:
+    if not upload or not upload.filename:
+        return "", ""
+    raw = upload.file.read()
+    try:
+        return raw.decode("utf-8-sig"), upload.filename
+    except UnicodeDecodeError as exc:
+        raise ValueError("CSV files must use UTF-8 encoding") from exc
+
+
+def _parse_csv_rows(csv_text: str) -> tuple[list[str], list[dict[str, str]]]:
+    reader = csv.DictReader(io.StringIO(csv_text))
+    if not reader.fieldnames:
+        raise ValueError("CSV data must include a header row")
+
+    columns = [col.strip() for col in reader.fieldnames if col and col.strip()]
+    if not columns:
+        raise ValueError("CSV header row is empty")
+
+    rows: list[dict[str, str]] = []
+    for idx, row in enumerate(reader, start=2):
+        cleaned = {str(key).strip(): (value or "").strip() for key, value in row.items() if key}
+        if not any(cleaned.values()):
+            continue
+        rows.append(cleaned)
+
+    if not rows:
+        raise ValueError("CSV data must include at least one data row")
+    return columns, rows
+
+
+def _guided_change_from_form(kind: str, form_data: dict[str, Any]) -> dict[str, Any]:
+    if kind in {"add_concept", "edit_concept"}:
+        return {
+            "entity_type": "concept",
+            "operation": "create" if kind == "add_concept" else "update",
+            "concept": {
+                "iri": form_data["concept_iri"].strip(),
+                "scheme_iri": form_data["scheme_iri"].strip(),
+                "pref_label": {
+                    "language": form_data["concept_language"].strip() or "en",
+                    "value": form_data["concept_label"].strip(),
+                },
+                "notation": form_data["concept_notation"].strip(),
+                "definition": form_data["concept_definition"].strip(),
+            },
+            "broader_iri": form_data["broader_iri"].strip(),
+        }
+    if kind == "add_relationship":
+        return {
+            "entity_type": "relationship",
+            "operation": "create",
+            "relationship": {
+                "source_iri": form_data["relationship_source_iri"].strip(),
+                "target_iri": form_data["relationship_target_iri"].strip(),
+                "predicate": form_data["relationship_predicate"].strip(),
+            },
+        }
+    if kind == "edit_concept_scheme":
+        return {
+            "entity_type": "concept_scheme",
+            "operation": "update",
+            "concept_scheme": {
+                "iri": form_data["target_iri"].strip() or form_data["scheme_iri"].strip(),
+                "pref_label": form_data["scheme_label"].strip(),
+                "notation": form_data["scheme_notation"].strip(),
+                "definition": form_data["scheme_definition"].strip(),
+                "version": form_data["scheme_version"].strip(),
+            },
+        }
+    if kind == "deprecate_concept":
+        return {
+            "entity_type": "concept",
+            "operation": "deprecate",
+            "concept": {
+                "iri": form_data["target_iri"].strip() or form_data["concept_iri"].strip(),
+                "replacement_iri": form_data["replacement_iri"].strip(),
+                "note": form_data["deprecation_note"].strip(),
+            },
+        }
+    return {}
+
+
+def _csv_change_from_form(
+    kind: str,
+    *,
+    csv_text: str,
+    csv_file_name: str,
+    import_name: str,
+) -> dict[str, Any]:
+    columns, rows = _parse_csv_rows(csv_text)
+    return {
+        "entity_type": "csv_import",
+        "import_kind": "tree" if kind == "bulk_tree_import" else "concordance",
+        "import_name": import_name.strip(),
+        "file_name": csv_file_name,
+        "columns": columns,
+        "rows": rows,
+    }
+
+
+def _build_claim_payload(
+    kind: str,
+    *,
+    rationale: str,
+    form_data: dict[str, Any],
+    payload_text: str,
+    csv_text: str,
+    csv_file_name: str,
+    csv_import_name: str,
+) -> tuple[dict[str, Any], str]:
+    rationale = rationale.strip()
+    payload_text = payload_text.strip()
+
+    if kind in {"bulk_tree_import", "bulk_concordance_import"}:
+        change = _csv_change_from_form(
+            kind,
+            csv_text=csv_text,
+            csv_file_name=csv_file_name,
+            import_name=csv_import_name,
+        )
+        mode = "csv"
+    elif payload_text:
+        raise ValueError("Raw JSON claim submission is no longer supported; use the shared forms")
+    else:
+        change = _guided_change_from_form(kind, form_data)
+        if not change:
+            raise ValueError("Provide structured claim details or advanced JSON")
+        mode = "guided"
+
+    return (
+        {
+            "rationale": rationale,
+            "submission": {
+                "mode": mode,
+                "kind": kind,
+            },
+            "change": change,
+        },
+        mode,
+    )
+
+
+def _claim_payload_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    submission = payload.get("submission", {}) if isinstance(payload, dict) else {}
+    change = payload.get("change", {}) if isinstance(payload, dict) else {}
+    rows = change.get("rows", []) if isinstance(change, dict) else []
+    columns = change.get("columns", []) if isinstance(change, dict) else []
+    return {
+        "rationale": payload.get("rationale", "") if isinstance(payload, dict) else "",
+        "submission": submission if isinstance(submission, dict) else {},
+        "change": change if isinstance(change, dict) else {},
+        "change_json": json.dumps(change if isinstance(change, dict) else {}, indent=2),
+        "csv_columns": columns if isinstance(columns, list) else [],
+        "csv_rows_preview": rows[:5] if isinstance(rows, list) else [],
+        "csv_row_count": len(rows) if isinstance(rows, list) else 0,
+    }
 
 
 def _contributor_configured(settings: Settings) -> bool:
@@ -149,7 +384,111 @@ def _render_contributor_dashboard(
     )
 
 
-def _render_claim_form(
+def _render_shared_concept_scheme_form(
+    request: Request,
+    *,
+    language: str,
+    settings: Settings,
+    contributor_user: dict[str, Any],
+    form_data: dict[str, Any],
+    form_mode: str,
+    error: str | None = None,
+    message: str | None = None,
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "admin_concept_scheme_form.html",
+        context=_base_context(
+            request,
+            language,
+            settings,
+            contributor_user=contributor_user,
+            csrf_token=_ensure_contributor_csrf_token(request),
+            form_data=form_data,
+            form_mode=form_mode,
+            status_options=STATUS_OPTIONS,
+            actor_label="Contributor",
+            actor_home_url=f"/web/contributor/?language={language}",
+            actor_home_name="Contributor",
+            submit_label=(
+                "Submit Scheme Claim" if form_mode == "create" else "Submit Change Claim"
+            ),
+            show_delete_actions=False,
+            collect_rationale=True,
+            form_helper_text=(
+                "This is the same editing form used by admins, but submitting it creates a claim for review."
+            ),
+            message=message,
+            error=error,
+        ),
+    )
+
+
+def _render_shared_concept_form(
+    request: Request,
+    *,
+    language: str,
+    settings: Settings,
+    contributor_user: dict[str, Any],
+    form_data: dict[str, Any],
+    concept_schemes: list[de.ConceptScheme],
+    form_mode: str,
+    relationship_rows: list[dict[str, Any]] | None = None,
+    mappings: list[dict[str, Any]] | None = None,
+    mapping_form_data: dict[str, Any] | None = None,
+    associations: list[dict[str, Any]] | None = None,
+    mapping_form_action: str | None = None,
+    error: str | None = None,
+    message: str | None = None,
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request,
+        "admin_concept_form.html",
+        context=_base_context(
+            request,
+            language,
+            settings,
+            contributor_user=contributor_user,
+            csrf_token=_ensure_contributor_csrf_token(request),
+            form_data=form_data,
+            concept_schemes=concept_schemes,
+            relationship_rows=relationship_rows or [],
+            mappings=mappings or [],
+            mapping_form_data=mapping_form_data,
+            associations=associations or [],
+            association_form_data=None,
+            concept_form_action=request.url.path,
+            mapping_form_action=mapping_form_action,
+            association_form_action=None,
+            form_mode=form_mode,
+            status_options=STATUS_OPTIONS,
+            mapping_verbs=[verb for verb, _label in RELATIONSHIP_PREDICATE_OPTIONS if verb in {
+                RelationshipVerbs.exact_match,
+                RelationshipVerbs.close_match,
+                RelationshipVerbs.broad_match,
+                RelationshipVerbs.narrow_match,
+                RelationshipVerbs.related_match,
+            }],
+            actor_label="Contributor",
+            actor_home_url=f"/web/contributor/?language={language}",
+            actor_home_name="Contributor",
+            submit_label=(
+                "Submit Concept Claim" if form_mode == "create" else "Submit Change Claim"
+            ),
+            show_delete_actions=False,
+            show_direct_link_actions=False,
+            show_mapping_form=form_mode == "edit",
+            collect_rationale=True,
+            form_helper_text=(
+                "This is the same editing form used by admins, but submitting it creates a claim for review."
+            ),
+            message=message,
+            error=error,
+        ),
+    )
+
+
+def _render_csv_import_form(
     request: Request,
     *,
     language: str,
@@ -167,10 +506,35 @@ def _render_claim_form(
             settings,
             contributor_user=contributor_user,
             csrf_token=_ensure_contributor_csrf_token(request),
-            claim_kinds=CLAIM_KINDS,
-            form_data=form_data,
+            claim_kinds=[("bulk_tree_import", "Bulk tree import"), ("bulk_concordance_import", "Bulk concordance import")],
+            form_data=_normalize_claim_form_data(form_data),
+            relationship_predicates=RELATIONSHIP_PREDICATE_OPTIONS,
+            csv_import_examples=CSV_IMPORT_EXAMPLES,
             error=error,
         ),
+    )
+
+
+async def _submit_claim(
+    *,
+    claim_store,
+    kind: str,
+    title: str,
+    target_iri: str,
+    rationale: str,
+    contributor_user: dict[str, Any],
+    change: dict[str, Any],
+) -> None:
+    await claim_store.create(
+        kind=kind,
+        title=title.strip(),
+        target_iri=target_iri.strip(),
+        payload={
+            "rationale": rationale.strip(),
+            "submission": {"mode": "shared_ui", "kind": kind},
+            "change": change,
+        },
+        submitted_by=contributor_user,
     )
 
 
@@ -417,38 +781,59 @@ async def contributor_dashboard(
 async def contributor_new_claim(
     request: Request,
     language: str | None = None,
-    target_iri: str = "",
     settings: Settings = Depends(get_settings),
 ):
     contributor_user = _ensure_contributor(request, language, settings)
     if isinstance(contributor_user, RedirectResponse):
         return contributor_user
+    return RedirectResponse(
+        str(request.url_for("contributor_dashboard"))
+        + "?"
+        + urlencode(
+            {
+                "language": _default_language(language, settings),
+                "message": "Use the guided contributor forms instead of the old generic claim form",
+            }
+        ),
+        status_code=303,
+    )
 
+
+@router.get("/concept_schemes/new", response_class=HTMLResponse, name="contributor_new_concept_scheme")
+async def contributor_new_concept_scheme(
+    request: Request,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+):
+    contributor_user = _ensure_contributor(request, language, settings)
+    if isinstance(contributor_user, RedirectResponse):
+        return contributor_user
     language = _default_language(language, settings)
-    return _render_claim_form(
+    form_data = _concept_scheme_form_data_for_language(None, language=language)
+    form_data["rationale"] = ""
+    return _render_shared_concept_scheme_form(
         request,
         language=language,
         settings=settings,
         contributor_user=contributor_user,
-        form_data={
-            "kind": CLAIM_KINDS[0][0],
-            "title": "",
-            "target_iri": target_iri,
-            "rationale": "",
-            "payload": "{\n  \n}",
-        },
+        form_data=form_data,
+        form_mode="create",
     )
 
 
-@router.post("/claims/new", response_class=HTMLResponse)
-async def contributor_create_claim(
+@router.post("/concept_schemes/new", response_class=HTMLResponse)
+async def contributor_create_concept_scheme_claim(
     request: Request,
     csrf_token: str = Form(...),
-    kind: str = Form(...),
-    title: str = Form(...),
-    target_iri: str = Form(""),
     rationale: str = Form(""),
-    payload: str = Form("{}"),
+    id_: str = Form(...),
+    pref_label_text: str = Form(...),
+    definition_text: str = Form(""),
+    notations: str = Form(""),
+    status: str = Form(...),
+    created: str = Form(...),
+    creators: str = Form(""),
+    version: str = Form(...),
     language: str = Form("en"),
     settings: Settings = Depends(get_settings),
     claim_store=Depends(get_claim_store),
@@ -457,64 +842,520 @@ async def contributor_create_claim(
     if isinstance(contributor_user, RedirectResponse):
         return contributor_user
     _validate_contributor_csrf(request, csrf_token)
-
-    form_data = {
-        "kind": kind,
-        "title": title,
-        "target_iri": target_iri,
-        "rationale": rationale,
-        "payload": payload,
-    }
-    if kind not in {value for value, _label in CLAIM_KINDS}:
-        return _render_claim_form(
-            request,
-            language=language,
-            settings=settings,
-            contributor_user=contributor_user,
-            form_data=form_data,
-            error="Unknown claim type",
-        )
-    if not title.strip():
-        return _render_claim_form(
-            request,
-            language=language,
-            settings=settings,
-            contributor_user=contributor_user,
-            form_data=form_data,
-            error="Title is required",
-        )
-    try:
-        parsed_payload = json.loads(payload or "{}")
-    except json.JSONDecodeError as exc:
-        return _render_claim_form(
-            request,
-            language=language,
-            settings=settings,
-            contributor_user=contributor_user,
-            form_data=form_data,
-            error=f"Payload must be valid JSON: {exc}",
-        )
-    if not isinstance(parsed_payload, dict):
-        return _render_claim_form(
-            request,
-            language=language,
-            settings=settings,
-            contributor_user=contributor_user,
-            form_data=form_data,
-            error="Payload must be a JSON object",
-        )
-
-    await claim_store.create(
-        kind=kind,
-        title=title.strip(),
-        target_iri=target_iri.strip(),
-        payload={"rationale": rationale.strip(), "change": parsed_payload},
-        submitted_by=contributor_user,
+    form_data = _build_concept_scheme_form_data(
+        language=language,
+        id_=id_,
+        pref_label_text=pref_label_text,
+        definition_text=definition_text,
+        notations=notations,
+        status=status,
+        created=created,
+        creators=creators,
+        version=version,
     )
+    form_data["rationale"] = rationale
+    try:
+        payload = _concept_scheme_payload(form_data)
+        validated = req.ConceptScheme.model_validate(payload)
+        await _submit_claim(
+            claim_store=claim_store,
+            kind="add_concept_scheme",
+            title=f"Create concept scheme: {pref_label_text.strip() or id_.strip()}",
+            target_iri=id_,
+            rationale=rationale,
+            contributor_user=contributor_user,
+            change={
+                "entity_type": "concept_scheme",
+                "operation": "create",
+                "payload": validated.model_dump(by_alias=True),
+            },
+        )
+    except (ValidationError, ValueError) as exc:
+        return _render_shared_concept_scheme_form(
+            request,
+            language=language,
+            settings=settings,
+            contributor_user=contributor_user,
+            form_data=form_data,
+            form_mode="create",
+            error=str(exc),
+        )
     return RedirectResponse(
         str(request.url_for("contributor_dashboard"))
         + "?"
-        + urlencode({"language": language, "message": "Claim submitted for admin review"}),
+        + urlencode({"language": language, "message": "Concept scheme claim submitted for admin review"}),
+        status_code=303,
+    )
+
+
+@router.get("/concept_schemes/{iri:path}/edit", response_class=HTMLResponse, name="contributor_edit_concept_scheme")
+async def contributor_edit_concept_scheme(
+    request: Request,
+    iri: str,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+    service=Depends(get_graph_service),
+):
+    contributor_user = _ensure_contributor(request, language, settings)
+    if isinstance(contributor_user, RedirectResponse):
+        return contributor_user
+    language = _default_language(language, settings)
+    concept_scheme = await service.concept_scheme_get(iri)
+    form_data = _concept_scheme_form_data_for_language(concept_scheme, language=language)
+    form_data["rationale"] = ""
+    return _render_shared_concept_scheme_form(
+        request,
+        language=language,
+        settings=settings,
+        contributor_user=contributor_user,
+        form_data=form_data,
+        form_mode="edit",
+    )
+
+
+@router.post("/concept_schemes/{iri:path}/edit", response_class=HTMLResponse)
+async def contributor_update_concept_scheme_claim(
+    request: Request,
+    iri: str,
+    csrf_token: str = Form(...),
+    rationale: str = Form(""),
+    id_: str = Form(...),
+    pref_label_text: str = Form(...),
+    definition_text: str = Form(""),
+    notations: str = Form(""),
+    status: str = Form(...),
+    created: str = Form(...),
+    creators: str = Form(""),
+    version: str = Form(...),
+    language: str = Form("en"),
+    settings: Settings = Depends(get_settings),
+    claim_store=Depends(get_claim_store),
+    service=Depends(get_graph_service),
+):
+    contributor_user = _ensure_contributor(request, language, settings)
+    if isinstance(contributor_user, RedirectResponse):
+        return contributor_user
+    _validate_contributor_csrf(request, csrf_token)
+    current = await service.concept_scheme_get(iri)
+    form_data = _build_concept_scheme_form_data(
+        language=language,
+        id_=id_,
+        pref_label_text=pref_label_text,
+        definition_text=definition_text,
+        notations=notations,
+        status=status,
+        created=created,
+        creators=creators,
+        version=version,
+        existing=current,
+    )
+    form_data["rationale"] = rationale
+    try:
+        payload = _concept_scheme_payload(form_data, extra=_modified_extra(current.extra))
+        validated = req.ConceptScheme.model_validate(payload)
+        await _submit_claim(
+            claim_store=claim_store,
+            kind="edit_concept_scheme",
+            title=f"Edit concept scheme: {pref_label_text.strip() or id_.strip()}",
+            target_iri=id_,
+            rationale=rationale,
+            contributor_user=contributor_user,
+            change={
+                "entity_type": "concept_scheme",
+                "operation": "update",
+                "payload": validated.model_dump(by_alias=True),
+            },
+        )
+    except (ValidationError, ValueError) as exc:
+        return _render_shared_concept_scheme_form(
+            request,
+            language=language,
+            settings=settings,
+            contributor_user=contributor_user,
+            form_data=form_data,
+            form_mode="edit",
+            error=str(exc),
+        )
+    return RedirectResponse(
+        str(request.url_for("contributor_dashboard"))
+        + "?"
+        + urlencode({"language": language, "message": "Concept scheme change claim submitted"}),
+        status_code=303,
+    )
+
+
+@router.get("/concepts/new", response_class=HTMLResponse, name="contributor_new_concept")
+async def contributor_new_concept(
+    request: Request,
+    concept_scheme: str | None = None,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+    service=Depends(get_graph_service),
+):
+    contributor_user = _ensure_contributor(request, language, settings)
+    if isinstance(contributor_user, RedirectResponse):
+        return contributor_user
+    language = _default_language(language, settings)
+    concept_schemes = await service.concept_scheme_get_all()
+    form_data = _concept_form_data_for_language(None, language=language, scheme_hint=concept_scheme or "")
+    form_data["rationale"] = ""
+    return _render_shared_concept_form(
+        request,
+        language=language,
+        settings=settings,
+        contributor_user=contributor_user,
+        form_data=form_data,
+        concept_schemes=concept_schemes,
+        form_mode="create",
+    )
+
+
+@router.post("/concepts/new", response_class=HTMLResponse)
+async def contributor_create_concept_claim(
+    request: Request,
+    csrf_token: str = Form(...),
+    rationale: str = Form(""),
+    id_: str = Form(...),
+    pref_label_text: str = Form(...),
+    definition_text: str = Form(""),
+    notations: str = Form(""),
+    status: str = Form(...),
+    schemes: str = Form(...),
+    alt_labels: str = Form(""),
+    hidden_labels: str = Form(""),
+    broader_iris: str = Form(""),
+    top_concept: bool = Form(False),
+    language: str = Form("en"),
+    settings: Settings = Depends(get_settings),
+    claim_store=Depends(get_claim_store),
+    service=Depends(get_graph_service),
+):
+    contributor_user = _ensure_contributor(request, language, settings)
+    if isinstance(contributor_user, RedirectResponse):
+        return contributor_user
+    _validate_contributor_csrf(request, csrf_token)
+    concept_schemes = await service.concept_scheme_get_all()
+    form_data = _build_concept_form_data(
+        language=language,
+        id_=id_,
+        pref_label_text=pref_label_text,
+        definition_text=definition_text,
+        notations=notations,
+        status=status,
+        schemes=schemes,
+        alt_labels=alt_labels,
+        hidden_labels=hidden_labels,
+        broader_iris=broader_iris,
+        top_concept=top_concept,
+    )
+    form_data["rationale"] = rationale
+    try:
+        payload = _concept_payload(form_data)
+        if top_concept and _parse_nodes(broader_iris):
+            raise ValueError("A top concept cannot also have broader concepts")
+        validated = req.ConceptCreate.model_validate(
+            {**payload, str(RelationshipVerbs.broader): _parse_nodes(broader_iris)}
+        )
+        await _submit_claim(
+            claim_store=claim_store,
+            kind="add_concept",
+            title=f"Create concept: {pref_label_text.strip() or id_.strip()}",
+            target_iri=id_,
+            rationale=rationale,
+            contributor_user=contributor_user,
+            change={
+                "entity_type": "concept",
+                "operation": "create",
+                "payload": validated.model_dump(by_alias=True),
+            },
+        )
+    except (ValidationError, ValueError, de.ConceptSchemesNotInDatabase) as exc:
+        return _render_shared_concept_form(
+            request,
+            language=language,
+            settings=settings,
+            contributor_user=contributor_user,
+            form_data=form_data,
+            concept_schemes=concept_schemes,
+            form_mode="create",
+            error=str(exc),
+        )
+    return RedirectResponse(
+        str(request.url_for("contributor_dashboard"))
+        + "?"
+        + urlencode({"language": language, "message": "Concept claim submitted for admin review"}),
+        status_code=303,
+    )
+
+
+@router.get("/concepts/{iri:path}/edit", response_class=HTMLResponse, name="contributor_edit_concept")
+async def contributor_edit_concept(
+    request: Request,
+    iri: str,
+    concept_scheme: str | None = None,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+    service=Depends(get_graph_service),
+):
+    contributor_user = _ensure_contributor(request, language, settings)
+    if isinstance(contributor_user, RedirectResponse):
+        return contributor_user
+    language = _default_language(language, settings)
+    concept = await service.concept_get(iri)
+    relationships = await service.relationships_get(iri=iri, source=True, target=True)
+    broader_iris = [
+        rel.target for rel in relationships
+        if rel.source == concept.id_ and rel.predicate == RelationshipVerbs.broader
+    ]
+    concept_schemes = await service.concept_scheme_get_all()
+    selected_scheme = concept_scheme or concept.schemes[0]["@id"]
+    relationship_rows = await _concept_relationship_rows(
+        request, concept_iri=concept.id_, language=language, concept_scheme=selected_scheme, service=service
+    )
+    associations = await _concept_association_rows(
+        request, concept_iri=concept.id_, language=language, concept_scheme=selected_scheme, service=service
+    )
+    mappings = await _concept_mapping_rows(
+        request, concept_iri=concept.id_, language=language, concept_scheme=selected_scheme, service=service
+    )
+    form_data = _concept_form_data_for_language(
+        concept, language=language, scheme_hint=selected_scheme, broader_iris=broader_iris
+    )
+    form_data["rationale"] = ""
+    return _render_shared_concept_form(
+        request,
+        language=language,
+        settings=settings,
+        contributor_user=contributor_user,
+        form_data=form_data,
+        concept_schemes=concept_schemes,
+        form_mode="edit",
+        relationship_rows=relationship_rows,
+        mappings=mappings,
+        associations=associations,
+        mapping_form_data=_mapping_form_data(
+            link_type=request.query_params.get("link_type", str(RelationshipVerbs.exact_match)),
+            target_iri=request.query_params.get("target_iri", ""),
+            association_id=request.query_params.get("association_id", ""),
+        ),
+        mapping_form_action=str(request.url_for("contributor_create_link_claim", iri=quote(concept.id_))),
+    )
+
+
+@router.post("/concepts/{iri:path}/edit", response_class=HTMLResponse)
+async def contributor_update_concept_claim(
+    request: Request,
+    iri: str,
+    csrf_token: str = Form(...),
+    rationale: str = Form(""),
+    id_: str = Form(...),
+    pref_label_text: str = Form(...),
+    definition_text: str = Form(""),
+    notations: str = Form(""),
+    status: str = Form(...),
+    schemes: str = Form(...),
+    alt_labels: str = Form(""),
+    hidden_labels: str = Form(""),
+    broader_iris: str = Form(""),
+    top_concept: bool = Form(False),
+    language: str = Form("en"),
+    concept_scheme: str | None = Form(None),
+    settings: Settings = Depends(get_settings),
+    claim_store=Depends(get_claim_store),
+    service=Depends(get_graph_service),
+):
+    contributor_user = _ensure_contributor(request, language, settings)
+    if isinstance(contributor_user, RedirectResponse):
+        return contributor_user
+    _validate_contributor_csrf(request, csrf_token)
+    current = await service.concept_get(iri)
+    concept_schemes = await service.concept_scheme_get_all()
+    selected_scheme = concept_scheme or current.schemes[0]["@id"]
+    relationship_rows = await _concept_relationship_rows(
+        request, concept_iri=current.id_, language=language, concept_scheme=selected_scheme, service=service
+    )
+    associations = await _concept_association_rows(
+        request, concept_iri=current.id_, language=language, concept_scheme=selected_scheme, service=service
+    )
+    mappings = await _concept_mapping_rows(
+        request, concept_iri=current.id_, language=language, concept_scheme=selected_scheme, service=service
+    )
+    form_data = _build_concept_form_data(
+        language=language,
+        id_=id_,
+        pref_label_text=pref_label_text,
+        definition_text=definition_text,
+        notations=notations,
+        status=status,
+        schemes=schemes,
+        alt_labels=alt_labels,
+        hidden_labels=hidden_labels,
+        broader_iris=broader_iris,
+        top_concept=top_concept,
+        existing=current,
+    )
+    form_data["rationale"] = rationale
+    try:
+        payload = _concept_payload(form_data, extra=_modified_extra(current.extra))
+        if top_concept and _parse_nodes(broader_iris):
+            raise ValueError("A top concept cannot also have broader concepts")
+        validated = req.ConceptUpdate.model_validate(payload)
+        await _submit_claim(
+            claim_store=claim_store,
+            kind="edit_concept",
+            title=f"Edit concept: {pref_label_text.strip() or id_.strip()}",
+            target_iri=id_,
+            rationale=rationale,
+            contributor_user=contributor_user,
+            change={
+                "entity_type": "concept",
+                "operation": "update",
+                "payload": validated.model_dump(by_alias=True),
+                "broader_iris": [node["@id"] for node in _parse_nodes(broader_iris)],
+            },
+        )
+    except (ValidationError, ValueError, de.ConceptNotFoundError) as exc:
+        return _render_shared_concept_form(
+            request,
+            language=language,
+            settings=settings,
+            contributor_user=contributor_user,
+            form_data=form_data,
+            concept_schemes=concept_schemes,
+            form_mode="edit",
+            relationship_rows=relationship_rows,
+            mappings=mappings,
+            associations=associations,
+            mapping_form_data=_mapping_form_data(),
+            mapping_form_action=str(request.url_for("contributor_create_link_claim", iri=quote(current.id_))),
+            error=str(exc),
+        )
+    return RedirectResponse(
+        str(request.url_for("contributor_dashboard"))
+        + "?"
+        + urlencode({"language": language, "message": "Concept change claim submitted"}),
+        status_code=303,
+    )
+
+
+@router.post("/concepts/{iri:path}/links/claim", name="contributor_create_link_claim")
+async def contributor_create_link_claim(
+    request: Request,
+    iri: str,
+    csrf_token: str = Form(...),
+    language: str = Form("en"),
+    link_type: str = Form(str(RelationshipVerbs.exact_match)),
+    target_iri: str = Form(""),
+    association_id: str = Form(""),
+    original_link_type: str = Form(""),
+    original_target_iri: str = Form(""),
+    concept_scheme: str | None = Form(None),
+    settings: Settings = Depends(get_settings),
+    claim_store=Depends(get_claim_store),
+):
+    contributor_user = _ensure_contributor(request, language, settings)
+    if isinstance(contributor_user, RedirectResponse):
+        return contributor_user
+    _validate_contributor_csrf(request, csrf_token)
+    change = {
+        "entity_type": "concept_link",
+        "operation": "upsert",
+        "source_iri": iri,
+        "target_iri": target_iri.strip(),
+        "link_type": link_type.strip(),
+        "association_id": association_id.strip(),
+        "original_link_type": original_link_type.strip(),
+        "original_target_iri": original_target_iri.strip(),
+    }
+    await _submit_claim(
+        claim_store=claim_store,
+        kind="add_relationship",
+        title=f"Update concept link for {iri}",
+        target_iri=iri,
+        rationale="",
+        contributor_user=contributor_user,
+        change=change,
+    )
+    return RedirectResponse(
+        str(request.url_for("contributor_edit_concept", iri=quote(iri)))
+        + "?"
+        + urlencode(
+            {
+                "language": language,
+                "concept_scheme": concept_scheme or "",
+                "message": "Link claim submitted for admin review",
+            }
+        ),
+        status_code=303,
+    )
+
+
+@router.get("/imports/csv", response_class=HTMLResponse, name="contributor_csv_import")
+async def contributor_csv_import(
+    request: Request,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+):
+    contributor_user = _ensure_contributor(request, language, settings)
+    if isinstance(contributor_user, RedirectResponse):
+        return contributor_user
+    language = _default_language(language, settings)
+    return _render_csv_import_form(
+        request,
+        language=language,
+        settings=settings,
+        contributor_user=contributor_user,
+        form_data={"kind": "bulk_tree_import", "title": "", "rationale": "", "csv_text": "", "csv_import_name": ""},
+    )
+
+
+@router.post("/imports/csv", response_class=HTMLResponse)
+async def contributor_csv_import_claim(
+    request: Request,
+    csrf_token: str = Form(...),
+    kind: str = Form("bulk_tree_import"),
+    title: str = Form(""),
+    rationale: str = Form(""),
+    csv_text: str = Form(""),
+    csv_import_name: str = Form(""),
+    csv_file: UploadFile | None = File(None),
+    language: str = Form("en"),
+    settings: Settings = Depends(get_settings),
+    claim_store=Depends(get_claim_store),
+):
+    contributor_user = _ensure_contributor(request, language, settings)
+    if isinstance(contributor_user, RedirectResponse):
+        return contributor_user
+    _validate_contributor_csrf(request, csrf_token)
+    form_data = {"kind": kind, "title": title, "rationale": rationale, "csv_text": csv_text, "csv_import_name": csv_import_name}
+    try:
+        uploaded_csv_text, csv_file_name = _read_csv_upload(csv_file)
+        if uploaded_csv_text:
+            csv_text = uploaded_csv_text
+            form_data["csv_text"] = csv_text
+        change = _csv_change_from_form(kind, csv_text=csv_text, csv_file_name=csv_file_name, import_name=csv_import_name)
+        await _submit_claim(
+            claim_store=claim_store,
+            kind=kind,
+            title=title.strip() or f"CSV import: {csv_import_name.strip() or kind}",
+            target_iri="",
+            rationale=rationale,
+            contributor_user=contributor_user,
+            change=change,
+        )
+    except ValueError as exc:
+        return _render_csv_import_form(
+            request,
+            language=language,
+            settings=settings,
+            contributor_user=contributor_user,
+            form_data=form_data,
+            error=str(exc),
+        )
+    return RedirectResponse(
+        str(request.url_for("contributor_dashboard"))
+        + "?"
+        + urlencode({"language": language, "message": "CSV import claim submitted for admin review"}),
         status_code=303,
     )
 
@@ -539,13 +1380,12 @@ async def contributor_claim_detail(
     return templates.TemplateResponse(
         request,
         "contributor_claim_detail.html",
-        context={
-            "request": request,
-            "language": language,
-            "language_selector": _language_selector(request, language, settings),
-            "suggest_api_url": get_full_api_path("suggest"),
-            "query": "",
-            "contributor_user": contributor_user,
-            "claim": claim,
-        },
+        context=_base_context(
+            request,
+            language,
+            settings,
+            contributor_user=contributor_user,
+            claim=claim,
+            claim_preview=_claim_payload_preview(claim.get("payload", {})),
+        ),
     )

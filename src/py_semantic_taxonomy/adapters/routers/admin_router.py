@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import quote, unquote, urlencode
@@ -136,6 +137,22 @@ def _base_context(
 
 def _split_lines(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+def _claim_payload_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    submission = payload.get("submission", {}) if isinstance(payload, dict) else {}
+    change = payload.get("change", {}) if isinstance(payload, dict) else {}
+    rows = change.get("rows", []) if isinstance(change, dict) else []
+    columns = change.get("columns", []) if isinstance(change, dict) else []
+    return {
+        "rationale": payload.get("rationale", "") if isinstance(payload, dict) else "",
+        "submission": submission if isinstance(submission, dict) else {},
+        "change": change if isinstance(change, dict) else {},
+        "change_json": json.dumps(change if isinstance(change, dict) else {}, indent=2),
+        "csv_columns": columns if isinstance(columns, list) else [],
+        "csv_rows_preview": rows[:5] if isinstance(rows, list) else [],
+        "csv_row_count": len(rows) if isinstance(rows, list) else 0,
+    }
 
 
 def _parse_multilingual(text: str, *, unique_per_language: bool) -> list[dict[str, str]]:
@@ -826,6 +843,16 @@ def _render_concept_scheme_form(
             form_data=form_data,
             form_mode=form_mode,
             status_options=STATUS_OPTIONS,
+            actor_label="Admin",
+            actor_home_url=f"/web/admin/?language={language}",
+            actor_home_name="Admin",
+            submit_label="Create Scheme" if form_mode == "create" else "Save Changes",
+            show_delete_actions=True,
+            collect_rationale=False,
+            form_helper_text=(
+                "Editing the "
+                f"{language.upper()} label and definition. Existing translations in other languages are preserved."
+            ),
             error=error,
             message=message,
         ),
@@ -874,6 +901,18 @@ def _render_concept_form(
             form_mode=form_mode,
             status_options=STATUS_OPTIONS,
             mapping_verbs=MAPPING_VERBS,
+            actor_label="Admin",
+            actor_home_url=f"/web/admin/?language={language}",
+            actor_home_name="Admin",
+            submit_label="Create Concept" if form_mode == "create" else "Save Changes",
+            show_delete_actions=True,
+            show_direct_link_actions=True,
+            show_mapping_form=form_mode == "edit",
+            collect_rationale=False,
+            form_helper_text=(
+                "Editing the "
+                f"{language.upper()} label and definition. Existing translations in other languages are preserved."
+            ),
             error=error,
             message=message,
         ),
@@ -1194,6 +1233,7 @@ async def admin_claim_detail(
             settings,
             admin_user=admin_user,
             claim=claim,
+            claim_preview=_claim_payload_preview(claim.get("payload", {})),
             csrf_token=_ensure_csrf_token(request),
         ),
     )

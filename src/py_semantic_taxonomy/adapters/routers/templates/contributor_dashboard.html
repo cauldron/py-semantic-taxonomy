@@ -6,11 +6,19 @@
 <div class="flex justify-between items-center">
     <div>
         <h1>Contributor user interface</h1>
-        <p style="color: var(--text-secondary)">Submit proposed taxonomy changes for admin review.</p>
+        <p style="color: var(--text-secondary)">Use the same editing forms as admins. Your submissions become reviewable claims instead of direct changes.</p>
     </div>
-    <a href="/web/contributor/claims/new?language={{ language }}" class="btn-primary">
-        <i class="fas fa-plus mr-2"></i>New Claim
-    </a>
+    <div class="flex gap-3">
+        <a href="/web/contributor/concept_schemes/new?language={{ language }}" class="btn-secondary">
+            <i class="fas fa-sitemap mr-2"></i>New Scheme
+        </a>
+        <a href="/web/contributor/concepts/new?language={{ language }}" class="btn-primary">
+            <i class="fas fa-plus mr-2"></i>New Concept
+        </a>
+        <a href="/web/contributor/imports/csv?language={{ language }}" class="btn-secondary">
+            <i class="fas fa-file-csv mr-2"></i>Import CSV
+        </a>
+    </div>
 </div>
 {% endblock %}
 

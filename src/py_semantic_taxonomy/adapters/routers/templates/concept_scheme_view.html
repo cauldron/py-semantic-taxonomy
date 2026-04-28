@@ -25,6 +25,13 @@
                 <i class="fas fa-trash mr-2"></i>Delete Scheme
             </button>
         </form>
+        {% elif is_contributor_request(request) %}
+        <a href="/web/contributor/concept_schemes/{{ concept_scheme.id_ | urlencode }}/edit?language={{ language }}" class="btn-primary">
+            <i class="fas fa-pen mr-2"></i>Edit Scheme
+        </a>
+        <a href="/web/contributor/concepts/new?language={{ language }}&concept_scheme={{ concept_scheme.id_ | urlencode }}" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+            <i class="fas fa-plus mr-2"></i>Add Concept
+        </a>
         {% endif %}
         <a href="/web/concept_schemes/" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
             <i class="fas fa-arrow-left mr-2"></i>Back to Schemes

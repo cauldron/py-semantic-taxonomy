@@ -6,11 +6,11 @@
 <div class="flex justify-between items-center">
     <div>
         <h1>{% if form_mode == "create" %}Create Concept Scheme{% else %}Edit Concept Scheme{% endif %}</h1>
-        <p style="color: var(--text-secondary)">Editing the {{ language|upper }} label and definition. Existing translations in other languages are preserved.</p>
+        <p style="color: var(--text-secondary)">{{ form_helper_text }}</p>
     </div>
     <div class="flex space-x-3">
-        <a href="/web/admin/?language={{ language }}" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
-            <i class="fas fa-arrow-left mr-2"></i>Admin
+        <a href="{{ actor_home_url }}" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+            <i class="fas fa-arrow-left mr-2"></i>{{ actor_home_name }}
         </a>
     </div>
 </div>
@@ -25,7 +25,7 @@
     <div class="card px-4 py-3 mb-4" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
     {% endif %}
 
-    {% if form_mode == "edit" %}
+    {% if form_mode == "edit" and show_delete_actions %}
     <form id="delete-scheme-form" method="post" action="/web/admin/concept_schemes/{{ form_data.id_|urlencode }}/delete">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="language" value="{{ language }}">
@@ -35,6 +35,13 @@
     <form method="post" class="card p-6 space-y-6" style="background-color: var(--nav-bg)">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="language" value="{{ language }}">
+
+        {% if collect_rationale %}
+        <div>
+            <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Rationale for review</label>
+            <textarea name="rationale" rows="3" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-color)">{{ form_data.rationale if form_data.rationale else '' }}</textarea>
+        </div>
+        {% endif %}
 
         <div>
             <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">IRI</label>
@@ -85,7 +92,7 @@
         </div>
 
         <div class="flex justify-between items-center">
-            {% if form_mode == "edit" %}
+            {% if form_mode == "edit" and show_delete_actions %}
             <button type="submit" form="delete-scheme-form"
                 onclick="return confirm('Delete this concept scheme and its concepts?');"
                 class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium"
@@ -96,7 +103,7 @@
             <div></div>
             {% endif %}
             <button type="submit" class="btn-primary">
-                <i class="fas fa-save mr-2"></i>{% if form_mode == "create" %}Create Scheme{% else %}Save Changes{% endif %}
+                <i class="fas fa-save mr-2"></i>{{ submit_label }}
             </button>
         </div>
     </form>

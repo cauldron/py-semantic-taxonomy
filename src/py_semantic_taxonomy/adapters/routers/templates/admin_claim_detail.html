@@ -29,12 +29,55 @@
                 <dt class="text-sm font-medium" style="color: var(--text-secondary)">Submitted</dt>
                 <dd style="color: var(--text-color)">{{ claim.created_at }}</dd>
             </div>
+            <div>
+                <dt class="text-sm font-medium" style="color: var(--text-secondary)">Submission mode</dt>
+                <dd style="color: var(--text-color)">{{ claim_preview.submission.mode or "legacy" }}</dd>
+            </div>
         </dl>
     </div>
 
+    {% if claim_preview.rationale %}
     <div class="card px-6 py-6">
-        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Payload</h2>
-        <pre class="overflow-x-auto text-sm">{{ claim.payload | tojson(indent=2) }}</pre>
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Rationale</h2>
+        <p style="color: var(--text-color)">{{ claim_preview.rationale }}</p>
+    </div>
+    {% endif %}
+
+    {% if claim_preview.csv_row_count %}
+    <div class="card px-6 py-6">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="text-lg font-medium" style="color: var(--text-color)">CSV preview</h2>
+            <span class="text-sm" style="color: var(--text-secondary)">{{ claim_preview.csv_row_count }} rows</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y" style="border-color: var(--border-color)">
+                <thead style="background-color: var(--nav-bg)">
+                    <tr>
+                        {% for column in claim_preview.csv_columns %}
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">{{ column }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class="divide-y" style="border-color: var(--border-color)">
+                    {% for row in claim_preview.csv_rows_preview %}
+                    <tr>
+                        {% for column in claim_preview.csv_columns %}
+                        <td class="px-4 py-3 text-sm" style="color: var(--text-color)">{{ row.get(column, "") }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if claim_preview.csv_row_count > 5 %}
+        <p class="text-xs mt-3" style="color: var(--text-secondary)">Showing the first 5 rows.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Structured change</h2>
+        <pre class="overflow-x-auto text-sm">{{ claim_preview.change_json }}</pre>
     </div>
 
     {% if claim.status == "pending" %}
