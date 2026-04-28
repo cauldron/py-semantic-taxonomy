@@ -1,4 +1,6 @@
 import json
+import re
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import quote, unquote, urlencode
@@ -153,6 +155,436 @@ def _claim_payload_preview(payload: dict[str, Any]) -> dict[str, Any]:
         "csv_rows_preview": rows[:5] if isinstance(rows, list) else [],
         "csv_row_count": len(rows) if isinstance(rows, list) else 0,
     }
+
+
+def _slugify_claim_value(text: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return slug or "import"
+
+
+def _import_identifier(import_name: str, file_name: str, title: str) -> str:
+    if import_name.strip():
+        return import_name.strip()
+    if file_name.strip():
+        stem = Path(file_name.strip()).stem
+        cleaned = re.sub(r"^(tree|conc)_", "", stem, flags=re.IGNORECASE)
+        return cleaned or stem
+    return _slugify_claim_value(title)
+
+
+def _claim_actor_node(user: dict[str, Any]) -> dict[str, str]:
+    if user.get("email"):
+        return {"@id": f"mailto:{user['email']}"}
+    if user.get("username"):
+        return {"@id": f"urn:pyst:user:{user['username']}"}
+    return {"@id": f"urn:pyst:user:{user.get('id', 'unknown')}"}
+
+
+def _tree_import_scheme_iri(
+    *,
+    import_name: str,
+    title: str,
+    settings: Settings,
+) -> str:
+    base = (settings.public_base_url or "http://example.com").rstrip("/")
+    slug = _slugify_claim_value(import_name or title)
+    return f"{base}/scheme/{slug}"
+
+
+def _find_scheme_by_notation(
+    schemes: list[de.ConceptScheme],
+    notation: str,
+) -> de.ConceptScheme:
+    notation = notation.strip()
+    for scheme in schemes:
+        if any(obj.get("@value", "").strip() == notation for obj in scheme.notations):
+            return scheme
+    notation_slug = _slugify_claim_value(notation)
+    for scheme in schemes:
+        if _slugify_claim_value(scheme.id_.rstrip("/").split("/")[-1]) == notation_slug:
+            return scheme
+        if any(
+            _slugify_claim_value(obj.get("@value", "").strip()) == notation_slug
+            for obj in scheme.pref_labels
+            if obj.get("@value")
+        ):
+            return scheme
+    raise ValueError(f"Could not resolve concept scheme with notation `{notation}`")
+
+
+def _find_concept_by_notation(
+    concepts: list[de.Concept],
+    notation: str,
+    *,
+    scheme_iri: str,
+) -> de.Concept:
+    notation = notation.strip()
+    for concept in concepts:
+        if any(obj.get("@value", "").strip() == notation for obj in concept.notations):
+            return concept
+    raise ValueError(
+        f"Could not resolve concept with notation `{notation}` in concept scheme `{scheme_iri}`"
+    )
+
+
+def _infer_scheme_from_code(
+    *,
+    schemes: list[de.ConceptScheme],
+    all_concepts: list[de.Concept],
+    code: str,
+    classification_label: str,
+) -> de.ConceptScheme:
+    matches = [
+        concept
+        for concept in all_concepts
+        if any(obj.get("@value", "").strip() == code.strip() for obj in concept.notations)
+    ]
+    if not matches:
+        raise ValueError(
+            f"Could not resolve concept scheme `{classification_label}` and no concept with notation `{code}` was found"
+        )
+
+    candidate_scheme_ids = sorted(
+        {
+            scheme.get("@id", "")
+            for concept in matches
+            for scheme in concept.schemes
+            if scheme.get("@id")
+        }
+    )
+    if len(candidate_scheme_ids) != 1:
+        raise ValueError(
+            f"Could not resolve concept scheme `{classification_label}` uniquely from concept notation `{code}`"
+        )
+
+    target_scheme_id = candidate_scheme_ids[0]
+    for scheme in schemes:
+        if scheme.id_ == target_scheme_id:
+            return scheme
+    raise ValueError(
+        f"Resolved concept scheme IRI `{target_scheme_id}` from notation `{code}`, but the scheme object could not be loaded"
+    )
+
+
+def _tree_import_scheme_payload(
+    *,
+    claim: dict[str, Any],
+    rows: list[dict[str, str]],
+    settings: Settings,
+) -> dict[str, Any]:
+    change = claim.get("payload", {}).get("change", {})
+    import_name = change.get("import_name", "").strip()
+    file_name = change.get("file_name", "").strip()
+    identifier = _import_identifier(import_name, file_name, claim.get("title", ""))
+    label = import_name or identifier or claim.get("title", "").strip() or "Imported scheme"
+    scheme_iri = _tree_import_scheme_iri(import_name=identifier, title=claim.get("title", ""), settings=settings)
+    created = datetime.now(tz=timezone.utc).replace(microsecond=0).isoformat()
+    definition = claim.get("payload", {}).get("rationale", "").strip() or (
+        f"Imported from accepted CSV claim `{claim.get('title', 'bulk tree import')}`."
+    )
+    first_code = next((row.get("code", "").strip() for row in rows if row.get("code", "").strip()), "")
+    notation = identifier or first_code or _slugify_claim_value(label)
+    return {
+        RDF_MAPPING["id_"]: scheme_iri,
+        RDF_MAPPING["types"]: [f"{SKOS}ConceptScheme"],
+        RDF_MAPPING["pref_labels"]: [{"@language": "en", "@value": label}],
+        RDF_MAPPING["definitions"]: [{"@language": "en", "@value": definition}],
+        RDF_MAPPING["notations"]: [{"@value": notation, "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"}],
+        RDF_MAPPING["status"]: [{"@id": f"{BIBO}status/accepted"}],
+        f"{DCTERMS}created": [{"@type": DATETIME_TYPE, "@value": created}],
+        f"{DCTERMS}creator": [_claim_actor_node(claim.get("submitted_by", {}))],
+        f"{OWL}versionInfo": [{"@value": notation}],
+    }
+
+
+def _tree_import_concept_iri(scheme_iri: str, row: dict[str, str]) -> str:
+    explicit = row.get("iri", "").strip()
+    if explicit:
+        return explicit
+    code = row.get("code", "").strip()
+    return f"{scheme_iri}/{quote(code, safe='')}"
+
+
+def _tree_import_concept_payload(
+    *,
+    scheme_iri: str,
+    row: dict[str, str],
+) -> dict[str, Any]:
+    code = row.get("code", "").strip()
+    name = row.get("name", "").strip()
+    if not code:
+        raise ValueError("Tree import rows require a non-empty `code` column")
+    if not name:
+        raise ValueError(f"Tree import row `{code}` requires a non-empty `name` column")
+    payload = {
+        RDF_MAPPING["id_"]: _tree_import_concept_iri(scheme_iri, row),
+        RDF_MAPPING["types"]: [f"{SKOS}Concept"],
+        RDF_MAPPING["pref_labels"]: [{"@language": "en", "@value": name}],
+        RDF_MAPPING["status"]: [{"@id": f"{BIBO}status/accepted"}],
+        RDF_MAPPING["notations"]: [{"@value": code, "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"}],
+        RDF_MAPPING["schemes"]: [{"@id": scheme_iri}],
+    }
+    if not row.get("parent_code", "").strip():
+        payload[RDF_MAPPING["top_concept_of"]] = [{"@id": scheme_iri}]
+    definition = row.get("definition_en", "").strip()
+    if definition:
+        payload[RDF_MAPPING["definitions"]] = [{"@language": "en", "@value": definition}]
+    return payload
+
+
+def _tree_import_relationships(
+    *,
+    scheme_iri: str,
+    rows: list[dict[str, str]],
+) -> tuple[list[dict[str, Any]], list[de.Relationship]]:
+    seen_codes: dict[str, dict[str, str]] = {}
+    for row in rows:
+        code = row.get("code", "").strip()
+        if not code:
+            raise ValueError("Tree import rows require a non-empty `code` column")
+        if code in seen_codes:
+            raise ValueError(f"Duplicate `code` in tree import: `{code}`")
+        seen_codes[code] = row
+
+    concepts_payload: list[dict[str, Any]] = []
+    relationships: list[de.Relationship] = []
+    for row in rows:
+        concepts_payload.append(_tree_import_concept_payload(scheme_iri=scheme_iri, row=row))
+        parent_code = row.get("parent_code", "").strip()
+        level_text = row.get("level", "").strip()
+        if parent_code:
+            if parent_code not in seen_codes:
+                raise ValueError(
+                    f"Tree import row `{row.get('code', '').strip()}` references unknown parent `{parent_code}`"
+                )
+            relationships.append(
+                de.Relationship(
+                    source=_tree_import_concept_iri(scheme_iri, row),
+                    target=_tree_import_concept_iri(scheme_iri, seen_codes[parent_code]),
+                    predicate=RelationshipVerbs.broader,
+                )
+            )
+        if level_text:
+            try:
+                expected = 0 if not parent_code else int(seen_codes[parent_code].get("level", "0") or "0") + 1
+                if int(level_text) != expected:
+                    raise ValueError(
+                        f"Tree import row `{row.get('code', '').strip()}` has level `{level_text}` but expected `{expected}`"
+                    )
+            except ValueError:
+                if not level_text.isdigit():
+                    raise ValueError(
+                        f"Tree import row `{row.get('code', '').strip()}` has non-numeric level `{level_text}`"
+                    )
+                raise
+    return concepts_payload, relationships
+
+
+async def _apply_tree_import_claim(
+    *,
+    claim: dict[str, Any],
+    settings: Settings,
+    service,
+) -> None:
+    change = claim.get("payload", {}).get("change", {})
+    rows = change.get("rows", []) if isinstance(change, dict) else []
+    if not rows:
+        raise ValueError("Tree import claim contains no rows")
+
+    scheme_payload = _tree_import_scheme_payload(claim=claim, rows=rows, settings=settings)
+    validated_scheme = req.ConceptScheme.model_validate(scheme_payload)
+    scheme = de.ConceptScheme.from_json_ld(validated_scheme.model_dump(by_alias=True))
+    try:
+        await service.concept_scheme_create(scheme)
+    except de.DuplicateIRI:
+        pass
+
+    scheme_iri = scheme.id_
+    concepts_payload, relationships = _tree_import_relationships(scheme_iri=scheme_iri, rows=rows)
+    for concept_payload in concepts_payload:
+        validated = req.ConceptCreate.model_validate(concept_payload)
+        concept_json = validated.model_dump(by_alias=True)
+        concept = de.Concept.from_json_ld(concept_json)
+        try:
+            await service.concept_create(concept, [])
+        except de.DuplicateIRI:
+            continue
+
+    if relationships:
+        existing = set()
+        for rel in relationships:
+            existing.update(
+                {
+                    (current.source, current.target, current.predicate)
+                    for current in await service.relationships_get(
+                        iri=rel.source,
+                        source=True,
+                        target=False,
+                        verb=RelationshipVerbs.broader,
+                    )
+                }
+            )
+        desired = [rel for rel in relationships if (rel.source, rel.target, rel.predicate) not in existing]
+        if desired:
+            await service.relationships_create(desired)
+
+
+async def _apply_concordance_import_claim(
+    *,
+    claim: dict[str, Any],
+    service,
+) -> None:
+    change = claim.get("payload", {}).get("change", {})
+    rows = change.get("rows", []) if isinstance(change, dict) else []
+    if not rows:
+        raise ValueError("Concordance import claim contains no rows")
+
+    schemes = await service.concept_scheme_get_all()
+    all_concepts = await service.concept_get_all(concept_scheme_iri=None, top_concepts_only=False)
+    scheme_cache: dict[str, tuple[de.ConceptScheme, list[de.Concept]]] = {}
+    relationships: list[de.Relationship] = []
+    predicate_map = {verb.value: verb for verb in RelationshipVerbs if verb not in {RelationshipVerbs.broader, RelationshipVerbs.narrower}}
+
+    for row in rows:
+        classification_from = row.get("classification_from", "").strip()
+        classification_to = row.get("classification_to", "").strip()
+        if not classification_from or not classification_to:
+            raise ValueError("Concordance import rows require `classification_from` and `classification_to`")
+
+        from_columns = [key for key in row if key.endswith("_from") and key != "classification_from"]
+        to_columns = [key for key in row if key.endswith("_to") and key != "classification_to"]
+        if len(from_columns) != 1 or len(to_columns) != 1:
+            raise ValueError(
+                "Concordance import rows must contain exactly one source `<category>_from` column and one target `<category>_to` column"
+            )
+
+        source_code = row.get(from_columns[0], "").strip()
+        target_code = row.get(to_columns[0], "").strip()
+        if not source_code or not target_code:
+            raise ValueError("Concordance import rows require non-empty source and target codes")
+
+        if classification_from not in scheme_cache:
+            try:
+                from_scheme = _find_scheme_by_notation(schemes, classification_from)
+            except ValueError:
+                from_scheme = _infer_scheme_from_code(
+                    schemes=schemes,
+                    all_concepts=all_concepts,
+                    code=source_code,
+                    classification_label=classification_from,
+                )
+            scheme_cache[classification_from] = (
+                from_scheme,
+                await service.concept_get_all(concept_scheme_iri=from_scheme.id_, top_concepts_only=False),
+            )
+        if classification_to not in scheme_cache:
+            try:
+                to_scheme = _find_scheme_by_notation(schemes, classification_to)
+            except ValueError:
+                to_scheme = _infer_scheme_from_code(
+                    schemes=schemes,
+                    all_concepts=all_concepts,
+                    code=target_code,
+                    classification_label=classification_to,
+                )
+            scheme_cache[classification_to] = (
+                to_scheme,
+                await service.concept_get_all(concept_scheme_iri=to_scheme.id_, top_concepts_only=False),
+            )
+
+        from_scheme, from_concepts = scheme_cache[classification_from]
+        to_scheme, to_concepts = scheme_cache[classification_to]
+        source_concept = _find_concept_by_notation(from_concepts, source_code, scheme_iri=from_scheme.id_)
+        target_concept = _find_concept_by_notation(to_concepts, target_code, scheme_iri=to_scheme.id_)
+
+        skos_uri = row.get("skos_uri", "").strip()
+        if skos_uri not in predicate_map:
+            raise ValueError(f"Unsupported `skos_uri` in concordance import: `{skos_uri}`")
+        relationships.append(
+            de.Relationship(
+                source=source_concept.id_,
+                target=target_concept.id_,
+                predicate=predicate_map[skos_uri],
+            )
+        )
+
+    if relationships:
+        existing = set()
+        for rel in relationships:
+            existing.update(
+                {
+                    (current.source, current.target, current.predicate)
+                    for current in await service.relationships_get(
+                        iri=rel.source,
+                        source=True,
+                        target=False,
+                        verb=rel.predicate,
+                    )
+                }
+            )
+        desired = [rel for rel in relationships if (rel.source, rel.target, rel.predicate) not in existing]
+        if desired:
+            await service.relationships_create(desired)
+
+
+async def _apply_claim_on_accept(
+    *,
+    claim: dict[str, Any],
+    settings: Settings,
+    service,
+) -> None:
+    change = claim.get("payload", {}).get("change", {})
+    entity_type = change.get("entity_type") if isinstance(change, dict) else None
+    operation = change.get("operation") if isinstance(change, dict) else None
+
+    if claim.get("kind") == "bulk_tree_import":
+        await _apply_tree_import_claim(claim=claim, settings=settings, service=service)
+        return
+    if claim.get("kind") == "bulk_concordance_import":
+        await _apply_concordance_import_claim(claim=claim, service=service)
+        return
+
+    payload = change.get("payload") if isinstance(change, dict) else None
+    if entity_type == "concept_scheme" and operation == "create" and isinstance(payload, dict):
+        validated = req.ConceptScheme.model_validate(payload)
+        await service.concept_scheme_create(de.ConceptScheme.from_json_ld(validated.model_dump(by_alias=True)))
+        return
+    if entity_type == "concept_scheme" and operation == "update" and isinstance(payload, dict):
+        validated = req.ConceptScheme.model_validate(payload)
+        await service.concept_scheme_update(de.ConceptScheme.from_json_ld(validated.model_dump(by_alias=True)))
+        return
+    if entity_type == "concept" and operation == "create" and isinstance(payload, dict):
+        validated = req.ConceptCreate.model_validate(payload)
+        concept_json = validated.model_dump(by_alias=True)
+        concept = de.Concept.from_json_ld(concept_json)
+        relationships = de.Relationship.from_json_ld(concept_json)
+        await service.concept_create(concept, relationships)
+        return
+    if entity_type == "concept" and operation == "update" and isinstance(payload, dict):
+        validated = req.ConceptUpdate.model_validate(payload)
+        concept = de.Concept.from_json_ld(validated.model_dump(by_alias=True))
+        await service.concept_update(concept)
+        desired_broader = set(change.get("broader_iris", [])) if isinstance(change.get("broader_iris", []), list) else set()
+        current_relationships = await service.relationships_get(iri=concept.id_, source=True, target=True)
+        existing_broader = {
+            rel.target
+            for rel in current_relationships
+            if rel.source == concept.id_ and rel.predicate == RelationshipVerbs.broader
+        }
+        to_add = sorted(desired_broader - existing_broader)
+        to_remove = sorted(existing_broader - desired_broader)
+        if to_add:
+            await service.relationships_create(
+                [de.Relationship(source=concept.id_, target=target, predicate=RelationshipVerbs.broader) for target in to_add]
+            )
+        if to_remove:
+            await service.relationships_delete(
+                [de.Relationship(source=concept.id_, target=target, predicate=RelationshipVerbs.broader) for target in to_remove]
+            )
+        return
+
+    # Unsupported accepted claims can still be reviewed, but cannot be published yet.
+    raise ValueError(f"Accepted claims of kind `{claim.get('kind')}` cannot be applied yet")
 
 
 def _parse_multilingual(text: str, *, unique_per_language: bool) -> list[dict[str, str]]:
@@ -1235,6 +1667,8 @@ async def admin_claim_detail(
             claim=claim,
             claim_preview=_claim_payload_preview(claim.get("payload", {})),
             csrf_token=_ensure_csrf_token(request),
+            message=request.query_params.get("message"),
+            error=request.query_params.get("error"),
         ),
     )
 
@@ -1249,6 +1683,7 @@ async def admin_review_claim(
     language: str = Form("en"),
     settings: Settings = Depends(get_settings),
     claim_store=Depends(get_claim_store),
+    service=Depends(get_graph_service),
 ):
     admin_user = _ensure_admin(request, language, settings)
     if isinstance(admin_user, RedirectResponse):
@@ -1269,6 +1704,22 @@ async def admin_review_claim(
             + urlencode({"language": language, "error": "Claim has already been reviewed"}),
             status_code=303,
         )
+
+    if status == "accepted":
+        try:
+            await _apply_claim_on_accept(claim=claim, settings=settings, service=service)
+        except Exception as exc:
+            return RedirectResponse(
+                str(request.url_for("admin_claim_detail", claim_id=claim_id))
+                + "?"
+                + urlencode(
+                    {
+                        "language": language,
+                        "error": f"Claim could not be applied: {exc}",
+                    }
+                ),
+                status_code=303,
+            )
 
     await claim_store.review(
         claim_id=claim_id,

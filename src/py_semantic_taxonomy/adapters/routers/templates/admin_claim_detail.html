@@ -11,6 +11,13 @@
 
 {% block content %}
 <div class="space-y-6">
+    {% if message %}
+    <div class="card px-4 py-3" style="background-color: var(--nav-bg); color: var(--text-color)">{{ message }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="card px-4 py-3" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
+    {% endif %}
+
     <div class="card px-6 py-6">
         <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
