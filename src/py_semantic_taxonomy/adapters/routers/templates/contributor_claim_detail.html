@@ -38,7 +38,7 @@
 
     {% if claim_preview.rationale %}
     <div class="card px-6 py-6">
-        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Rationale</h2>
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">{% if claim.kind in ["bulk_tree_import", "bulk_concordance_import"] %}Description{% else %}Rationale{% endif %}</h2>
         <p style="color: var(--text-color)">{{ claim_preview.rationale }}</p>
     </div>
     {% endif %}

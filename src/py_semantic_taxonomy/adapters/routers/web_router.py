@@ -285,6 +285,10 @@ async def web_concept_scheme_view(
         concepts = await service.concept_get_all(
             concept_scheme_iri=decoded_iri, top_concepts_only=True
         )
+        if not concepts:
+            concepts = await service.concept_get_all(
+                concept_scheme_iri=decoded_iri, top_concepts_only=False
+            )
         for concept in concepts:
             concept.url = concept_view_url(request, concept.id_, concept_scheme.id_, language)
 

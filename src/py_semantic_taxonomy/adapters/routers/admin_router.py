@@ -309,6 +309,7 @@ def _tree_import_concept_payload(
     *,
     scheme_iri: str,
     row: dict[str, str],
+    is_top_concept: bool,
 ) -> dict[str, Any]:
     code = row.get("code", "").strip()
     name = row.get("name", "").strip()
@@ -324,7 +325,7 @@ def _tree_import_concept_payload(
         RDF_MAPPING["notations"]: [{"@value": code, "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"}],
         RDF_MAPPING["schemes"]: [{"@id": scheme_iri}],
     }
-    if not row.get("parent_code", "").strip():
+    if is_top_concept:
         payload[RDF_MAPPING["top_concept_of"]] = [{"@id": scheme_iri}]
     definition = row.get("definition_en", "").strip()
     if definition:
@@ -346,10 +347,31 @@ def _tree_import_relationships(
             raise ValueError(f"Duplicate `code` in tree import: `{code}`")
         seen_codes[code] = row
 
+    explicit_top_codes = {
+        row.get("code", "").strip() for row in rows if not row.get("parent_code", "").strip()
+    }
+    min_level_codes: set[str] = set()
+    numeric_levels = []
+    for row in rows:
+        level_text = row.get("level", "").strip()
+        if level_text.isdigit():
+            numeric_levels.append((int(level_text), row.get("code", "").strip()))
+    if numeric_levels:
+        min_level = min(level for level, _code in numeric_levels)
+        min_level_codes = {code for level, code in numeric_levels if level == min_level}
+    top_codes = explicit_top_codes or min_level_codes
+
     concepts_payload: list[dict[str, Any]] = []
     relationships: list[de.Relationship] = []
     for row in rows:
-        concepts_payload.append(_tree_import_concept_payload(scheme_iri=scheme_iri, row=row))
+        code = row.get("code", "").strip()
+        concepts_payload.append(
+            _tree_import_concept_payload(
+                scheme_iri=scheme_iri,
+                row=row,
+                is_top_concept=code in top_codes,
+            )
+        )
         parent_code = row.get("parent_code", "").strip()
         level_text = row.get("level", "").strip()
         if parent_code:
