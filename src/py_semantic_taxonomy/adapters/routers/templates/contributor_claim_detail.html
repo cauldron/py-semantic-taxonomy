@@ -43,12 +43,23 @@
     </div>
     {% endif %}
 
+    {% if claim.status == "pending" %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">What Happens Next?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm" style="color: var(--text-secondary)">
+            <div>Your submission is waiting for admin review. It is not published yet.</div>
+            <div>If the claim is rejected, the review comment should explain what needs to change before resubmitting.</div>
+        </div>
+    </div>
+    {% endif %}
+
     {% if claim_preview.csv_row_count %}
     <div class="card px-6 py-6">
         <div class="flex justify-between items-center mb-3">
             <h2 class="text-lg font-medium" style="color: var(--text-color)">CSV preview</h2>
             <span class="text-sm" style="color: var(--text-secondary)">{{ claim_preview.csv_row_count }} rows</span>
         </div>
+        <p class="text-sm mb-3" style="color: var(--text-secondary)">This preview helps you confirm that the uploaded file was read the way you intended.</p>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y" style="border-color: var(--border-color)">
                 <thead style="background-color: var(--nav-bg)">

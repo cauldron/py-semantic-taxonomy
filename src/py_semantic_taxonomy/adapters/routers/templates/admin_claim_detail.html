@@ -50,12 +50,23 @@
     </div>
     {% endif %}
 
+    {% if claim.status == "pending" %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Admin Guidance</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm" style="color: var(--text-secondary)">
+            <div>Accepting a claim publishes it to the live taxonomy. Rejecting keeps the current data unchanged.</div>
+            <div>For CSV imports, check that the selected schemes, codes, and mapping direction match the contributor's description before accepting.</div>
+        </div>
+    </div>
+    {% endif %}
+
     {% if claim_preview.csv_row_count %}
     <div class="card px-6 py-6">
         <div class="flex justify-between items-center mb-3">
             <h2 class="text-lg font-medium" style="color: var(--text-color)">CSV preview</h2>
             <span class="text-sm" style="color: var(--text-secondary)">{{ claim_preview.csv_row_count }} rows</span>
         </div>
+        <p class="text-sm mb-3" style="color: var(--text-secondary)">Review the header names and a few example rows before publishing. The full file will be applied if you accept the claim.</p>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y" style="border-color: var(--border-color)">
                 <thead style="background-color: var(--nav-bg)">
@@ -95,8 +106,9 @@
             <input type="hidden" name="language" value="{{ language }}">
             <input type="hidden" id="claim-review-decision" name="decision" value="">
             <div>
-                <label for="comment" class="block text-sm font-medium" style="color: var(--text-color)">Comment</label>
+                <label for="comment" class="block text-sm font-medium" style="color: var(--text-color)">Review comment</label>
                 <textarea id="comment" name="comment" rows="4" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)"></textarea>
+                <p class="text-xs mt-2" style="color: var(--text-secondary)">Optional. Leave context for the contributor, especially if you reject the claim or need them to resubmit.</p>
             </div>
             <div id="claim-review-actions" class="flex justify-end space-x-3">
                 <button type="submit" data-decision="reject" class="btn-secondary">Reject</button>
