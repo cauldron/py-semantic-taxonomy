@@ -26,14 +26,14 @@
     <!-- Header -->
     <header class="header">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <a href="/" class="flex items-center">
+            <div class="header-shell flex justify-between items-center">
+                <div class="header-brand flex items-center">
+                    <a href="/" class="flex items-center brand-link">
                         <img src="/static/img/logo.png" alt="PyST Logo" class="logo mr-3">
-                        <span class="text-xl font-semibold" style="color: var(--text-color)">PyST</span>
+                        <span class="brand-wordmark text-xl font-semibold" style="color: var(--text-color)">PyST</span>
                     </a>
                 </div>
-                <div class="flex-1 max-w-md mx-4">
+                <div class="header-search flex-1 max-w-md mx-4">
                     <form id="searchForm" class="relative" action="/web/search/" method="get">
                         <div class="relative">
                             <input
@@ -60,12 +60,15 @@
                         </div>
                     </form>
                 </div>
-                <nav class="flex items-center space-x-4">
+                <nav class="header-nav flex items-center space-x-4">
                     <button id="theme-toggle" class="nav-link" aria-label="Toggle dark mode">
                         <i class="fas fa-moon"></i>
                     </button>
                     <a href="/web/concept_schemes/?language={{ language }}" class="nav-link {% if request.url.path == '/web/concept_schemes/' %}active{% endif %}">
                         <i class="fas fa-list mr-2"></i>Concept Schemes
+                    </a>
+                    <a href="/web/correspondences/?language={{ language }}" class="nav-link {% if request.url.path == '/web/correspondences/' or request.url.path.startswith('/web/correspondence/') %}active{% endif %}">
+                        <i class="fas fa-project-diagram mr-2"></i>Correspondences
                     </a>
                     {% if is_admin_request(request) %}
                     <a href="/web/admin/?language={{ language }}" class="nav-link {% if request.url.path.startswith('/web/admin') %}active{% endif %}">
@@ -79,6 +82,20 @@
                     {% else %}
                     <a href="/web/admin/login" class="nav-link">
                         <i class="fas fa-user-shield mr-2"></i>Admin
+                    </a>
+                    {% endif %}
+                    {% if is_contributor_request(request) %}
+                    <a href="/web/contributor/?language={{ language }}" class="nav-link {% if request.url.path.startswith('/web/contributor') %}active{% endif %}">
+                        <i class="fas fa-pen-to-square mr-2"></i>{{ contributor_user_name(request) }}
+                    </a>
+                    <form action="/web/contributor/logout" method="post" class="inline">
+                        <button type="submit" class="nav-link">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="/web/contributor/login" class="nav-link">
+                        <i class="fas fa-pen-to-square mr-2"></i>Contribute
                     </a>
                     {% endif %}
 <!--                     <a href="/web/concept_scheme/create/" class="nav-link disabled opacity-50 cursor-not-allowed" aria-disabled="true">

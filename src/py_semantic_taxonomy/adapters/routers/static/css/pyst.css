@@ -45,9 +45,42 @@ body {
     border-bottom-color: #374151;
 }
 
+.header-shell {
+    min-height: 4rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.header-brand {
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+.brand-link {
+    white-space: nowrap;
+}
+
 .logo {
-    height: 32px;
+    height: 28px;
     width: auto;
+    flex-shrink: 0;
+}
+
+.brand-wordmark {
+    line-height: 1;
+}
+
+.header-search {
+    min-width: 18rem;
+}
+
+.header-nav {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
 }
 
 .nav-link {
@@ -83,6 +116,25 @@ body {
 
 .btn-primary:hover {
     background-color: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: var(--nav-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-secondary:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
     transform: translateY(-1px);
 }
 
@@ -206,4 +258,41 @@ body {
 /* Disabled/empty chevron */
 .tree-expand-btn:disabled i {
     color: var(--text-tertiary);
+}
+
+@media (min-width: 1280px) {
+    .header-shell {
+        flex-wrap: nowrap;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .header-search {
+        min-width: 0;
+    }
+
+    .header-nav {
+        flex: 0 1 auto;
+        flex-wrap: nowrap;
+    }
+}
+
+@media (max-width: 1024px) {
+    .logo {
+        height: 24px;
+    }
+
+    .header-search {
+        flex: 1 1 100%;
+        margin-left: 0;
+        margin-right: 0;
+        min-width: 0;
+        max-width: none;
+        order: 3;
+    }
+
+    .header-nav {
+        justify-content: flex-start;
+        order: 2;
+    }
 }

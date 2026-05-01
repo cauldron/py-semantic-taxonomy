@@ -1,3 +1,6 @@
+import json
+import re
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import quote, unquote, urlencode
@@ -16,7 +19,7 @@ from py_semantic_taxonomy.adapters.routers.web_router import (
     templates,
 )
 from py_semantic_taxonomy.cfg import Settings, get_settings
-from py_semantic_taxonomy.dependencies import get_graph_service
+from py_semantic_taxonomy.dependencies import get_claim_store, get_graph_service
 from py_semantic_taxonomy.domain import entities as de
 from py_semantic_taxonomy.domain.constants import BIBO, DCTERMS, OWL, SKOS, XKOS, RDF_MAPPING
 from py_semantic_taxonomy.domain.hash_utils import hash_fnv64
@@ -51,6 +54,17 @@ def _admin_configured(settings: Settings) -> bool:
             settings.gitlab_admin_group,
         )
     )
+
+
+def _backend_configured(settings: Settings) -> bool:
+    return bool(
+        settings.contributor_backend_base_url
+        and settings.contributor_backend_base_url != "missing"
+    )
+
+
+def _backend_url(settings: Settings, path: str) -> str:
+    return settings.contributor_backend_base_url.rstrip("/") + path
 
 
 def _default_language(language: str | None, settings: Settings) -> str:
@@ -125,6 +139,601 @@ def _base_context(
 
 def _split_lines(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+def _claim_payload_preview(payload: dict[str, Any]) -> dict[str, Any]:
+    submission = payload.get("submission", {}) if isinstance(payload, dict) else {}
+    change = payload.get("change", {}) if isinstance(payload, dict) else {}
+    rows = change.get("rows", []) if isinstance(change, dict) else []
+    columns = change.get("columns", []) if isinstance(change, dict) else []
+    return {
+        "rationale": payload.get("rationale", "") if isinstance(payload, dict) else "",
+        "submission": submission if isinstance(submission, dict) else {},
+        "change": change if isinstance(change, dict) else {},
+        "change_json": json.dumps(change if isinstance(change, dict) else {}, indent=2),
+        "csv_columns": columns if isinstance(columns, list) else [],
+        "csv_rows_preview": rows[:5] if isinstance(rows, list) else [],
+        "csv_row_count": len(rows) if isinstance(rows, list) else 0,
+    }
+
+
+def _slugify_claim_value(text: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return slug or "import"
+
+
+def _import_identifier(import_name: str, file_name: str, title: str) -> str:
+    if import_name.strip():
+        return import_name.strip()
+    if file_name.strip():
+        stem = Path(file_name.strip()).stem
+        cleaned = re.sub(r"^(tree|conc)_", "", stem, flags=re.IGNORECASE)
+        return cleaned or stem
+    return _slugify_claim_value(title)
+
+
+def _claim_actor_node(user: dict[str, Any]) -> dict[str, str]:
+    if user.get("email"):
+        return {"@id": f"mailto:{user['email']}"}
+    if user.get("username"):
+        return {"@id": f"urn:pyst:user:{user['username']}"}
+    return {"@id": f"urn:pyst:user:{user.get('id', 'unknown')}"}
+
+
+def _tree_import_scheme_iri(
+    *,
+    import_name: str,
+    title: str,
+    settings: Settings,
+) -> str:
+    base = (settings.public_base_url or "http://example.com").rstrip("/")
+    slug = _slugify_claim_value(import_name or title)
+    return f"{base}/scheme/{slug}"
+
+
+def _concordance_import_correspondence_iri(
+    *,
+    import_name: str,
+    title: str,
+    settings: Settings,
+) -> str:
+    base = (settings.public_base_url or "http://example.com").rstrip("/")
+    slug = _slugify_claim_value(import_name or title)
+    return f"{base}/correspondence/{slug}"
+
+
+def _find_scheme_by_notation(
+    schemes: list[de.ConceptScheme],
+    notation: str,
+) -> de.ConceptScheme:
+    notation = notation.strip()
+    for scheme in schemes:
+        if any(obj.get("@value", "").strip() == notation for obj in scheme.notations):
+            return scheme
+    notation_slug = _slugify_claim_value(notation)
+    for scheme in schemes:
+        if _slugify_claim_value(scheme.id_.rstrip("/").split("/")[-1]) == notation_slug:
+            return scheme
+        if any(
+            _slugify_claim_value(obj.get("@value", "").strip()) == notation_slug
+            for obj in scheme.pref_labels
+            if obj.get("@value")
+        ):
+            return scheme
+    raise ValueError(f"Could not resolve concept scheme with notation `{notation}`")
+
+
+def _find_scheme_by_iri(
+    schemes: list[de.ConceptScheme],
+    scheme_iri: str,
+) -> de.ConceptScheme:
+    scheme_iri = scheme_iri.strip()
+    for scheme in schemes:
+        if scheme.id_ == scheme_iri:
+            return scheme
+    raise ValueError(f"Could not resolve concept scheme with IRI `{scheme_iri}`")
+
+
+def _find_concept_by_notation(
+    concepts: list[de.Concept],
+    notation: str,
+    *,
+    scheme_iri: str,
+) -> de.Concept:
+    notation = notation.strip()
+    for concept in concepts:
+        if any(obj.get("@value", "").strip() == notation for obj in concept.notations):
+            return concept
+    raise ValueError(
+        f"Could not resolve concept with notation `{notation}` in concept scheme `{scheme_iri}`"
+    )
+
+
+def _infer_scheme_from_code(
+    *,
+    schemes: list[de.ConceptScheme],
+    all_concepts: list[de.Concept],
+    code: str,
+    classification_label: str,
+) -> de.ConceptScheme:
+    matches = [
+        concept
+        for concept in all_concepts
+        if any(obj.get("@value", "").strip() == code.strip() for obj in concept.notations)
+    ]
+    if not matches:
+        raise ValueError(
+            f"Could not resolve concept scheme `{classification_label}` and no concept with notation `{code}` was found"
+        )
+
+    candidate_scheme_ids = sorted(
+        {
+            scheme.get("@id", "")
+            for concept in matches
+            for scheme in concept.schemes
+            if scheme.get("@id")
+        }
+    )
+    if len(candidate_scheme_ids) != 1:
+        raise ValueError(
+            f"Could not resolve concept scheme `{classification_label}` uniquely from concept notation `{code}`"
+        )
+
+    target_scheme_id = candidate_scheme_ids[0]
+    for scheme in schemes:
+        if scheme.id_ == target_scheme_id:
+            return scheme
+    raise ValueError(
+        f"Resolved concept scheme IRI `{target_scheme_id}` from notation `{code}`, but the scheme object could not be loaded"
+    )
+
+
+def _tree_import_scheme_payload(
+    *,
+    claim: dict[str, Any],
+    rows: list[dict[str, str]],
+    settings: Settings,
+) -> dict[str, Any]:
+    change = claim.get("payload", {}).get("change", {})
+    import_name = change.get("import_name", "").strip()
+    file_name = change.get("file_name", "").strip()
+    identifier = _import_identifier(import_name, file_name, claim.get("title", ""))
+    label = import_name or identifier or claim.get("title", "").strip() or "Imported scheme"
+    scheme_iri = _tree_import_scheme_iri(import_name=identifier, title=claim.get("title", ""), settings=settings)
+    created = datetime.now(tz=timezone.utc).replace(microsecond=0).isoformat()
+    definition = claim.get("payload", {}).get("rationale", "").strip() or (
+        f"Imported from accepted CSV claim `{claim.get('title', 'bulk tree import')}`."
+    )
+    first_code = next((row.get("code", "").strip() for row in rows if row.get("code", "").strip()), "")
+    notation = identifier or first_code or _slugify_claim_value(label)
+    return {
+        RDF_MAPPING["id_"]: scheme_iri,
+        RDF_MAPPING["types"]: [f"{SKOS}ConceptScheme"],
+        RDF_MAPPING["pref_labels"]: [{"@language": "en", "@value": label}],
+        RDF_MAPPING["definitions"]: [{"@language": "en", "@value": definition}],
+        RDF_MAPPING["notations"]: [{"@value": notation, "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"}],
+        RDF_MAPPING["status"]: [{"@id": f"{BIBO}status/accepted"}],
+        f"{DCTERMS}created": [{"@type": DATETIME_TYPE, "@value": created}],
+        f"{DCTERMS}creator": [_claim_actor_node(claim.get("submitted_by", {}))],
+        f"{OWL}versionInfo": [{"@value": notation}],
+    }
+
+
+def _tree_import_concept_iri(scheme_iri: str, row: dict[str, str]) -> str:
+    explicit = row.get("iri", "").strip()
+    if explicit:
+        return explicit
+    code = row.get("code", "").strip()
+    return f"{scheme_iri}/{quote(code, safe='')}"
+
+
+def _concordance_import_correspondence_payload(
+    *,
+    claim: dict[str, Any],
+    change: dict[str, Any],
+    compared_scheme_ids: list[str],
+    settings: Settings,
+) -> dict[str, Any]:
+    import_name = change.get("import_name", "").strip()
+    file_name = change.get("file_name", "").strip()
+    identifier = _import_identifier(import_name, file_name, claim.get("title", ""))
+    label = import_name or identifier or claim.get("title", "").strip() or "Imported correspondence"
+    correspondence_iri = _concordance_import_correspondence_iri(
+        import_name=identifier,
+        title=claim.get("title", ""),
+        settings=settings,
+    )
+    created = datetime.now(tz=timezone.utc).replace(microsecond=0).isoformat()
+    definition = claim.get("payload", {}).get("rationale", "").strip() or (
+        f"Imported from accepted CSV claim `{claim.get('title', 'bulk concordance import')}`."
+    )
+    notation = identifier or _slugify_claim_value(label)
+    return {
+        RDF_MAPPING["id_"]: correspondence_iri,
+        RDF_MAPPING["types"]: [f"{XKOS}Correspondence"],
+        RDF_MAPPING["pref_labels"]: [{"@language": "en", "@value": label}],
+        RDF_MAPPING["definitions"]: [{"@language": "en", "@value": definition}],
+        RDF_MAPPING["notations"]: [{"@value": notation, "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"}],
+        RDF_MAPPING["status"]: [{"@id": f"{BIBO}status/accepted"}],
+        f"{DCTERMS}created": [{"@type": DATETIME_TYPE, "@value": created}],
+        f"{DCTERMS}creator": [_claim_actor_node(claim.get("submitted_by", {}))],
+        f"{OWL}versionInfo": [{"@value": notation}],
+        f"{XKOS}compares": [{"@id": scheme_id} for scheme_id in compared_scheme_ids],
+    }
+
+
+def _tree_import_concept_payload(
+    *,
+    scheme_iri: str,
+    row: dict[str, str],
+    is_top_concept: bool,
+) -> dict[str, Any]:
+    code = row.get("code", "").strip()
+    name = row.get("name", "").strip()
+    if not code:
+        raise ValueError("Tree import rows require a non-empty `code` column")
+    if not name:
+        raise ValueError(f"Tree import row `{code}` requires a non-empty `name` column")
+    payload = {
+        RDF_MAPPING["id_"]: _tree_import_concept_iri(scheme_iri, row),
+        RDF_MAPPING["types"]: [f"{SKOS}Concept"],
+        RDF_MAPPING["pref_labels"]: [{"@language": "en", "@value": name}],
+        RDF_MAPPING["status"]: [{"@id": f"{BIBO}status/accepted"}],
+        RDF_MAPPING["notations"]: [{"@value": code, "@type": "http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral"}],
+        RDF_MAPPING["schemes"]: [{"@id": scheme_iri}],
+    }
+    if is_top_concept:
+        payload[RDF_MAPPING["top_concept_of"]] = [{"@id": scheme_iri}]
+    definition = row.get("definition_en", "").strip()
+    if definition:
+        payload[RDF_MAPPING["definitions"]] = [{"@language": "en", "@value": definition}]
+    return payload
+
+
+def _tree_import_relationships(
+    *,
+    scheme_iri: str,
+    rows: list[dict[str, str]],
+) -> tuple[list[dict[str, Any]], list[de.Relationship]]:
+    seen_codes: dict[str, dict[str, str]] = {}
+    for row in rows:
+        code = row.get("code", "").strip()
+        if not code:
+            raise ValueError("Tree import rows require a non-empty `code` column")
+        if code in seen_codes:
+            raise ValueError(f"Duplicate `code` in tree import: `{code}`")
+        seen_codes[code] = row
+
+    explicit_top_codes = {
+        row.get("code", "").strip() for row in rows if not row.get("parent_code", "").strip()
+    }
+    min_level_codes: set[str] = set()
+    numeric_levels = []
+    for row in rows:
+        level_text = row.get("level", "").strip()
+        if level_text.isdigit():
+            numeric_levels.append((int(level_text), row.get("code", "").strip()))
+    if numeric_levels:
+        min_level = min(level for level, _code in numeric_levels)
+        min_level_codes = {code for level, code in numeric_levels if level == min_level}
+    top_codes = explicit_top_codes or min_level_codes
+
+    concepts_payload: list[dict[str, Any]] = []
+    relationships: list[de.Relationship] = []
+    for row in rows:
+        code = row.get("code", "").strip()
+        concepts_payload.append(
+            _tree_import_concept_payload(
+                scheme_iri=scheme_iri,
+                row=row,
+                is_top_concept=code in top_codes,
+            )
+        )
+        parent_code = row.get("parent_code", "").strip()
+        level_text = row.get("level", "").strip()
+        if parent_code:
+            if parent_code not in seen_codes:
+                raise ValueError(
+                    f"Tree import row `{row.get('code', '').strip()}` references unknown parent `{parent_code}`"
+                )
+            relationships.append(
+                de.Relationship(
+                    source=_tree_import_concept_iri(scheme_iri, row),
+                    target=_tree_import_concept_iri(scheme_iri, seen_codes[parent_code]),
+                    predicate=RelationshipVerbs.broader,
+                )
+            )
+        if level_text:
+            try:
+                expected = 0 if not parent_code else int(seen_codes[parent_code].get("level", "0") or "0") + 1
+                if int(level_text) != expected:
+                    raise ValueError(
+                        f"Tree import row `{row.get('code', '').strip()}` has level `{level_text}` but expected `{expected}`"
+                    )
+            except ValueError:
+                if not level_text.isdigit():
+                    raise ValueError(
+                        f"Tree import row `{row.get('code', '').strip()}` has non-numeric level `{level_text}`"
+                    )
+                raise
+    return concepts_payload, relationships
+
+
+async def _apply_tree_import_claim(
+    *,
+    claim: dict[str, Any],
+    settings: Settings,
+    service,
+) -> None:
+    change = claim.get("payload", {}).get("change", {})
+    rows = change.get("rows", []) if isinstance(change, dict) else []
+    if not rows:
+        raise ValueError("Tree import claim contains no rows")
+
+    scheme_payload = _tree_import_scheme_payload(claim=claim, rows=rows, settings=settings)
+    validated_scheme = req.ConceptScheme.model_validate(scheme_payload)
+    scheme = de.ConceptScheme.from_json_ld(validated_scheme.model_dump(by_alias=True))
+    try:
+        await service.concept_scheme_create(scheme)
+    except de.DuplicateIRI:
+        pass
+
+    scheme_iri = scheme.id_
+    concepts_payload, relationships = _tree_import_relationships(scheme_iri=scheme_iri, rows=rows)
+    for concept_payload in concepts_payload:
+        validated = req.ConceptCreate.model_validate(concept_payload)
+        concept_json = validated.model_dump(by_alias=True)
+        concept = de.Concept.from_json_ld(concept_json)
+        try:
+            await service.concept_create(concept, [])
+        except de.DuplicateIRI:
+            continue
+
+    if relationships:
+        existing = set()
+        for rel in relationships:
+            existing.update(
+                {
+                    (current.source, current.target, current.predicate)
+                    for current in await service.relationships_get(
+                        iri=rel.source,
+                        source=True,
+                        target=False,
+                        verb=RelationshipVerbs.broader,
+                    )
+                }
+            )
+        desired = [rel for rel in relationships if (rel.source, rel.target, rel.predicate) not in existing]
+        if desired:
+            await service.relationships_create(desired)
+
+
+async def _apply_concordance_import_claim(
+    *,
+    claim: dict[str, Any],
+    settings: Settings,
+    service,
+) -> None:
+    change = claim.get("payload", {}).get("change", {})
+    rows = change.get("rows", []) if isinstance(change, dict) else []
+    if not rows:
+        raise ValueError("Concordance import claim contains no rows")
+
+    schemes = await service.concept_scheme_get_all()
+    all_concepts = await service.concept_get_all(concept_scheme_iri=None, top_concepts_only=False)
+    scheme_cache: dict[str, tuple[de.ConceptScheme, list[de.Concept]]] = {}
+    relationships: list[de.Relationship] = []
+    associations_to_create: list[de.Association] = []
+    compared_scheme_ids: set[str] = set()
+    predicate_map = {verb.value: verb for verb in RelationshipVerbs if verb not in {RelationshipVerbs.broader, RelationshipVerbs.narrower}}
+    explicit_source_scheme_iri = change.get("source_scheme_iri", "").strip() if isinstance(change, dict) else ""
+    explicit_target_scheme_iri = change.get("target_scheme_iri", "").strip() if isinstance(change, dict) else ""
+
+    if explicit_source_scheme_iri:
+        from_scheme = _find_scheme_by_iri(schemes, explicit_source_scheme_iri)
+        scheme_cache[f"iri:{explicit_source_scheme_iri}"] = (
+            from_scheme,
+            await service.concept_get_all(concept_scheme_iri=from_scheme.id_, top_concepts_only=False),
+        )
+    if explicit_target_scheme_iri:
+        to_scheme = _find_scheme_by_iri(schemes, explicit_target_scheme_iri)
+        scheme_cache[f"iri:{explicit_target_scheme_iri}"] = (
+            to_scheme,
+            await service.concept_get_all(concept_scheme_iri=to_scheme.id_, top_concepts_only=False),
+        )
+
+    for row in rows:
+        classification_from = row.get("classification_from", "").strip()
+        classification_to = row.get("classification_to", "").strip()
+        if (not classification_from and not explicit_source_scheme_iri) or (
+            not classification_to and not explicit_target_scheme_iri
+        ):
+            raise ValueError("Concordance import rows require `classification_from` and `classification_to`")
+
+        from_columns = [key for key in row if key.endswith("_from") and key != "classification_from"]
+        to_columns = [key for key in row if key.endswith("_to") and key != "classification_to"]
+        if len(from_columns) != 1 or len(to_columns) != 1:
+            raise ValueError(
+                "Concordance import rows must contain exactly one source `<category>_from` column and one target `<category>_to` column"
+            )
+
+        source_code = row.get(from_columns[0], "").strip()
+        target_code = row.get(to_columns[0], "").strip()
+        if not source_code or not target_code:
+            raise ValueError("Concordance import rows require non-empty source and target codes")
+
+        source_cache_key = f"iri:{explicit_source_scheme_iri}" if explicit_source_scheme_iri else classification_from
+        target_cache_key = f"iri:{explicit_target_scheme_iri}" if explicit_target_scheme_iri else classification_to
+
+        if source_cache_key not in scheme_cache:
+            try:
+                from_scheme = _find_scheme_by_notation(schemes, classification_from)
+            except ValueError:
+                from_scheme = _infer_scheme_from_code(
+                    schemes=schemes,
+                    all_concepts=all_concepts,
+                    code=source_code,
+                    classification_label=classification_from,
+                )
+            scheme_cache[source_cache_key] = (
+                from_scheme,
+                await service.concept_get_all(concept_scheme_iri=from_scheme.id_, top_concepts_only=False),
+            )
+        if target_cache_key not in scheme_cache:
+            try:
+                to_scheme = _find_scheme_by_notation(schemes, classification_to)
+            except ValueError:
+                to_scheme = _infer_scheme_from_code(
+                    schemes=schemes,
+                    all_concepts=all_concepts,
+                    code=target_code,
+                    classification_label=classification_to,
+                )
+            scheme_cache[target_cache_key] = (
+                to_scheme,
+                await service.concept_get_all(concept_scheme_iri=to_scheme.id_, top_concepts_only=False),
+            )
+
+        from_scheme, from_concepts = scheme_cache[source_cache_key]
+        to_scheme, to_concepts = scheme_cache[target_cache_key]
+        compared_scheme_ids.update({from_scheme.id_, to_scheme.id_})
+        source_concept = _find_concept_by_notation(from_concepts, source_code, scheme_iri=from_scheme.id_)
+        target_concept = _find_concept_by_notation(to_concepts, target_code, scheme_iri=to_scheme.id_)
+
+        skos_uri = row.get("skos_uri", "").strip()
+        if skos_uri not in predicate_map:
+            raise ValueError(f"Unsupported `skos_uri` in concordance import: `{skos_uri}`")
+        association_iri = _generate_association_iri(source_concept.id_, target_concept.id_)
+        validated_association = req.Association.model_validate(
+            _association_payload(
+                {
+                    "id_": association_iri,
+                    "source_concept_iri": source_concept.id_,
+                    "target_concept_iri": target_concept.id_,
+                }
+            )
+        )
+        associations_to_create.append(
+            de.Association.from_json_ld(validated_association.model_dump(by_alias=True))
+        )
+        relationships.append(
+            de.Relationship(
+                source=source_concept.id_,
+                target=target_concept.id_,
+                predicate=predicate_map[skos_uri],
+            )
+        )
+
+    if associations_to_create:
+        existing_association_ids = {
+            association.id_
+            for association in await service.association_get_all(kind=de.AssociationKind.simple)
+        }
+        created_association_ids: list[str] = []
+        for association in associations_to_create:
+            created_association_ids.append(association.id_)
+            if association.id_ in existing_association_ids:
+                continue
+            await service.association_create(association)
+        correspondence_payload = _concordance_import_correspondence_payload(
+            claim=claim,
+            change=change,
+            compared_scheme_ids=sorted(compared_scheme_ids),
+            settings=settings,
+        )
+        validated_correspondence = req.Correspondence.model_validate(correspondence_payload)
+        correspondence = de.Correspondence.from_json_ld(validated_correspondence.model_dump(by_alias=True))
+        try:
+            await service.correspondence_create(correspondence)
+        except de.DuplicateIRI:
+            existing = await service.correspondence_get(correspondence.id_)
+            if sorted(item.get("@id", "") for item in existing.compares) != sorted(compared_scheme_ids):
+                existing.compares = [{"@id": scheme_id} for scheme_id in sorted(compared_scheme_ids)]
+                await service.correspondence_update(existing)
+        await service.made_of_add(
+            de.MadeOf(
+                id_=correspondence.id_,
+                made_ofs=[{"@id": association_id} for association_id in sorted(set(created_association_ids))],
+            )
+        )
+
+    if relationships:
+        existing = set()
+        for rel in relationships:
+            existing.update(
+                {
+                    (current.source, current.target, current.predicate)
+                    for current in await service.relationships_get(
+                        iri=rel.source,
+                        source=True,
+                        target=False,
+                        verb=rel.predicate,
+                    )
+                }
+            )
+        desired = [rel for rel in relationships if (rel.source, rel.target, rel.predicate) not in existing]
+        if desired:
+            await service.relationships_create(desired)
+
+
+async def _apply_claim_on_accept(
+    *,
+    claim: dict[str, Any],
+    settings: Settings,
+    service,
+) -> None:
+    change = claim.get("payload", {}).get("change", {})
+    entity_type = change.get("entity_type") if isinstance(change, dict) else None
+    operation = change.get("operation") if isinstance(change, dict) else None
+
+    if claim.get("kind") == "bulk_tree_import":
+        await _apply_tree_import_claim(claim=claim, settings=settings, service=service)
+        return
+    if claim.get("kind") == "bulk_concordance_import":
+        await _apply_concordance_import_claim(claim=claim, settings=settings, service=service)
+        return
+
+    payload = change.get("payload") if isinstance(change, dict) else None
+    if entity_type == "concept_scheme" and operation == "create" and isinstance(payload, dict):
+        validated = req.ConceptScheme.model_validate(payload)
+        await service.concept_scheme_create(de.ConceptScheme.from_json_ld(validated.model_dump(by_alias=True)))
+        return
+    if entity_type == "concept_scheme" and operation == "update" and isinstance(payload, dict):
+        validated = req.ConceptScheme.model_validate(payload)
+        await service.concept_scheme_update(de.ConceptScheme.from_json_ld(validated.model_dump(by_alias=True)))
+        return
+    if entity_type == "concept" and operation == "create" and isinstance(payload, dict):
+        validated = req.ConceptCreate.model_validate(payload)
+        concept_json = validated.model_dump(by_alias=True)
+        concept = de.Concept.from_json_ld(concept_json)
+        relationships = de.Relationship.from_json_ld(concept_json)
+        await service.concept_create(concept, relationships)
+        return
+    if entity_type == "concept" and operation == "update" and isinstance(payload, dict):
+        validated = req.ConceptUpdate.model_validate(payload)
+        concept = de.Concept.from_json_ld(validated.model_dump(by_alias=True))
+        await service.concept_update(concept)
+        desired_broader = set(change.get("broader_iris", [])) if isinstance(change.get("broader_iris", []), list) else set()
+        current_relationships = await service.relationships_get(iri=concept.id_, source=True, target=True)
+        existing_broader = {
+            rel.target
+            for rel in current_relationships
+            if rel.source == concept.id_ and rel.predicate == RelationshipVerbs.broader
+        }
+        to_add = sorted(desired_broader - existing_broader)
+        to_remove = sorted(existing_broader - desired_broader)
+        if to_add:
+            await service.relationships_create(
+                [de.Relationship(source=concept.id_, target=target, predicate=RelationshipVerbs.broader) for target in to_add]
+            )
+        if to_remove:
+            await service.relationships_delete(
+                [de.Relationship(source=concept.id_, target=target, predicate=RelationshipVerbs.broader) for target in to_remove]
+            )
+        return
+
+    # Unsupported accepted claims can still be reviewed, but cannot be published yet.
+    raise ValueError(f"Accepted claims of kind `{claim.get('kind')}` cannot be applied yet")
 
 
 def _parse_multilingual(text: str, *, unique_per_language: bool) -> list[dict[str, str]]:
@@ -532,7 +1141,38 @@ async def _gitlab_group_member(user_id: int, access_token: str, settings: Settin
     if response.status_code == 404:
         return False
     response.raise_for_status()
-    return True
+    member = response.json()
+    return member.get("access_level", 0) >= settings.gitlab_admin_min_access_level
+
+
+def _backend_user_from_payload(
+    payload: dict[str, Any],
+    *,
+    fallback_email: str | None = None,
+) -> tuple[dict[str, Any], str | None]:
+    user = payload.get("user") if isinstance(payload.get("user"), dict) else payload
+    email = user.get("email") or fallback_email
+    username = user.get("username") or user.get("name") or email or str(user.get("id", "backend-user"))
+    admin_user = {
+        "provider": "backend",
+        "id": str(user.get("id") or user.get("sub") or email or username),
+        "username": username,
+        "name": user.get("name") or username or "Admin",
+        "email": email,
+    }
+    return admin_user, payload.get("token")
+
+
+def _backend_user_is_admin(user: dict[str, Any], payload: dict[str, Any], settings: Settings) -> bool:
+    email = user.get("email")
+    if email and email in settings.admin_backend_allowed_emails:
+        return True
+
+    candidate = payload.get("user") if isinstance(payload.get("user"), dict) else payload
+    return any(
+        bool(candidate.get(key))
+        for key in ("is_admin", "is_staff", "is_superuser", "admin")
+    )
 
 
 async def _concept_association_rows(
@@ -739,17 +1379,20 @@ def _render_admin_dashboard(
     settings: Settings,
     admin_user: dict[str, Any],
     concept_schemes: list[de.ConceptScheme],
+    pending_claim_count: int = 0,
     message: str | None = None,
     error: str | None = None,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
+        request,
         "admin_dashboard.html",
-        _base_context(
+        context=_base_context(
             request,
             language,
             settings,
             admin_user=admin_user,
             concept_schemes=concept_schemes,
+            pending_claim_count=pending_claim_count,
             csrf_token=_ensure_csrf_token(request),
             message=message,
             error=error,
@@ -770,8 +1413,9 @@ def _render_concept_scheme_form(
     message: str | None = None,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
+        request,
         "admin_concept_scheme_form.html",
-        _base_context(
+        context=_base_context(
             request,
             language,
             settings,
@@ -780,6 +1424,16 @@ def _render_concept_scheme_form(
             form_data=form_data,
             form_mode=form_mode,
             status_options=STATUS_OPTIONS,
+            actor_label="Admin",
+            actor_home_url=f"/web/admin/?language={language}",
+            actor_home_name="Admin",
+            submit_label="Create Scheme" if form_mode == "create" else "Save Changes",
+            show_delete_actions=True,
+            collect_rationale=False,
+            form_helper_text=(
+                "Editing the "
+                f"{language.upper()} label and definition. Existing translations in other languages are preserved."
+            ),
             error=error,
             message=message,
         ),
@@ -807,8 +1461,9 @@ def _render_concept_form(
     message: str | None = None,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
+        request,
         "admin_concept_form.html",
-        _base_context(
+        context=_base_context(
             request,
             language,
             settings,
@@ -827,6 +1482,18 @@ def _render_concept_form(
             form_mode=form_mode,
             status_options=STATUS_OPTIONS,
             mapping_verbs=MAPPING_VERBS,
+            actor_label="Admin",
+            actor_home_url=f"/web/admin/?language={language}",
+            actor_home_name="Admin",
+            submit_label="Create Concept" if form_mode == "create" else "Save Changes",
+            show_delete_actions=True,
+            show_direct_link_actions=True,
+            show_mapping_form=form_mode == "edit",
+            collect_rationale=False,
+            form_helper_text=(
+                "Editing the "
+                f"{language.upper()} label and definition. Existing translations in other languages are preserved."
+            ),
             error=error,
             message=message,
         ),
@@ -845,6 +1512,32 @@ async def admin_login(
             str(request.url_for("admin_dashboard")) + "?" + urlencode({"language": language}),
             status_code=303,
         )
+    if not _admin_configured(settings) and not _backend_configured(settings):
+        raise HTTPException(status_code=503, detail="Admin authentication is not configured")
+
+    return templates.TemplateResponse(
+        request,
+        "admin_login.html",
+        context=_base_context(
+            request,
+            language,
+            settings,
+            csrf_token=_ensure_csrf_token(request),
+            gitlab_configured=_admin_configured(settings),
+            backend_configured=_backend_configured(settings),
+            backend_name=settings.contributor_backend_name,
+            error=request.query_params.get("error"),
+        ),
+    )
+
+
+@router.get("/gitlab/login", name="admin_gitlab_login")
+async def admin_gitlab_login(
+    request: Request,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+):
+    language = _default_language(language, settings)
     if not _admin_configured(settings):
         raise HTTPException(status_code=503, detail="GitLab admin authentication is not configured")
 
@@ -866,6 +1559,113 @@ async def admin_login(
     return RedirectResponse(authorization_url, status_code=303)
 
 
+@router.get("/backend/login", name="admin_backend_login")
+async def admin_backend_login(
+    request: Request,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+):
+    if not _backend_configured(settings):
+        raise HTTPException(status_code=503, detail="Admin backend is not configured")
+
+    next_url = _public_url_for(request, "admin_backend_callback", settings)
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(
+            _backend_url(settings, "/api/user/auth/gitlab/login/"),
+            json={"next": next_url},
+        )
+    response.raise_for_status()
+    payload = response.json()
+    authorization_url = payload.get("authorization_url") or payload.get("next")
+    if not authorization_url:
+        raise HTTPException(status_code=502, detail="Admin backend did not return an authorization URL")
+    return RedirectResponse(authorization_url, status_code=303)
+
+
+@router.get("/backend/callback", name="admin_backend_callback")
+async def admin_backend_callback(
+    request: Request,
+    code: str | None = None,
+    handoff_code: str | None = None,
+    error: str | None = None,
+    settings: Settings = Depends(get_settings),
+):
+    if error:
+        raise HTTPException(status_code=403, detail=error)
+    if not _backend_configured(settings):
+        raise HTTPException(status_code=503, detail="Admin backend is not configured")
+
+    exchange_code = code or handoff_code or request.query_params.get("handoff")
+    if not exchange_code:
+        raise HTTPException(status_code=400, detail="Missing backend handoff code")
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(
+            _backend_url(settings, "/api/user/auth/exchange/"),
+            json={"code": exchange_code},
+        )
+    response.raise_for_status()
+    payload = response.json()
+    admin_user, _token = _backend_user_from_payload(payload)
+    if not _backend_user_is_admin(admin_user, payload, settings):
+        raise HTTPException(status_code=403, detail="Backend user is not allowed to administer PyST")
+
+    request.session["admin_user"] = admin_user
+    return RedirectResponse(str(request.url_for("admin_dashboard")), status_code=303)
+
+
+@router.post("/backend/token-login", name="admin_backend_token_login")
+async def admin_backend_token_login(
+    request: Request,
+    csrf_token: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    language: str = Form("en"),
+    settings: Settings = Depends(get_settings),
+):
+    if not _backend_configured(settings):
+        raise HTTPException(status_code=503, detail="Admin backend is not configured")
+    _validate_csrf(request, csrf_token)
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        token_response = await client.post(
+            _backend_url(settings, "/api/user/token/"),
+            json={"email": email, "password": password},
+        )
+        if token_response.status_code >= 400:
+            return RedirectResponse(
+                str(request.url_for("admin_login"))
+                + "?"
+                + urlencode({"language": language, "error": "Backend login failed"}),
+                status_code=303,
+            )
+        token_payload = token_response.json()
+        token = token_payload.get("token")
+        user_payload: dict[str, Any] = token_payload
+        if token:
+            me_response = await client.get(
+                _backend_url(settings, "/api/user/me/"),
+                headers={"Authorization": f"Token {token}"},
+            )
+            if me_response.status_code < 400:
+                user_payload = {"user": me_response.json(), "token": token}
+
+    admin_user, _token = _backend_user_from_payload(user_payload, fallback_email=email)
+    if not _backend_user_is_admin(admin_user, user_payload, settings):
+        return RedirectResponse(
+            str(request.url_for("admin_login"))
+            + "?"
+            + urlencode({"language": language, "error": "Backend user is not allowed to administer PyST"}),
+            status_code=303,
+        )
+
+    request.session["admin_user"] = admin_user
+    return RedirectResponse(
+        str(request.url_for("admin_dashboard")) + "?" + urlencode({"language": language}),
+        status_code=303,
+    )
+
+
 @router.get("/callback", name="admin_gitlab_callback")
 async def admin_gitlab_callback(
     request: Request,
@@ -884,7 +1684,13 @@ async def admin_gitlab_callback(
     user = await _gitlab_user(access_token, settings)
     is_group_member = await _gitlab_group_member(user["id"], access_token, settings)
     if not is_group_member:
-        raise HTTPException(status_code=403, detail="GitLab user is not in the configured admin group")
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "GitLab user is not in the configured admin group with the required "
+                "access level"
+            ),
+        )
 
     request.session.pop("gitlab_oauth_state", None)
     request.session["admin_user"] = {
@@ -916,6 +1722,7 @@ async def admin_dashboard(
     language: str | None = None,
     settings: Settings = Depends(get_settings),
     service=Depends(get_graph_service),
+    claim_store=Depends(get_claim_store),
 ):
     admin_user = _ensure_admin(request, language, settings)
     if isinstance(admin_user, RedirectResponse):
@@ -923,6 +1730,7 @@ async def admin_dashboard(
 
     language = _default_language(language, settings)
     concept_schemes = await service.concept_scheme_get_all()
+    pending_claims = await claim_store.get_all(status="pending")
     for scheme in concept_schemes:
         scheme.url = concept_scheme_view_url(request, scheme.id_, language)
         scheme.edit_url = (
@@ -943,8 +1751,136 @@ async def admin_dashboard(
         settings=settings,
         admin_user=admin_user,
         concept_schemes=concept_schemes,
+        pending_claim_count=len(pending_claims),
         message=request.query_params.get("message"),
         error=request.query_params.get("error"),
+    )
+
+
+@router.get("/claims", response_class=HTMLResponse, name="admin_claims")
+async def admin_claims(
+    request: Request,
+    status: str | None = "pending",
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+    claim_store=Depends(get_claim_store),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
+    language = _default_language(language, settings)
+    claims = await claim_store.get_all(status=status or None)
+    return templates.TemplateResponse(
+        request,
+        "admin_claims.html",
+        context=_base_context(
+            request,
+            language,
+            settings,
+            admin_user=admin_user,
+            claims=claims,
+            status=status or "",
+            csrf_token=_ensure_csrf_token(request),
+            message=request.query_params.get("message"),
+            error=request.query_params.get("error"),
+        ),
+    )
+
+
+@router.get("/claims/{claim_id}", response_class=HTMLResponse, name="admin_claim_detail")
+async def admin_claim_detail(
+    request: Request,
+    claim_id: int,
+    language: str | None = None,
+    settings: Settings = Depends(get_settings),
+    claim_store=Depends(get_claim_store),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+
+    claim = await claim_store.get(claim_id)
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+
+    language = _default_language(language, settings)
+    return templates.TemplateResponse(
+        request,
+        "admin_claim_detail.html",
+        context=_base_context(
+            request,
+            language,
+            settings,
+            admin_user=admin_user,
+            claim=claim,
+            claim_preview=_claim_payload_preview(claim.get("payload", {})),
+            csrf_token=_ensure_csrf_token(request),
+            message=request.query_params.get("message"),
+            error=request.query_params.get("error"),
+        ),
+    )
+
+
+@router.post("/claims/{claim_id}/review", name="admin_review_claim")
+async def admin_review_claim(
+    request: Request,
+    claim_id: int,
+    csrf_token: str = Form(...),
+    decision: str = Form(...),
+    comment: str = Form(""),
+    language: str = Form("en"),
+    settings: Settings = Depends(get_settings),
+    claim_store=Depends(get_claim_store),
+    service=Depends(get_graph_service),
+):
+    admin_user = _ensure_admin(request, language, settings)
+    if isinstance(admin_user, RedirectResponse):
+        return admin_user
+    _validate_csrf(request, csrf_token)
+
+    status = {"accept": "accepted", "reject": "rejected"}.get(decision)
+    if not status:
+        raise HTTPException(status_code=422, detail="Unknown review decision")
+
+    claim = await claim_store.get(claim_id)
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+    if claim["status"] != "pending":
+        return RedirectResponse(
+            str(request.url_for("admin_claim_detail", claim_id=claim_id))
+            + "?"
+            + urlencode({"language": language, "error": "Claim has already been reviewed"}),
+            status_code=303,
+        )
+
+    if status == "accepted":
+        try:
+            await _apply_claim_on_accept(claim=claim, settings=settings, service=service)
+        except Exception as exc:
+            return RedirectResponse(
+                str(request.url_for("admin_claim_detail", claim_id=claim_id))
+                + "?"
+                + urlencode(
+                    {
+                        "language": language,
+                        "error": f"Claim could not be applied: {exc}",
+                    }
+                ),
+                status_code=303,
+            )
+
+    await claim_store.review(
+        claim_id=claim_id,
+        status=status,
+        reviewer=admin_user,
+        comment=comment.strip(),
+    )
+    return RedirectResponse(
+        str(request.url_for("admin_claims"))
+        + "?"
+        + urlencode({"language": language, "status": "pending", "message": f"Claim {status}"}),
+        status_code=303,
     )
 
 

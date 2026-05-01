@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Column, Enum, Index, Integer, MetaData, String, Table, UniqueConstraint
+from sqlalchemy import DateTime, JSON, Column, Enum, Index, Integer, MetaData, String, Table, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 
 from py_semantic_taxonomy.domain.constants import AssociationKind, RelationshipVerbs
@@ -96,6 +96,21 @@ association_table = Table(
     Column("target_concepts", BetterJSON, default=[]),
     Column("kind", Enum(AssociationKind, values_callable=lambda x: [i.value for i in x])),
     Column("extra", BetterJSON, default={}),
+)
+
+contributor_claim_table = Table(
+    "contributor_claim",
+    metadata_obj,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("kind", String, nullable=False, index=True),
+    Column("status", String, nullable=False, index=True, default="pending"),
+    Column("title", String, nullable=False),
+    Column("target_iri", String, nullable=True, index=True),
+    Column("payload", BetterJSON, default={}),
+    Column("submitted_by", BetterJSON, default={}),
+    Column("review", BetterJSON, default={}),
+    Column("created_at", DateTime(timezone=True), nullable=False),
+    Column("reviewed_at", DateTime(timezone=True), nullable=True),
 )
 
 Index(

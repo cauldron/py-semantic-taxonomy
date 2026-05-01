@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}CSV Import Claim - PyST{% endblock %}
+
+{% block page_header %}
+<div>
+    <h1>CSV import claim</h1>
+    <p style="color: var(--text-secondary)">Use BONSAI-style `tree_` and `conc_` CSV files. The upload will be stored as a claim for admin review.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl">
+    <div class="card px-6 py-6" style="background: linear-gradient(135deg, rgba(178,34,34,0.08), rgba(221,107,32,0.08)); border: 1px solid var(--border-color);">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Workflow</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm" style="color: var(--text-secondary)">
+            <div>1. Choose whether this is a `tree_` or `conc_` import.</div>
+            <div>2. Upload or paste the CSV content.</div>
+            <div>3. PyST stores it as a reviewable claim.</div>
+        </div>
+    </div>
+
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">What Happens Next?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm" style="color: var(--text-secondary)">
+            <div>Contributors do not publish data directly. This form creates a claim for admin review.</div>
+            <div>Use clear titles and descriptions so reviewers can quickly understand what the file contains and where it came from.</div>
+        </div>
+    </div>
+
+    <div class="card px-6 py-6">
+        {% if error %}
+        <div class="mb-4 px-4 py-3 rounded-md" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="/web/contributor/imports/csv" enctype="multipart/form-data" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="language" value="{{ language }}">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label for="kind" class="block text-sm font-medium" style="color: var(--text-color)">Import type</label>
+                    <select id="kind" name="kind" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                        {% for value, label in claim_kinds %}
+                        <option value="{{ value }}" {% if form_data.kind == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs mt-2" style="color: var(--text-secondary)">Use `tree_` for a classification hierarchy and `conc_` for mappings between two classifications.</p>
+                </div>
+                <div>
+                    <label for="title" class="block text-sm font-medium" style="color: var(--text-color)">Submission title</label>
+                    <input id="title" name="title" type="text" value="{{ form_data.title }}" placeholder="Example: Import HS 2017 concept scheme" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                    <p class="text-xs mt-2" style="color: var(--text-secondary)">Short summary for reviewers. Keep it specific.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label for="csv_import_name" class="block text-sm font-medium" style="color: var(--text-color)">Import identifier</label>
+                    <input id="csv_import_name" name="csv_import_name" type="text" value="{{ form_data.csv_import_name }}" placeholder="Example: hs2017 or hs2017_to_cn2024" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                    <p class="text-xs mt-2" style="color: var(--text-secondary)">Used to build the imported scheme or correspondence identifier. Prefer a short stable ID.</p>
+                </div>
+                <div>
+                    <label for="csv_file" class="block text-sm font-medium" style="color: var(--text-color)">CSV file</label>
+                    <input id="csv_file" name="csv_file" type="file" accept=".csv,text/csv" class="mt-1 block w-full text-sm" style="color: var(--text-color)">
+                    <p class="text-xs mt-2" style="color: var(--text-secondary)">Upload the file directly or paste the same content in the CSV text field below.</p>
+                </div>
+            </div>
+
+            <div id="concordance-scheme-selectors" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label for="source_scheme_iri" class="block text-sm font-medium" style="color: var(--text-color)">Map from</label>
+                    <select id="source_scheme_iri" name="source_scheme_iri" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                        <option value="">Resolve from CSV values</option>
+                        {% for concept_scheme in concept_schemes %}
+                        {% set scheme_label = concept_scheme.pref_labels[0]["@value"] if concept_scheme.pref_labels else concept_scheme.id_ %}
+                        {% set scheme_notation = concept_scheme.notations[0]["@value"] if concept_scheme.notations else "" %}
+                        <option value="{{ concept_scheme.id_ }}" {% if form_data.source_scheme_iri == concept_scheme.id_ %}selected{% endif %}>
+                            {{ scheme_label }}{% if scheme_notation %} ({{ scheme_notation }}){% endif %} - {{ concept_scheme.id_ }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs mt-2" style="color: var(--text-secondary)">Choose the classification that all `*_from` codes belong to. This avoids scheme-resolution errors during review.</p>
+                </div>
+                <div>
+                    <label for="target_scheme_iri" class="block text-sm font-medium" style="color: var(--text-color)">Map to</label>
+                    <select id="target_scheme_iri" name="target_scheme_iri" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                        <option value="">Resolve from CSV values</option>
+                        {% for concept_scheme in concept_schemes %}
+                        {% set scheme_label = concept_scheme.pref_labels[0]["@value"] if concept_scheme.pref_labels else concept_scheme.id_ %}
+                        {% set scheme_notation = concept_scheme.notations[0]["@value"] if concept_scheme.notations else "" %}
+                        <option value="{{ concept_scheme.id_ }}" {% if form_data.target_scheme_iri == concept_scheme.id_ %}selected{% endif %}>
+                            {{ scheme_label }}{% if scheme_notation %} ({{ scheme_notation }}){% endif %} - {{ concept_scheme.id_ }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs mt-2" style="color: var(--text-secondary)">Choose the classification that all `*_to` codes belong to. Use this together with `Map from` for `conc_` files.</p>
+                </div>
+            </div>
+
+            <div>
+                <label for="rationale" class="block text-sm font-medium" style="color: var(--text-color)">Description</label>
+                <textarea id="rationale" name="rationale" rows="3" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">{{ form_data.rationale }}</textarea>
+                <p class="text-xs mt-2" style="color: var(--text-secondary)">Explain what the file contains, where it comes from, and anything the reviewer should check.</p>
+            </div>
+
+            <div>
+                <label for="csv_text" class="block text-sm font-medium" style="color: var(--text-color)">CSV text</label>
+                <textarea id="csv_text" name="csv_text" rows="14" class="mt-1 block w-full border rounded-md px-3 py-2 font-mono text-sm" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">{{ form_data.csv_text }}</textarea>
+                <p id="csv-example" class="text-xs mt-2 whitespace-pre-wrap" style="color: var(--text-secondary)"></p>
+                <p class="text-xs mt-2" style="color: var(--text-secondary)">Include the header row. Codes must match existing notation values exactly for `conc_` imports.</p>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <a href="/web/contributor/?language={{ language }}" class="btn-secondary">Cancel</a>
+                <button type="submit" class="btn-primary">Submit Import Claim</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const kindSelect = document.getElementById('kind');
+    const csvExample = document.getElementById('csv-example');
+    const concordanceSchemeSelectors = document.getElementById('concordance-scheme-selectors');
+    const csvExamples = {{ csv_import_examples | tojson }};
+
+    function updateExample() {
+        const selected = kindSelect.value;
+        csvExample.textContent = csvExamples[selected] ? 'Example header:\n' + csvExamples[selected] : '';
+        concordanceSchemeSelectors.style.display = selected === 'bulk_concordance_import' ? 'grid' : 'none';
+    }
+
+    kindSelect.addEventListener('change', updateExample);
+    updateExample();
+});
+</script>
+{% endblock %}

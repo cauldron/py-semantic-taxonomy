@@ -18,7 +18,13 @@ class Settings(BaseSettings):
     gitlab_client_id: str = "missing"
     gitlab_client_secret: str = "missing"
     gitlab_admin_group: str = "missing"
+    gitlab_admin_min_access_level: int = 40
+    gitlab_contributor_group: str = "missing"
+    gitlab_contributor_min_access_level: int = 30
     gitlab_oauth_scope: str = "read_api"
+    contributor_backend_base_url: str = "missing"
+    contributor_backend_name: str = "BONSAI"
+    admin_backend_allowed_emails: list[str] = []
 
     typesense_url: str = "missing"
     typesense_api_key: str = "missing"

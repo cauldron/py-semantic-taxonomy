@@ -11,6 +11,7 @@ from py_semantic_taxonomy.adapters.persistence.database import (
 from py_semantic_taxonomy.adapters.routers.admin_router import router as admin_router
 from py_semantic_taxonomy.adapters.routers.api_router import api_router
 from py_semantic_taxonomy.adapters.routers.catch_router import router as catch_router
+from py_semantic_taxonomy.adapters.routers.contributor_router import router as contributor_router
 from py_semantic_taxonomy.adapters.routers.web_router import router as web_router
 from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_search_service
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     app.include_router(api_router)
     app.include_router(web_router)
     app.include_router(admin_router)
+    app.include_router(contributor_router)
     app.include_router(catch_router)
     app.mount(
         "/static",
@@ -60,6 +62,7 @@ def test_app() -> FastAPI:
     app.include_router(api_router)
     app.include_router(web_router)
     app.include_router(admin_router)
+    app.include_router(contributor_router)
     return app
 
 

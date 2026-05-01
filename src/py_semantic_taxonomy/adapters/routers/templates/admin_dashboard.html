@@ -12,6 +12,10 @@
         </p>
     </div>
     <div class="flex space-x-3">
+        <a href="/web/admin/claims?language={{ language }}&status=pending" class="btn-secondary">
+            <i class="fas fa-inbox mr-2"></i>Review Claims
+            {% if pending_claim_count %}({{ pending_claim_count }}){% endif %}
+        </a>
         <a href="/web/admin/concept_schemes/new?language={{ language }}" class="btn-primary">
             <i class="fas fa-plus mr-2"></i>New Scheme
         </a>

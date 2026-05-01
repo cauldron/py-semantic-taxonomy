@@ -6,11 +6,11 @@
 <div class="flex justify-between items-center">
     <div>
         <h1>{% if form_mode == "create" %}Create Concept{% else %}Edit Concept{% endif %}</h1>
-        <p style="color: var(--text-secondary)">Editing the {{ language|upper }} label and definition. Existing translations in other languages are preserved.</p>
+        <p style="color: var(--text-secondary)">{{ form_helper_text }}</p>
     </div>
     <div class="flex space-x-3">
-        <a href="/web/admin/?language={{ language }}" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
-            <i class="fas fa-arrow-left mr-2"></i>Admin
+        <a href="{{ actor_home_url }}" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+            <i class="fas fa-arrow-left mr-2"></i>{{ actor_home_name }}
         </a>
     </div>
 </div>
@@ -25,7 +25,7 @@
     <div class="card px-4 py-3 mb-4" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
     {% endif %}
 
-    {% if form_mode == "edit" %}
+    {% if form_mode == "edit" and show_delete_actions %}
     <form id="delete-concept-form" method="post" action="/web/admin/concepts/{{ form_data.id_|urlencode }}/delete">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="language" value="{{ language }}">
@@ -37,6 +37,13 @@
         <input type="hidden" name="language" value="{{ language }}">
         {% if request.query_params.get('concept_scheme') %}
         <input type="hidden" name="concept_scheme" value="{{ request.query_params.get('concept_scheme') }}">
+        {% endif %}
+
+        {% if collect_rationale %}
+        <div>
+            <label class="block text-sm font-medium mb-2" style="color: var(--text-color)">Rationale for review</label>
+            <textarea name="rationale" rows="3" class="w-full px-4 py-2 border rounded-lg" style="border-color: var(--border-color); background-color: var(--header-bg); color: var(--text-color)">{{ form_data.rationale if form_data.rationale else '' }}</textarea>
+        </div>
         {% endif %}
 
         <div>
@@ -105,7 +112,7 @@
         </div>
 
         <div class="flex justify-between items-center">
-            {% if form_mode == "edit" %}
+            {% if form_mode == "edit" and show_delete_actions %}
             <button type="submit" form="delete-concept-form"
                 onclick="return confirm('Delete this concept and all of its links?');"
                 class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium"
@@ -116,7 +123,7 @@
             <div></div>
             {% endif %}
             <button type="submit" class="btn-primary">
-                <i class="fas fa-save mr-2"></i>{% if form_mode == "create" %}Create Concept{% else %}Save Changes{% endif %}
+                <i class="fas fa-save mr-2"></i>{{ submit_label }}
             </button>
         </div>
     </form>
@@ -154,6 +161,7 @@
                                     <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ relationship.related_iri }}</div>
                                 </td>
                                 <td class="px-4 py-3 text-right text-sm">
+                                    {% if show_direct_link_actions %}
                                     <form method="post" action="/web/admin/concepts/{{ form_data.id_|urlencode }}/relationships/delete" class="inline"
                                         onsubmit="return confirm('Delete this relationship?');">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -166,6 +174,9 @@
                                         {% endif %}
                                         <button type="submit" class="text-primary hover:text-primary-hover">Delete</button>
                                     </form>
+                                    {% else %}
+                                    <span style="color: var(--text-secondary)">Read only</span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -208,6 +219,7 @@
                                     <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ mapping.target_iri }}</div>
                                 </td>
                                 <td class="px-4 py-3 text-right text-sm">
+                                    {% if show_direct_link_actions %}
                                     <a href="{{ mapping.edit_url }}" class="text-primary hover:text-primary-hover mr-3">Edit</a>
                                     <form method="post" action="/web/admin/concepts/{{ form_data.id_|urlencode }}/mappings/delete" class="inline"
                                         onsubmit="return confirm('Delete this mapping?');">
@@ -220,6 +232,9 @@
                                         {% endif %}
                                         <button type="submit" class="text-primary hover:text-primary-hover">Delete</button>
                                     </form>
+                                    {% else %}
+                                    <span style="color: var(--text-secondary)">Read only</span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -256,6 +271,7 @@
                                     <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ association.target_iri }}</div>
                                 </td>
                                 <td class="px-4 py-3 text-right text-sm">
+                                    {% if show_direct_link_actions %}
                                     <a href="{{ association.edit_url }}" class="text-primary hover:text-primary-hover mr-3">Edit</a>
                                     <form method="post" action="/web/admin/associations/{{ association.id_|urlencode }}/delete" class="inline"
                                         onsubmit="return confirm('Delete this association?');">
@@ -267,6 +283,9 @@
                                         {% endif %}
                                         <button type="submit" class="text-primary hover:text-primary-hover">Delete</button>
                                     </form>
+                                    {% else %}
+                                    <span style="color: var(--text-secondary)">Read only</span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -280,6 +299,7 @@
                 </div>
             </div>
 
+            {% if show_mapping_form %}
             <div class="border-t pt-6" style="border-color: var(--border-color)">
                 <h3 class="text-base font-medium mb-1" style="color: var(--text-color)">Add Or Edit Cross-Scheme Link</h3>
                 <p class="text-sm mb-4" style="color: var(--text-secondary)">Choose whether to create a SKOS mapping predicate or an XKOS concept association resource.</p>
@@ -319,11 +339,12 @@
 
                     <div class="flex justify-end">
                         <button type="submit" class="btn-primary">
-                            <i class="fas fa-project-diagram mr-2"></i>Save Link
+                            <i class="fas fa-project-diagram mr-2"></i>{{ "Save Link" if show_direct_link_actions else "Submit Link Claim" }}
                         </button>
                     </div>
                 </form>
             </div>
+            {% endif %}
         </div>
     </div>
     {% endif %}
