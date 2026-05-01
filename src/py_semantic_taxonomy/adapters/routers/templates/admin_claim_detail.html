@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Review Claim {{ claim.id }} - PyST{% endblock %}
+
+{% block page_header %}
+<div>
+    <h1>{{ claim.title }}</h1>
+    <p style="color: var(--text-secondary)">Status: {{ claim.status }}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {% if message %}
+    <div class="card px-4 py-3" style="background-color: var(--nav-bg); color: var(--text-color)">{{ message }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="card px-4 py-3" style="background-color: #fff1f2; color: #9f1239">{{ error }}</div>
+    {% endif %}
+
+    <div class="card px-6 py-6">
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <dt class="text-sm font-medium" style="color: var(--text-secondary)">Type</dt>
+                <dd style="color: var(--text-color)">{{ claim.kind }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium" style="color: var(--text-secondary)">Contributor</dt>
+                <dd style="color: var(--text-color)">{{ claim.submitted_by.name }}{% if claim.submitted_by.username %} (@{{ claim.submitted_by.username }}){% endif %}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium" style="color: var(--text-secondary)">Target IRI</dt>
+                <dd style="color: var(--text-color)">{{ claim.target_iri or "" }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium" style="color: var(--text-secondary)">Submitted</dt>
+                <dd style="color: var(--text-color)">{{ claim.created_at }}</dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium" style="color: var(--text-secondary)">Submission mode</dt>
+                <dd style="color: var(--text-color)">{{ claim_preview.submission.mode or "legacy" }}</dd>
+            </div>
+        </dl>
+    </div>
+
+    {% if claim_preview.rationale %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">{% if claim.kind in ["bulk_tree_import", "bulk_concordance_import"] %}Description{% else %}Rationale{% endif %}</h2>
+        <p style="color: var(--text-color)">{{ claim_preview.rationale }}</p>
+    </div>
+    {% endif %}
+
+    {% if claim.status == "pending" %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Admin Guidance</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm" style="color: var(--text-secondary)">
+            <div>Accepting a claim publishes it to the live taxonomy. Rejecting keeps the current data unchanged.</div>
+            <div>For CSV imports, check that the selected schemes, codes, and mapping direction match the contributor's description before accepting.</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if claim_preview.csv_row_count %}
+    <div class="card px-6 py-6">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="text-lg font-medium" style="color: var(--text-color)">CSV preview</h2>
+            <span class="text-sm" style="color: var(--text-secondary)">{{ claim_preview.csv_row_count }} rows</span>
+        </div>
+        <p class="text-sm mb-3" style="color: var(--text-secondary)">Review the header names and a few example rows before publishing. The full file will be applied if you accept the claim.</p>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y" style="border-color: var(--border-color)">
+                <thead style="background-color: var(--nav-bg)">
+                    <tr>
+                        {% for column in claim_preview.csv_columns %}
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style="color: var(--text-secondary)">{{ column }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class="divide-y" style="border-color: var(--border-color)">
+                    {% for row in claim_preview.csv_rows_preview %}
+                    <tr>
+                        {% for column in claim_preview.csv_columns %}
+                        <td class="px-4 py-3 text-sm" style="color: var(--text-color)">{{ row.get(column, "") }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if claim_preview.csv_row_count > 5 %}
+        <p class="text-xs mt-3" style="color: var(--text-secondary)">Showing the first 5 rows.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Structured change</h2>
+        <pre class="overflow-x-auto text-sm">{{ claim_preview.change_json }}</pre>
+    </div>
+
+    {% if claim.status == "pending" %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Review</h2>
+        <form id="claim-review-form" method="post" action="/web/admin/claims/{{ claim.id }}/review" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="language" value="{{ language }}">
+            <input type="hidden" id="claim-review-decision" name="decision" value="">
+            <div>
+                <label for="comment" class="block text-sm font-medium" style="color: var(--text-color)">Review comment</label>
+                <textarea id="comment" name="comment" rows="4" class="mt-1 block w-full border rounded-md px-3 py-2" style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)"></textarea>
+                <p class="text-xs mt-2" style="color: var(--text-secondary)">Optional. Leave context for the contributor, especially if you reject the claim or need them to resubmit.</p>
+            </div>
+            <div id="claim-review-actions" class="flex justify-end space-x-3">
+                <button type="submit" data-decision="reject" class="btn-secondary">Reject</button>
+                <button id="claim-accept-button" type="submit" data-decision="accept" class="btn-primary">Accept</button>
+            </div>
+            <div id="claim-progress-panel" class="hidden rounded-lg border px-4 py-4 space-y-3" style="border-color: var(--border-color); background-color: var(--nav-bg);">
+                <div class="flex items-center gap-3">
+                    <div class="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style="border-color: var(--text-secondary); border-top-color: transparent;"></div>
+                    <div>
+                        <p class="text-sm font-medium" style="color: var(--text-color)">Applying claim</p>
+                        <p id="claim-progress-text" class="text-sm" style="color: var(--text-secondary)"></p>
+                    </div>
+                </div>
+                <div class="w-full h-2 rounded-full overflow-hidden" style="background-color: var(--header-bg);">
+                    <div class="h-full claim-progress-bar"></div>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div class="card px-6 py-6">
+        <h2 class="text-lg font-medium mb-3" style="color: var(--text-color)">Review</h2>
+        <p style="color: var(--text-secondary)">Reviewed by {{ claim.review.reviewer.name }} at {{ claim.reviewed_at }}</p>
+        <p class="mt-3" style="color: var(--text-color)">{{ claim.review.comment }}</p>
+    </div>
+    {% endif %}
+</div>
+{% if claim.status == "pending" %}
+<style>
+.claim-progress-bar {
+    width: 35%;
+    background: linear-gradient(90deg, #b91c1c, #ea580c, #b91c1c);
+    background-size: 200% 100%;
+    animation: claim-progress-shimmer 1.2s linear infinite;
+}
+
+@keyframes claim-progress-shimmer {
+    0% {
+        transform: translateX(-100%);
+        background-position: 0% 50%;
+    }
+    100% {
+        transform: translateX(300%);
+        background-position: 100% 50%;
+    }
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('claim-review-form');
+    if (!form) return;
+
+    const progressPanel = document.getElementById('claim-progress-panel');
+    const progressText = document.getElementById('claim-progress-text');
+    const decisionInput = document.getElementById('claim-review-decision');
+    const actionButtons = Array.from(form.querySelectorAll('button[type="submit"]'));
+    const csvRowCount = {{ claim_preview.csv_row_count or 0 }};
+    const claimKind = {{ claim.kind | tojson }};
+
+    function buildProgressMessage(decision) {
+        if (decision === 'reject') {
+            return 'Saving the review decision...';
+        }
+        if (csvRowCount > 0) {
+            return `Publishing ${csvRowCount} CSV row${csvRowCount === 1 ? '' : 's'}. This can take a while; the page will continue once the import is finished.`;
+        }
+        if (claimKind === 'add_concept' || claimKind === 'edit_concept') {
+            return 'Publishing the concept changes. This may take a few moments.';
+        }
+        if (claimKind === 'add_concept_scheme' || claimKind === 'edit_concept_scheme') {
+            return 'Publishing the concept scheme changes. This may take a few moments.';
+        }
+        return 'Applying the claim. This page will update once the operation is finished.';
+    }
+
+    form.addEventListener('submit', function (event) {
+        const submitter = event.submitter;
+        const decision = submitter ? (submitter.dataset.decision || 'accept') : 'accept';
+        decisionInput.value = decision;
+        progressText.textContent = buildProgressMessage(decision);
+        progressPanel.classList.remove('hidden');
+        actionButtons.forEach((button) => {
+            button.disabled = true;
+            button.style.opacity = '0.6';
+            button.style.cursor = 'wait';
+        });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

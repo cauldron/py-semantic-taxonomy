@@ -1,0 +1,283 @@
+{# Breadcrumb #}
+<div class="mb-3 px-1">
+    <p class="text-sm" style="color: var(--text-secondary)">
+        <a href="{{ scheme_url }}" class="text-primary hover:text-primary-hover">{{ scheme|best_short_label(language) }}</a>
+        {% for url, ancestor in hierarchy %}
+        &raquo; <a href="#" class="concept-detail-link text-primary hover:text-primary-hover"
+                   data-iri="{{ ancestor.id_ }}" data-scheme="{{ concept_scheme_iri }}">{{ ancestor|best_short_label(language) }}</a>
+        {% endfor %}
+        &raquo; <span>{{ concept.pref_labels|lang(language) or "(no label)" }}</span>
+    </p>
+</div>
+
+{% if is_admin_request(request) %}
+<div class="mb-4 flex flex-wrap gap-3 px-1">
+    <a href="/web/admin/concepts/{{ concept.id_ | urlencode }}/edit?language={{ language }}&concept_scheme={{ concept_scheme_iri | urlencode }}"
+        class="btn-primary">
+        <i class="fas fa-pen mr-2"></i>Edit Concept
+    </a>
+    <form method="post" action="/web/admin/concepts/{{ concept.id_ | urlencode }}/delete" class="inline"
+        onsubmit="return confirm('Delete this concept and all of its links?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="language" value="{{ language }}">
+        <button type="submit" class="inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium"
+            style="color: #9f1239; background-color: #fff1f2; border-color: #fecdd3">
+            <i class="fas fa-trash mr-2"></i>Delete Concept
+        </button>
+    </form>
+</div>
+{% endif %}
+
+{# Definition card #}
+<div class="card mb-4">
+    <div class="px-4 py-4 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+        <div class="flex items-center justify-between gap-4">
+            <h2 class="text-base font-semibold" style="color: var(--text-color)">{{ concept.pref_labels|lang(language) or "(no label)" }}</h2>
+            {% if is_admin_request(request) %}
+            <a href="/web/admin/concepts/{{ concept.id_ | urlencode }}/edit?language={{ language }}&concept_scheme={{ concept_scheme_iri | urlencode }}"
+                class="text-sm text-primary hover:text-primary-hover">Manage links</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="px-4 py-4" style="background-color: var(--nav-bg)">
+        <div class="text-sm mathjax-content" style="color: var(--text-color)">
+            {% if concept.definitions|lang(language) %}
+            {{ concept.definitions|lang(language) }}
+            {% else %}
+            <span class="italic" style="color: var(--text-tertiary)">No definition available</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# Concept Hierarchy card #}
+{% if broader_concepts or narrower_concepts %}
+<div class="card mb-4">
+    <div class="px-4 py-4 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+        <h2 class="text-base font-semibold flex items-center" style="color: var(--text-color)">
+            <i class="fas fa-sitemap text-primary mr-2"></i>Concept Hierarchy
+        </h2>
+    </div>
+    <div class="px-4 py-4" style="background-color: var(--nav-bg)">
+        {% if broader_concepts %}
+        <h3 class="text-xs font-medium mb-2 flex items-center" style="color: var(--text-secondary)">
+            <i class="fas fa-arrow-up mr-1"></i>Broader
+        </h3>
+        <div class="space-y-1 mb-4">
+            {% for rel in broader_concepts %}
+            {% if rel.1 is string %}
+            <div class="text-sm px-3 py-2 rounded" style="color: var(--text-tertiary)">{{ rel.1 }}</div>
+            {% else %}
+            <a href="#" class="block concept-detail-link group"
+               data-iri="{{ rel.1.id_ }}" data-scheme="{{ concept_scheme_iri }}">
+                <div class="border rounded-lg px-3 py-2 hover:border-primary transition-all duration-150"
+                     style="border-color: var(--border-color); background-color: var(--header-bg)">
+                    <div class="text-sm font-medium group-hover:text-primary" style="color: var(--text-color)">
+                        {{ rel.1|best_label(language) }}
+                    </div>
+                    {% if rel.1.notations %}
+                    <div class="text-xs" style="color: var(--text-tertiary)">
+                        <i class="fas fa-hashtag mr-0.5"></i>{{ rel.1.notations[0]['@value'] }}
+                    </div>
+                    {% endif %}
+                </div>
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="relative my-3">
+            <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                <div class="w-full border-t" style="border-color: var(--border-color)"></div>
+            </div>
+            <div class="relative flex justify-center">
+                <div class="px-3 py-1 rounded-lg border shadow-sm"
+                     style="border-color: var(--border-color); background-color: var(--nav-bg)">
+                    <div class="flex items-center space-x-1">
+                        <i class="fas fa-circle text-primary text-xs"></i>
+                        <span class="text-xs font-medium" style="color: var(--text-color)">Current Concept</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if narrower_concepts %}
+        <h3 class="text-xs font-medium mb-2 flex items-center" style="color: var(--text-secondary)">
+            <i class="fas fa-arrow-down mr-1"></i>Narrower
+        </h3>
+        <div class="space-y-1">
+            {% for rel in narrower_concepts %}
+            {% if rel.1 is string %}
+            <div class="text-sm px-3 py-2 rounded" style="color: var(--text-tertiary)">{{ rel.1 }}</div>
+            {% else %}
+            <a href="#" class="block concept-detail-link group"
+               data-iri="{{ rel.1.id_ }}" data-scheme="{{ concept_scheme_iri }}">
+                <div class="border rounded-lg px-3 py-2 hover:border-primary transition-all duration-150"
+                     style="border-color: var(--border-color); background-color: var(--header-bg)">
+                    <div class="text-sm font-medium group-hover:text-primary" style="color: var(--text-color)">
+                        {{ rel.1|best_label(language) }}
+                    </div>
+                    {% if rel.1.notations %}
+                    <div class="text-xs" style="color: var(--text-tertiary)">
+                        <i class="fas fa-hashtag mr-0.5"></i>{{ rel.1.notations[0]['@value'] }}
+                    </div>
+                    {% endif %}
+                </div>
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{# Associations card #}
+{% if associations %}
+<div class="card mb-4">
+    <div class="px-4 py-4 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+        <h2 class="text-base font-semibold flex items-center" style="color: var(--text-color)">
+            <i class="fas fa-heart text-primary mr-2"></i>Associations
+        </h2>
+    </div>
+    <div class="px-4 py-4 space-y-1" style="background-color: var(--nav-bg)">
+        {% for ass in associations %}
+        {% if ass.obj is string %}
+        <div class="text-sm px-3 py-2 rounded" style="color: var(--text-tertiary)">{{ ass.obj }}</div>
+        {% else %}
+        <a href="#" class="block concept-detail-link group"
+           data-iri="{{ ass.obj.id_ }}" data-scheme="{{ concept_scheme_iri }}">
+            <div class="border rounded-lg px-3 py-2 hover:border-primary transition-all duration-150 relative"
+                 style="border-color: var(--border-color); background-color: var(--header-bg)">
+                <div class="text-sm font-medium group-hover:text-primary" style="color: var(--text-color)">
+                    {{ ass.obj|best_label(language) }}
+                </div>
+                {% if ass.direction %}
+                <div class="text-xs mt-1" style="color: var(--text-secondary)">{{ ass.direction }} association</div>
+                {% endif %}
+                {% if ass.mapping_types %}
+                <div class="text-xs mt-1" style="color: var(--text-secondary)">Mapping type: {{ ass.mapping_types|join(', ') }}</div>
+                {% endif %}
+                {% set schemes = ass.obj|scheme_list %}
+                {% if schemes %}
+                <div class="text-xs mt-1" style="color: var(--text-tertiary)">{{ schemes }}</div>
+                {% endif %}
+                {% if ass.conversion %}
+                <div class="text-xs mt-1" style="color: var(--text-secondary)">Conversion: {{ ass.conversion }}</div>
+                {% endif %}
+            </div>
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# Notes card #}
+{% if concept.editorial_notes or concept.change_notes or concept.history_notes %}
+<div class="card mb-4">
+    <div class="px-4 py-4 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+        <h2 class="text-base font-semibold" style="color: var(--text-color)">Notes</h2>
+    </div>
+    <div class="px-4 py-4 space-y-4" style="background-color: var(--nav-bg)">
+        {% if concept.editorial_notes %}
+        <div>
+            <h3 class="text-xs font-medium mb-1" style="color: var(--text-secondary)">Editorial Notes</h3>
+            <div class="text-sm" style="color: var(--text-color)">
+                {% for note in concept.editorial_notes %}<p>{{ note['@value'] }}</p>{% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if concept.change_notes %}
+        <div>
+            <h3 class="text-xs font-medium mb-1" style="color: var(--text-secondary)">Change Notes</h3>
+            <div class="text-sm" style="color: var(--text-color)">
+                {% for note in concept.change_notes %}<p>{{ note['@value'] }}</p>{% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if concept.history_notes %}
+        <div>
+            <h3 class="text-xs font-medium mb-1" style="color: var(--text-secondary)">History Notes</h3>
+            <div class="text-sm" style="color: var(--text-color)">
+                {% for note in concept.history_notes %}<p>{{ note['@value'] }}</p>{% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{# Concept Information card #}
+<div class="card">
+    <div class="px-4 py-4 border-b" style="border-color: var(--border-color); background-color: var(--nav-bg)">
+        <h2 class="text-base font-semibold" style="color: var(--text-color)">Concept Information</h2>
+    </div>
+    <div class="px-4 py-4 space-y-3" style="background-color: var(--nav-bg)">
+        <div>
+            <h3 class="text-xs font-medium" style="color: var(--text-secondary)">IRI</h3>
+            <p class="mt-1 text-sm cursor-pointer" style="color: var(--text-color)"
+               title="{{ concept.id_ }}" id="concept_iri_clicker" data-iri="{{ concept.id_ }}">
+                {{ concept.id_|short_iri }}
+                <i class="fas fa-copy ml-1" id="concept_iri_clicker_icon"></i>
+            </p>
+        </div>
+
+        {% if concept.notations %}
+        <div>
+            <h3 class="text-xs font-medium" style="color: var(--text-secondary)">Notation</h3>
+            <p class="mt-1 text-sm" style="color: var(--text-color)">{{ concept.notations[0]['@value'] }}</p>
+        </div>
+        {% endif %}
+
+        {% if concept.status %}
+        <div>
+            <h3 class="text-xs font-medium" style="color: var(--text-secondary)">Status</h3>
+            <div class="mt-1">
+                {% set status = concept.status[0]['@id']|split('/')|last|title %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {% if status == 'Accepted' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %} relationship-badge">
+                    {{ status }}
+                </span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if concept.schemes %}
+        <div>
+            <h3 class="text-xs font-medium" style="color: var(--text-secondary)">Concept Schemes</h3>
+            <div class="mt-1 text-sm" style="color: var(--text-color)">
+                {% for scheme_item in scheme_list %}
+                <a href="{{ scheme_item.0 }}" class="text-primary hover:text-primary-hover block">{{ scheme_item.1['@id']|short_iri }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if concept.alt_labels %}
+        <div>
+            <h3 class="text-xs font-medium" style="color: var(--text-secondary)">Alternative Labels</h3>
+            <div class="mt-1 text-sm" style="color: var(--text-color)">
+                {% for label in concept.alt_labels %}
+                <span style="color: var(--text-tertiary)" class="mr-1">{{ label['@language'] }}:</span>
+                <span>{{ label['@value'] }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if concept.hidden_labels %}
+        <div>
+            <h3 class="text-xs font-medium" style="color: var(--text-secondary)">Hidden Labels</h3>
+            <div class="mt-1 text-sm" style="color: var(--text-color)">
+                {% for label in concept.hidden_labels %}
+                <div>
+                    <span style="color: var(--text-tertiary)" class="mr-1">{{ label['@language'] }}:</span>
+                    <span>{{ label['@value'] }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>

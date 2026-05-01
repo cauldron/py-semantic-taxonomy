@@ -35,6 +35,7 @@ markdown_extensions:
 nav:
   - Home: 'index.md'
   - Common workflows: 'common-workflows.md'
+  - Contributor and admin workflows: 'contributor-workflows.md'
   - Data model: 'data-model.md'
   - Architecture: 'architecture.md'
   - API docs: 'https://docs.pyst.dev/api/'
