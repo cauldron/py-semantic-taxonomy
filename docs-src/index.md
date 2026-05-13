@@ -33,6 +33,8 @@ export PyST_auth_token="supersecret"
 
 The following parameters must be either specified as environment variables, or given in the file `pyst-config.env`.
 
+You can start from the checked-in example file [pyst-config.env.example](/Users/TN76JP/Documents/GitHub/py-semantic-taxonomy/pyst-config.env.example) and copy it to `pyst-config.env`.
+
 !!! Note
 
     We use `pydantic-settings` for settings management, please note [their instructions on dependencies, precedence, and env file location](https://docs.pydantic.dev/1.10/usage/settings/#dotenv-env-support).
