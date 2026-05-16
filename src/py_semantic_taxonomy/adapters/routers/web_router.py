@@ -375,6 +375,7 @@ async def web_search(
     query: str = "",
     language: str = "en",
     semantic: bool = True,
+    concept_scheme_iri: str | None = None,
     search_service=Depends(get_search_service),
     graph_service=Depends(get_graph_service),
     settings=Depends(get_settings),
@@ -411,7 +412,14 @@ async def web_search(
     try:
         results = []
         if query:
-            results = await search_service.search(query=query, language=language, semantic=semantic)
+            results = await search_service.search(
+                query=query,
+                language=language,
+                semantic=semantic,
+                concept_scheme_iri=concept_scheme_iri,
+            )
+
+        concept_schemes = await graph_service.concept_scheme_get_all()
 
         languages = [(request.url, Language.get(language).display_name(language).title())] + [
             (
@@ -433,6 +441,8 @@ async def web_search(
                 "language_selector": languages,
                 "semantic": semantic,
                 "results": results,
+                "concept_schemes": concept_schemes,
+                "selected_scheme": concept_scheme_iri,
                 "suggest_api_url": get_full_api_path("suggest"),
                 "concept_api_base_url": get_full_api_path("concept_all"),
             },

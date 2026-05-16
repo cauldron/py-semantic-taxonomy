@@ -183,7 +183,12 @@ class SearchEngine(Protocol):
     async def delete_concept(self, id_: str, collection: str) -> None: ...
 
     async def search(
-        self, query: str, collection: str, semantic: bool, prefix: bool
+        self,
+        query: str,
+        collection: str,
+        semantic: bool,
+        prefix: bool,
+        concept_scheme_iri: str | None = None,
     ) -> list[SearchResult]: ...
 
 
@@ -202,7 +207,14 @@ class SearchService(Protocol):
     async def delete_concept(self, iri: str) -> None: ...
 
     async def search(
-        self, query: str, language: str, semantic: bool = True, prefix: bool = False
+        self,
+        query: str,
+        language: str,
+        semantic: bool = True,
+        prefix: bool = False,
+        concept_scheme_iri: str | None = None,
     ) -> list[SearchResult]: ...
 
-    async def suggest(self, query: str, language: str) -> list[SearchResult]: ...
+    async def suggest(
+        self, query: str, language: str, concept_scheme_iri: str | None = None
+    ) -> list[SearchResult]: ...
