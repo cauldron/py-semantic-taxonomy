@@ -6,7 +6,7 @@ All three layers of PyST are asynchronous; most functions and methods user `asyn
 
 ## Prerequisites
 
-Use `pip install "py-semantic-taxonomy[dev]"` to get everything needed for development and testing.
+Use [uv](https://docs.astral.sh/uv/) for development. Run `uv sync --extra dev` to create a virtual environment and install all dependencies.
 
 ## Containers for Postgres and Typesense
 
