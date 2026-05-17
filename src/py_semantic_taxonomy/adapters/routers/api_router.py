@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from pydantic import TypeAdapter
 from pydantic_settings import BaseSettings
 
 import py_semantic_taxonomy.adapters.routers.request_dto as req
@@ -388,6 +389,16 @@ async def relationships_create(
     summary="Delete a list of `Concept` relationships",
     dependencies=[Depends(verify_auth_token)],
     tags=["Concept"],
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "schema": TypeAdapter(list[req.Relationship]).json_schema()
+                }
+            },
+            "required": True,
+        }
+    },
 )
 async def relationship_delete(
     request: Request,
@@ -615,6 +626,16 @@ async def made_of_add(
     dependencies=[Depends(verify_auth_token)],
     tags=["Correspondence"],
     responses={404: {"description": "Resource not found"}},
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "schema": req.MadeOf.model_json_schema()
+                }
+            },
+            "required": True,
+        }
+    },
 )
 async def made_of_remove(
     request: Request,
