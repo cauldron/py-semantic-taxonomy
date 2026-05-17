@@ -391,7 +391,6 @@ async def relationships_create(
 )
 async def relationship_delete(
     request: Request,
-    relationships: list[req.Relationship],
     service=Depends(get_graph_service),
 ) -> JSONResponse:
     incoming = de.Relationship.from_json_ld_list(await request.json())
@@ -619,7 +618,6 @@ async def made_of_add(
 )
 async def made_of_remove(
     request: Request,
-    made_of: req.MadeOf,
     service=Depends(get_graph_service),
 ) -> response.Correspondence:
     try:

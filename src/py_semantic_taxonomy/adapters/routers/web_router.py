@@ -137,9 +137,9 @@ async def web_concept_schemes(
         if code != language
     ]
     return templates.TemplateResponse(
+        request,
         "concept_schemes.html",
         {
-            "request": request,
             "concept_schemes": concept_schemes,
             "language_selector": languages,
             "language": language,
@@ -188,9 +188,9 @@ async def web_concept_scheme_view(
         ]
 
         return templates.TemplateResponse(
+            request,
             "concept_scheme_view.html",
             {
-                "request": request,
                 "concept_scheme": concept_scheme,
                 "concepts": concepts,
                 "language": language,
@@ -340,9 +340,9 @@ async def web_concept_view(
         ]
 
         return templates.TemplateResponse(
+            request,
             "concept_view.html",
             {
-                "request": request,
                 "scheme": scheme,
                 "scheme_url": concept_scheme_view_url(request, scheme.id_, language),
                 "hierarchy": hierarchy,
@@ -425,9 +425,9 @@ async def web_search(
         ]
 
         return templates.TemplateResponse(
+            request,
             "search.html",
             {
-                "request": request,
                 "query": query,
                 "language": language,
                 "language_selector": languages,
