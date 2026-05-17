@@ -95,6 +95,7 @@ class Concept(SKOS):
             # Not language-specific
             "notation": " ".join([obj["@value"] for obj in self.notations]),
             "all_languages_pref_labels": [obj["@value"] for obj in self.pref_labels],
+            "concept_schemes": [scheme["@id"] for scheme in self.schemes],
         }
 
     def filter_language(self, language: str) -> "Concept":

@@ -97,19 +97,53 @@ async def test_search_service_search_language_error(search_service):
 async def test_search_service_search_default(search_service):
     await search_service.search("foo", "de")
     search_service.engine.search.assert_called_once_with(
-        query="foo", collection=search_service.languages["de"], semantic=True, prefix=False
+        query="foo",
+        collection=search_service.languages["de"],
+        semantic=True,
+        prefix=False,
+        concept_scheme_iri=None,
     )
 
 
 async def test_search_service_search_semantic(search_service):
     await search_service.search("foo", "de", False)
     search_service.engine.search.assert_called_once_with(
-        query="foo", collection=search_service.languages["de"], semantic=False, prefix=False
+        query="foo",
+        collection=search_service.languages["de"],
+        semantic=False,
+        prefix=False,
+        concept_scheme_iri=None,
     )
 
 
 async def test_search_service_search_suggest(search_service):
     await search_service.suggest("foo", "de")
     search_service.engine.search.assert_called_once_with(
-        query="foo", collection=search_service.languages["de"], semantic=False, prefix=True
+        query="foo",
+        collection=search_service.languages["de"],
+        semantic=False,
+        prefix=True,
+        concept_scheme_iri=None,
+    )
+
+
+async def test_search_service_search_with_concept_scheme(search_service):
+    await search_service.search("foo", "de", concept_scheme_iri="http://example.com/scheme")
+    search_service.engine.search.assert_called_once_with(
+        query="foo",
+        collection=search_service.languages["de"],
+        semantic=True,
+        prefix=False,
+        concept_scheme_iri="http://example.com/scheme",
+    )
+
+
+async def test_search_service_suggest_with_concept_scheme(search_service):
+    await search_service.suggest("foo", "de", concept_scheme_iri="http://example.com/scheme")
+    search_service.engine.search.assert_called_once_with(
+        query="foo",
+        collection=search_service.languages["de"],
+        semantic=False,
+        prefix=True,
+        concept_scheme_iri="http://example.com/scheme",
     )

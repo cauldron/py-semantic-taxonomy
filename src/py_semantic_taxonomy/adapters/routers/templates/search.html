@@ -17,6 +17,28 @@
 
 {% block content %}
 <div class="space-y-6">
+    {% if concept_schemes %}
+    <div class="card p-4 sm:p-6">
+        <form method="get" action="{{ request.url_for('web_search') }}" class="flex flex-wrap items-center gap-3">
+            <input type="hidden" name="query" value="{{ query }}" />
+            <input type="hidden" name="language" value="{{ language }}" />
+            <input type="hidden" name="semantic" value="{{ semantic | lower }}" />
+            <label class="text-sm font-medium" style="color: var(--text-secondary)">
+                <i class="fas fa-filter mr-1"></i>Filter by concept scheme:
+            </label>
+            <select name="concept_scheme_iri" onchange="this.form.submit()"
+                class="px-3 py-1.5 text-sm border rounded-md"
+                style="color: var(--text-color); background-color: var(--header-bg); border-color: var(--border-color)">
+                <option value="">All schemes</option>
+                {% for scheme in concept_schemes %}
+                <option value="{{ scheme.id_ }}" {% if selected_scheme == scheme.id_ %}selected{% endif %}>
+                    {{ scheme.pref_labels | selectattr('@language', 'equalto', language) | map(attribute='@value') | first | default(scheme.id_) }}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    {% endif %}
     {% if query %}
     <div class="card p-4 sm:p-6">
         {% if results %}

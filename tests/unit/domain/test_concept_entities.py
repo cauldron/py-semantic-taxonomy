@@ -151,6 +151,7 @@ def test_concept_to_search_dict(cn):
             "SECTION I - LIVE ANIMALS; ANIMAL PRODUCTS",
             "E PRODUTOS DO REINO ANIMAL",
         ],
+        "concept_schemes": ["http://data.europa.eu/xsp/cn2024/cn2024"],
     }
     assert given == expected, "Conversion to search dict failed"
 

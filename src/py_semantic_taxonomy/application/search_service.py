@@ -81,7 +81,12 @@ class SearchService:
             await self.engine.delete_concept(hash_fnv64(iri), collection)
 
     async def search(
-        self, query: str, language: str, semantic: bool = True, prefix: bool = False
+        self,
+        query: str,
+        language: str,
+        semantic: bool = True,
+        prefix: bool = False,
+        concept_scheme_iri: str | None = None,
     ) -> list[SearchResult]:
         if not self.is_configured():
             raise SearchNotConfigured
@@ -93,8 +98,16 @@ class SearchService:
             semantic = False
 
         return await self.engine.search(
-            query=query, collection=self.languages[language], semantic=semantic, prefix=prefix
+            query=query,
+            collection=self.languages[language],
+            semantic=semantic,
+            prefix=prefix,
+            concept_scheme_iri=concept_scheme_iri,
         )
 
-    async def suggest(self, query: str, language: str) -> list[SearchResult]:
-        return await self.search(query=query, language=language, prefix=True)
+    async def suggest(
+        self, query: str, language: str, concept_scheme_iri: str | None = None
+    ) -> list[SearchResult]:
+        return await self.search(
+            query=query, language=language, prefix=True, concept_scheme_iri=concept_scheme_iri
+        )

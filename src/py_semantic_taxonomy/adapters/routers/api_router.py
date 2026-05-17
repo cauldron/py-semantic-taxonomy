@@ -78,10 +78,16 @@ async def concept_search(
     query: str,
     language: str,
     semantic: bool = True,
+    concept_scheme_iri: str | None = None,
     service=Depends(get_search_service),
 ) -> list[de.SearchResult]:
     try:
-        results = await service.search(query=query, language=language, semantic=semantic)
+        results = await service.search(
+            query=query,
+            language=language,
+            semantic=semantic,
+            concept_scheme_iri=concept_scheme_iri,
+        )
         return results
     except de.SearchNotConfigured:
         raise HTTPException(status_code=503, detail="Search engine not available")
@@ -101,10 +107,13 @@ async def concept_search(
 async def concept_suggest(
     query: str,
     language: str,
+    concept_scheme_iri: str | None = None,
     service=Depends(get_search_service),
 ) -> list[de.SearchResult]:
     try:
-        results = await service.suggest(query=query, language=language)
+        results = await service.suggest(
+            query=query, language=language, concept_scheme_iri=concept_scheme_iri
+        )
         return results
     except de.SearchNotConfigured:
         raise HTTPException(status_code=503, detail="Search engine not available")

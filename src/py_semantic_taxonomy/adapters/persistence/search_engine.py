@@ -59,6 +59,7 @@ class TypesenseSearchEngine:
                             {"name": "notation", "type": "string"},
                             {"name": "all_languages_pref_labels", "type": "string[]"},
                             {"name": "url", "type": "string"},
+                            {"name": "concept_schemes", "type": "string[]", "facet": True},
                         ],
                     }
                 )
@@ -84,20 +85,27 @@ class TypesenseSearchEngine:
         await self.client.collections[collection].documents[id_].delete({"ignore_not_found": True})
 
     async def search(
-        self, query: str, collection: str, semantic: bool, prefix: bool
+        self,
+        query: str,
+        collection: str,
+        semantic: bool,
+        prefix: bool,
+        concept_scheme_iri: str | None = None,
     ) -> list[SearchResult]:
         without_semantic = (
             "pref_label,alt_labels,hidden_labels,notation,definition,all_languages_pref_labels"
         )
         with_semantic = "pref_label,pref_label_embedding,alt_labels,hidden_labels,notation,definition,all_languages_pref_labels"
 
-        results = await self.client.collections[collection].documents.search(
-            {
-                "q": query,
-                "query_by": with_semantic if semantic else without_semantic,
-                "per_page": 50,
-                "prefix": prefix,
-                "exclude_fields": "pref_label_embedding",
-            }
-        )
+        params = {
+            "q": query,
+            "query_by": with_semantic if semantic else without_semantic,
+            "per_page": 50,
+            "prefix": prefix,
+            "exclude_fields": "pref_label_embedding",
+        }
+        if concept_scheme_iri:
+            params["filter_by"] = f"concept_schemes:=[`{concept_scheme_iri}`]"
+
+        results = await self.client.collections[collection].documents.search(params)
         return SearchResult.from_typesense_results(results)
