@@ -419,7 +419,10 @@ async def web_search(
                 concept_scheme_iri=concept_scheme_iri,
             )
 
-        concept_schemes = await graph_service.concept_scheme_get_all()
+        try:
+            concept_schemes = await graph_service.concept_scheme_get_all()
+        except Exception:
+            concept_schemes = []
 
         languages = [(request.url, Language.get(language).display_name(language).title())] + [
             (
