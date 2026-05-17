@@ -8,7 +8,7 @@ name: Python 🐍 CI/CD tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths-ignore:  # prevents workflow execution when only these types of files are modified
       - "**.md"  # wildcards prevent file in any repo dir from trigering workflow
       - "**.bib"
@@ -16,8 +16,8 @@ on:
       - "LICENSE"
       - ".gitignore"
   pull_request:
-    branches: [main, develop]
-    # types: [opened, reopened]  # excludes syncronize to avoid redundant trigger from commits on PRs
+    branches: [main]
+    types: [opened, synchronize, reopened]  # synchronize covers new commits and force-pushes (e.g. after rebase)
     paths-ignore:
       - "**.md"
       - "**.bib"
@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        py-version: ["3.12", "3.13"]
+        py-version: ["3.12", "3.14"]
 
     steps:
       - uses: actions/checkout@v4
