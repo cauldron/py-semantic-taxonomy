@@ -1,5 +1,22 @@
 # `py-semantic-taxonomy` Changelog
 
+## [0.5.0] - Unreleased
+
+* Add GitLab-backed admin UI for creating, editing, and deleting concept schemes and concepts
+* Add contributor workflows with login, claim creation, claim detail pages, and admin claim review
+* Add claim persistence tables and repository helpers
+* Add CSV import support for concept data
+* Add exports for concept schemes and correspondences
+* Add SKOS mapping type support for XKOS associations in admin, contributor, and public UI flows
+* Refresh the web UI with concept tree/detail panels, correspondence pages, improved headers, and Tailwind-based styling
+* Improve concept scheme and concept views with editable descriptions, association identifiers, mapping details, and delete controls
+* Improve search behavior and search result display, including IRI search support
+* Add GitLab group/membership configuration and example environment configuration
+* Add contributor workflow documentation and update the demo notebook
+* Fix packaging for `url_utils` in PyPI distributions
+* Fix web UI regressions tracked in issues #66, #69, #71, #72, #77, #78, #79, and #81
+* Add integration and unit coverage for web UI, admin OAuth, and contributor claim helpers
+
 ## [0.4.4] - 2025-06-07
 
 * Fix packaging to include SQL queries
