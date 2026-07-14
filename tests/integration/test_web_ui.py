@@ -1,12 +1,12 @@
 """Integration tests for Web UI functionality."""
-import pytest
+
 from urllib.parse import quote
+
+import pytest
 
 
 @pytest.mark.typesense
-async def test_web_search_preserves_language_in_results(
-    sqlite, typesense, anonymous_client, cn
-):
+async def test_web_search_preserves_language_in_results(sqlite, typesense, anonymous_client, cn):
     """Test that search results include language parameter in concept links."""
     # Perform a search in German
     response = await anonymous_client.get(
@@ -78,9 +78,7 @@ async def test_web_search_without_language_redirects(sqlite, anonymous_client):
 
 async def test_web_search_empty_query(sqlite, anonymous_client):
     """Test that search page renders correctly with empty query."""
-    response = await anonymous_client.get(
-        "/web/search/", params={"query": "", "language": "en"}
-    )
+    response = await anonymous_client.get("/web/search/", params={"query": "", "language": "en"})
     assert response.status_code == 200
 
     html_content = response.text
@@ -188,4 +186,3 @@ async def test_web_search_with_regular_text_not_treated_as_iri(anonymous_client)
     assert response.status_code in (200, 503)
     if response.status_code == 503:
         assert "Search engine not available" in response.text or "503" in response.text
-

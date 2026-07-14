@@ -8,12 +8,12 @@ from py_semantic_taxonomy.domain.entities import MadeOf
 def test_made_of_domain_request_dto_same_fields():
     domain_fields = {f.name for f in fields(MadeOf)}
     request_fields = set(request.MadeOf.model_fields)
-    assert not domain_fields.difference(
-        request_fields
-    ), "Request validation and domain `madeof` model fields differ"
-    assert not request_fields.difference(
-        domain_fields
-    ), "Request validation and domain `made_of` model fields differ"
+    assert not domain_fields.difference(request_fields), (
+        "Request validation and domain `madeof` model fields differ"
+    )
+    assert not request_fields.difference(domain_fields), (
+        "Request validation and domain `made_of` model fields differ"
+    )
 
 
 def test_made_of_to_db_dict(made_of):

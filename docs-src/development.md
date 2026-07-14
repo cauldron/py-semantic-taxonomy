@@ -31,7 +31,15 @@ When adding new functionality, it's important to write unit tests for each layer
 
 ## Linting
 
+We use [ruff](https://docs.astral.sh/ruff/) for formatting and linting.
+
 ```console
-isort --profile=black tests/ && black tests/ && \
-isort --profile=black src/ && black src/
+ruff format . && ruff check --fix .
+```
+
+Alternatively, install the [pre-commit](https://pre-commit.com/) hooks to run this
+automatically on every commit:
+
+```console
+pre-commit install
 ```

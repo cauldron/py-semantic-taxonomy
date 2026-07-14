@@ -12,20 +12,20 @@ def test_correspondence_domain_request_dto_same_fields():
         "extra",
         "made_ofs",
     }, "Request validation and domain `Correspondence` model fields differ"
-    assert not request_fields.difference(
-        domain_fields
-    ), "Request validation and domain `Correspondence` model fields differ"
+    assert not request_fields.difference(domain_fields), (
+        "Request validation and domain `Correspondence` model fields differ"
+    )
 
 
 def test_correspondence_domain_response_dto_same_fields():
     domain_fields = {f.name for f in fields(Correspondence)}
     response_fields = set(response.Correspondence.model_fields)
-    assert domain_fields.difference(response_fields) == {
-        "extra"
-    }, "Response validation and domain `Correspondence` model fields differ"
-    assert not response_fields.difference(
-        domain_fields
-    ), "Response validation and domain `Correspondence` model fields differ"
+    assert domain_fields.difference(response_fields) == {"extra"}, (
+        "Response validation and domain `Correspondence` model fields differ"
+    )
+    assert not response_fields.difference(domain_fields), (
+        "Response validation and domain `Correspondence` model fields differ"
+    )
 
 
 def test_correspondence_to_db_dict(cn):

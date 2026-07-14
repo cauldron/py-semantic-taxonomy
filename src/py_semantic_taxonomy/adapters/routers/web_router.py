@@ -199,16 +199,10 @@ async def web_concept_scheme_view(
             },
         )
     except de.ConceptSchemeNotFoundError:
-        raise HTTPException(
-            status_code=404, detail=f"Concept Scheme with IRI `{iri}` not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Concept Scheme with IRI `{iri}` not found")
     except de.ConceptSchemesNotInDatabase as e:
-        logger.error(
-            "Database error while fetching concept scheme", iri=iri, error=str(e)
-        )
-        raise HTTPException(
-            status_code=500, detail="Database error while fetching concept scheme"
-        )
+        logger.error("Database error while fetching concept scheme", iri=iri, error=str(e))
+        raise HTTPException(status_code=500, detail="Database error while fetching concept scheme")
 
 
 def concept_view_url(
@@ -280,9 +274,7 @@ async def web_concept_view(
             except de.ConceptNotFoundError:
                 return iri, iri
 
-        relationships = await service.relationships_get(
-            iri=decoded_iri, source=True, target=True
-        )
+        relationships = await service.relationships_get(iri=decoded_iri, source=True, target=True)
         broader = [
             (await get_concept_and_link(obj.target))
             for obj in relationships
@@ -295,8 +287,7 @@ async def web_concept_view(
         ]
 
         scheme_list = [
-            (request.url_for("web_concept_view", iri=quote(s["@id"])), s)
-            for s in concept.schemes
+            (request.url_for("web_concept_view", iri=quote(s["@id"])), s) for s in concept.schemes
         ]
 
         associations = await service.association_get_all(source_concept_iri=concept.id_)
@@ -305,27 +296,29 @@ async def web_concept_view(
             for target in obj.target_concepts:
                 try:
                     url, assoc_concept = await get_concept_and_link(target["@id"])
-                    formatted_associations.append({
-                        "url": url,
-                        "obj": assoc_concept,
-                        "conditional": None,
-                        "conversion": target.get(
-                            "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
-                        ),
-                    })
+                    formatted_associations.append(
+                        {
+                            "url": url,
+                            "obj": assoc_concept,
+                            "conditional": None,
+                            "conversion": target.get(
+                                "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
+                            ),
+                        }
+                    )
                 except de.ConceptNotFoundError:
-                    formatted_associations.append({
-                        "url": target["@id"],
-                        "obj": target["@id"],
-                        "conditional": None,
-                        "conversion": target.get(
-                            "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
-                        ),
-                    })
+                    formatted_associations.append(
+                        {
+                            "url": target["@id"],
+                            "obj": target["@id"],
+                            "conditional": None,
+                            "conversion": target.get(
+                                "http://qudt.org/3.0.0/schema/qudt/conversionMultiplier"
+                            ),
+                        }
+                    )
 
-        languages = [
-            (request.url, Language.get(language).display_name(language).title())
-        ] + [
+        languages = [(request.url, Language.get(language).display_name(language).title())] + [
             (
                 concept_view_url(
                     request,
@@ -360,9 +353,7 @@ async def web_concept_view(
     except de.ConceptNotFoundError:
         raise HTTPException(status_code=404, detail=f"Concept with IRI `{iri}` not found")
     except de.ConceptSchemesNotInDatabase as e:
-        logger.error(
-            "Database error while fetching concept", iri=decoded_iri, error=str(e)
-        )
+        logger.error("Database error while fetching concept", iri=decoded_iri, error=str(e))
         raise HTTPException(status_code=500, detail="Database error while fetching concept")
 
 

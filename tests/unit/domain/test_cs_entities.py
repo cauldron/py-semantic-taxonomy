@@ -11,23 +11,23 @@ CS_DEFINITION = "The main classification for the European ITGS (International tr
 def test_concept_scheme_domain_request_dto_same_fields():
     domain_fields = {f.name for f in fields(ConceptScheme)}
     request_fields = set(request.ConceptScheme.model_fields)
-    assert domain_fields.difference(request_fields) == {
-        "extra"
-    }, "Request validation and domain `ConceptScheme` model fields differ"
-    assert not request_fields.difference(
-        domain_fields
-    ), "Request validation and domain `ConceptScheme` model fields differ"
+    assert domain_fields.difference(request_fields) == {"extra"}, (
+        "Request validation and domain `ConceptScheme` model fields differ"
+    )
+    assert not request_fields.difference(domain_fields), (
+        "Request validation and domain `ConceptScheme` model fields differ"
+    )
 
 
 def test_concept_scheme_domain_response_dto_same_fields():
     domain_fields = {f.name for f in fields(ConceptScheme)}
     response_fields = set(response.ConceptScheme.model_fields)
-    assert domain_fields.difference(response_fields) == {
-        "extra"
-    }, "Response validation and domain `ConceptScheme` model fields differ"
-    assert not response_fields.difference(
-        domain_fields
-    ), "Response validation and domain `ConceptScheme` model fields differ"
+    assert domain_fields.difference(response_fields) == {"extra"}, (
+        "Response validation and domain `ConceptScheme` model fields differ"
+    )
+    assert not response_fields.difference(domain_fields), (
+        "Response validation and domain `ConceptScheme` model fields differ"
+    )
 
 
 def test_concept_scheme_to_db_dict(cn):

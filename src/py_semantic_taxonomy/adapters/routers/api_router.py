@@ -7,11 +7,11 @@ from pydantic_settings import BaseSettings
 
 import py_semantic_taxonomy.adapters.routers.request_dto as req
 import py_semantic_taxonomy.adapters.routers.response_dto as response
+from py_semantic_taxonomy import __version__
 from py_semantic_taxonomy.cfg import get_settings
 from py_semantic_taxonomy.dependencies import get_graph_service, get_search_service
 from py_semantic_taxonomy.domain import entities as de
 from py_semantic_taxonomy.domain.constants import API_VERSION_PREFIX, APIPaths
-from py_semantic_taxonomy import __version__
 
 api_router = APIRouter(prefix=API_VERSION_PREFIX)
 
@@ -46,6 +46,7 @@ async def verify_auth_token(
     if x_pyst_auth_token != settings.auth_token:
         raise HTTPException(status_code=400, detail="X-PyST-Auth-Token header missing or invalid")
 
+
 # Status
 
 
@@ -58,10 +59,7 @@ async def verify_auth_token(
 async def server_status(
     search=Depends(get_search_service),
 ) -> response.ServerStatus:
-    return response.ServerStatus(
-        version=__version__,
-        search=bool(search.is_configured)
-    )
+    return response.ServerStatus(version=__version__, search=bool(search.is_configured))
 
 
 # Search
@@ -392,9 +390,7 @@ async def relationships_create(
     openapi_extra={
         "requestBody": {
             "content": {
-                "application/json": {
-                    "schema": TypeAdapter(list[req.Relationship]).json_schema()
-                }
+                "application/json": {"schema": TypeAdapter(list[req.Relationship]).json_schema()}
             },
             "required": True,
         }
@@ -628,11 +624,7 @@ async def made_of_add(
     responses={404: {"description": "Resource not found"}},
     openapi_extra={
         "requestBody": {
-            "content": {
-                "application/json": {
-                    "schema": req.MadeOf.model_json_schema()
-                }
-            },
+            "content": {"application/json": {"schema": req.MadeOf.model_json_schema()}},
             "required": True,
         }
     },

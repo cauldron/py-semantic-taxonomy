@@ -211,9 +211,9 @@ async def test_create_concept_relationships_across_scheme(
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"].endswith(
-        "`skos:broadMatch` instead."
-    ), "API return value incorrect"
+    assert response.json()["detail"].endswith("`skos:broadMatch` instead."), (
+        "API return value incorrect"
+    )
 
     response = await client.get(get_full_api_path("concept", iri=new_concept["@id"]))
     assert response.status_code == 404

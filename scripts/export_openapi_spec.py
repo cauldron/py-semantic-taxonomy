@@ -12,9 +12,7 @@ if __name__ == "__main__":
 
     app = create_app()
     openapi = app.openapi()
-    openapi["info"]["x-logo"] = {
-        "url": "https://docs.pyst.dev/img/logo.png"
-    }
+    openapi["info"]["x-logo"] = {"url": "https://docs.pyst.dev/img/logo.png"}
 
     with open(output_dir / "openapi.json", "w") as f:
         json.dump(openapi, f, indent=2)

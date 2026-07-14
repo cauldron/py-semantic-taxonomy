@@ -27,7 +27,7 @@ if __name__ == "__main__":
     print(
         "\n\033[94mTypesense container setup and running. Use \033[93mCTRL-C\033[94m to cleanly shut it down.\033[0m"
     )
-    print(f"\033[94mTest container is online with:\033[0m")
+    print("\033[94mTest container is online with:\033[0m")
     print(f"curl http://{ip}:{port}/health")
     print("\033[92mSet the follow environment variables to access it:\033[0m")
     print(f'export PyST_typesense_url="http://{ip}:{port}"')

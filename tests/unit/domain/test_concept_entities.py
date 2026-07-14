@@ -10,23 +10,23 @@ from py_semantic_taxonomy.domain.entities import Concept
 def test_concept_domain_request_dto_same_fields():
     domain_fields = {f.name for f in fields(Concept)}
     request_fields = set(request.Concept.model_fields)
-    assert domain_fields.difference(request_fields) == {
-        "extra"
-    }, "Request validation and domain `Concept` model fields differ"
-    assert not request_fields.difference(
-        domain_fields
-    ), "Request validation and domain `Concept` model fields differ"
+    assert domain_fields.difference(request_fields) == {"extra"}, (
+        "Request validation and domain `Concept` model fields differ"
+    )
+    assert not request_fields.difference(domain_fields), (
+        "Request validation and domain `Concept` model fields differ"
+    )
 
 
 def test_concept_domain_response_dto_same_fields():
     domain_fields = {f.name for f in fields(Concept)}
     response_fields = set(response.Concept.model_fields)
-    assert domain_fields.difference(response_fields) == {
-        "extra"
-    }, "Response validation and domain `Concept` model fields differ"
-    assert not response_fields.difference(
-        domain_fields
-    ), "Response validation and domain `Concept` model fields differ"
+    assert domain_fields.difference(response_fields) == {"extra"}, (
+        "Response validation and domain `Concept` model fields differ"
+    )
+    assert not response_fields.difference(domain_fields), (
+        "Response validation and domain `Concept` model fields differ"
+    )
 
 
 def test_concept_to_db_dict(cn):

@@ -22,13 +22,7 @@ WITH_HIGHLIGHTS = {
                 "all_languages_pref_labels": [
                     {
                         "matched_tokens": ["Ese"],
-                        "snippet": "0101 "
-                        "Pferde, "
-                        "<mark>Ese</mark>l, "
-                        "Maultiere "
-                        "und "
-                        "Maulesel, "
-                        "lebend",
+                        "snippet": "0101 Pferde, <mark>Ese</mark>l, Maultiere und Maulesel, lebend",
                     },
                     {
                         "matched_tokens": [],
@@ -37,10 +31,7 @@ WITH_HIGHLIGHTS = {
                 ],
                 "pref_label": {
                     "matched_tokens": ["Ese"],
-                    "snippet": "0101 Pferde, "
-                    "<mark>Ese</mark>l, "
-                    "Maultiere und Maulesel, "
-                    "lebend",
+                    "snippet": "0101 Pferde, <mark>Ese</mark>l, Maultiere und Maulesel, lebend",
                 },
             },
             "highlights": [

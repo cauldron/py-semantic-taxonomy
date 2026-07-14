@@ -307,8 +307,7 @@ class PostgresKOSGraphDatabase:
                 err = exc._message()
                 if (
                     # SQLite: Unit tests
-                    "UNIQUE constraint failed: relationship.source, relationship.target"
-                    in err
+                    "UNIQUE constraint failed: relationship.source, relationship.target" in err
                 ) or (
                     # Postgres: Integration tests
                     'duplicate key value violates unique constraint "relationship_source_target_uniqueness"'

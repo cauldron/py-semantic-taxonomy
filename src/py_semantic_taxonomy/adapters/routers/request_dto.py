@@ -269,7 +269,7 @@ class ConceptScheme(ConceptSchemeCommon):
         """skos:hasTopConcept has range skos:Concept, which we don't want. Create links later."""
         if f"{SKOS}hasTopConcept" in data:
             raise ValueError(
-                f"Found `hasTopConcept` in concept scheme; Specify `topConceptOf` of constituent concepts instead."
+                "Found `hasTopConcept` in concept scheme; Specify `topConceptOf` of constituent concepts instead."
             )
         return data
 
@@ -376,7 +376,7 @@ class Relationship(BaseModel):
         if len(truthy) > 1:
             raise ValueError(f"Found multiple relationships {truthy} where only one is allowed")
         elif not truthy:
-            raise ValueError(f"Found zero relationships")
+            raise ValueError("Found zero relationships")
 
         return self
 

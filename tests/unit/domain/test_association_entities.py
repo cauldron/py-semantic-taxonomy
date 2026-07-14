@@ -50,9 +50,9 @@ def test_association_domain_request_dto_same_fields():
         "extra",
         "kind",
     }, "Request validation and domain `Association` model fields differ"
-    assert not request_fields.difference(
-        domain_fields
-    ), "Request validation and domain `Association` model fields differ"
+    assert not request_fields.difference(domain_fields), (
+        "Request validation and domain `Association` model fields differ"
+    )
 
 
 def test_association_domain_response_dto_same_fields():
@@ -62,9 +62,9 @@ def test_association_domain_response_dto_same_fields():
         "extra",
         "kind",
     }, "Response validation and domain `Association` model fields differ"
-    assert not response_fields.difference(
-        domain_fields
-    ), "Response validation and domain `Association` model fields differ"
+    assert not response_fields.difference(domain_fields), (
+        "Response validation and domain `Association` model fields differ"
+    )
 
 
 def test_association_to_db_dict(cn):

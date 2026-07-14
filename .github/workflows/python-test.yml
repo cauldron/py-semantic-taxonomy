@@ -27,6 +27,21 @@ on:
   workflow_dispatch:  # also allow manual trigger, for testing purposes
 
 jobs:
+  linting:
+    runs-on: "ubuntu-latest"
+    # Non-blocking for now; flip to false (or remove) to make lint failures fail CI.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Check formatting and lint with ruff
+        run: |
+          uvx ruff format --check .
+          uvx ruff check .
+
   testing:
     runs-on: "ubuntu-latest"
     strategy:
