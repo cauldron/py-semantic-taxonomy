@@ -174,6 +174,29 @@ async def test_web_search_with_nonexistent_iri_falls_back_to_search(
     assert "Search" in response.text or "search" in response.text
 
 
+@pytest.mark.postgres
+async def test_web_concept_view_association_shows_scheme_and_notation(
+    postgres, cn_db_engine, anonymous_client, cn
+):
+    """The association display should surface each target's notation and concept scheme."""
+    source_iri = cn.concept_2023_top["@id"]
+    response = await anonymous_client.get(
+        f"/web/concept/{quote(source_iri)}", follow_redirects=True
+    )
+    assert response.status_code == 200
+    html = response.text
+
+    # The association target cn2024/010011000090 renders its label, notation "I",
+    # and its scheme inside the associations card. Its English label appears only
+    # there (the current concept and its narrower/broader are all in cn2023), so
+    # slice from the label to scope the assertions to the association card and
+    # avoid matching the notation icons of unrelated broader/narrower concepts.
+    assert "SECTION I - LIVE ANIMALS" in html
+    card = html[html.index("SECTION I - LIVE ANIMALS"):]
+    assert "fa-hashtag" in card
+    assert "Combined Nomenclature, 2024 (CN 2024)" in card
+
+
 async def test_web_search_with_regular_text_not_treated_as_iri(anonymous_client):
     """Test that regular search text is not treated as an IRI (no database required)."""
     response = await anonymous_client.get(

@@ -1,5 +1,14 @@
 {% extends "base.html" %}
 
+{% macro notation_line(obj) %}
+    {% if obj.notations %}
+    <div class="text-xs mt-1 flex items-center" style="color: var(--text-secondary)">
+        <i class="fas fa-hashtag mr-1" style="color: var(--text-tertiary)"></i>
+        {{ obj.notations[0]['@value'] }}
+    </div>
+    {% endif %}
+{% endmacro %}
+
 {% block title %}{{ concept.pref_labels|lang('en') }} - PyST{% endblock %}
 
 {% block page_header %}
@@ -64,12 +73,7 @@
                                             <div class="flex-1">
                                                 <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">{{ rel.1|best_label(language)}}
                                                 </div>
-                                                {% if rel.1.notations %}
-                                                <div class="text-xs mt-1 flex items-center" style="color: var(--text-secondary)">
-                                                    <i class="fas fa-hashtag mr-1" style="color: var(--text-tertiary)"></i>
-                                                    {{ rel.1.notations[0]['@value'] }}
-                                                </div>
-                                                {% endif %}
+                                                {{ notation_line(rel.1) }}
                                             </div>
                                             <div class="flex items-center space-x-2">
                                                 <span class="text-xs group-hover:text-primary" style="color: var(--text-tertiary)">View details</span>
@@ -116,12 +120,7 @@ style="color: var(--text-color)">Current Concept</span>
                                             <div class="flex-1">
                                                 <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">{{ rel.1|best_label(language) }}
                                                 </div>
-                                                {% if rel.1.notations %}
-                                                <div class="text-xs mt-1 flex items-center" style="color: var(--text-secondary)">
-                                                    <i class="fas fa-hashtag mr-1" style="color: var(--text-tertiary)"></i>
-                                                    {{ rel.1.notations[0]['@value'] }}
-                                                </div>
-                                                {% endif %}
+                                                {{ notation_line(rel.1) }}
                                             </div>
                                             <div class="flex items-center space-x-2">
                                                 <span class="text-xs group-hover:text-primary" style="color: var(--text-tertiary)">View details</span>
@@ -157,6 +156,13 @@ style="color: var(--text-color)">Current Concept</span>
                                 <div class="bg-white border rounded-lg p-3 hover:border-primary hover:shadow-sm transition-all duration-150 relative" style="border-color: var(--border-color); background-color: var(--nav-bg)">
                                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded-l-lg"></div>
                                     <div class="font-medium group-hover:text-primary transition-colors duration-150" style="color: var(--text-color)">{{ ass.obj|best_label(language) }}</div>
+                                    {{ notation_line(ass.obj) }}
+                                    {% for scheme in ass.obj.schemes %}
+                                        <div class="text-xs mt-1 flex items-center" style="color: var(--text-secondary)">
+                                            <i class="fas fa-layer-group mr-1" style="color: var(--text-tertiary)"></i>
+                                            {{ scheme_labels.get(scheme['@id'], scheme['@id']) }}
+                                        </div>
+                                    {% endfor %}
                                     {% if ass.conversion %}
                                         <div class="text-s mt-1" style="color: var(--text-secondary)">Conversion factor: {{ ass.conversion }}
                                         </div>

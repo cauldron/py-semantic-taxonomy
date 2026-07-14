@@ -323,6 +323,14 @@ async def web_concept_view(
                         ),
                     })
 
+        # Map scheme IRI -> label for the association display, falling back to the
+        # IRI when a scheme has no label in this language. Only queried when there
+        # are associations to label.
+        scheme_labels = {
+            cs.id_: value_for_language(cs.pref_labels, language) or cs.id_
+            for cs in (await service.concept_scheme_get_all() if formatted_associations else [])
+        }
+
         languages = [
             (request.url, Language.get(language).display_name(language).title())
         ] + [
@@ -353,6 +361,7 @@ async def web_concept_view(
                 "language_selector": languages,
                 "language": language,
                 "associations": formatted_associations,
+                "scheme_labels": scheme_labels,
                 # "conditional_associations": conditional_associations,
                 "suggest_api_url": get_full_api_path("suggest"),
             },
