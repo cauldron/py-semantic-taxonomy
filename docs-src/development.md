@@ -6,7 +6,7 @@ All three layers of PyST are asynchronous; most functions and methods user `asyn
 
 ## Prerequisites
 
-Use [uv](https://docs.astral.sh/uv/) for development. Run `uv sync --extra dev` to create a virtual environment and install all dependencies.
+Use [uv](https://docs.astral.sh/uv/) for development. Run `uv sync` to create a virtual environment and install all dependencies (the `dev` group, which includes the test dependencies, is installed by default).
 
 ## Containers for Postgres and Typesense
 

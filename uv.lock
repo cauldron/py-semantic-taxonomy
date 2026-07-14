@@ -1317,10 +1317,11 @@ dependencies = [
     { name = "uvicorn" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "aiosqlite" },
     { name = "build" },
+    { name = "faker" },
     { name = "httpx" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
@@ -1331,6 +1332,7 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-randomly" },
+    { name = "python-coveralls" },
     { name = "setuptools" },
     { name = "testcontainers" },
 ]
@@ -1349,47 +1351,54 @@ testing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiosqlite", marker = "extra == 'dev'" },
-    { name = "aiosqlite", marker = "extra == 'testing'" },
     { name = "asyncpg" },
-    { name = "build", marker = "extra == 'dev'" },
-    { name = "faker", marker = "extra == 'testing'" },
     { name = "fastapi" },
     { name = "fastapi-pagination" },
-    { name = "httpx", marker = "extra == 'dev'" },
-    { name = "httpx", marker = "extra == 'testing'" },
     { name = "jinja2" },
     { name = "langcodes" },
     { name = "language-data" },
-    { name = "mkdocs", marker = "extra == 'dev'" },
-    { name = "mkdocs-material", marker = "extra == 'dev'" },
     { name = "orjson" },
-    { name = "pre-commit", marker = "extra == 'dev'" },
     { name = "pydantic", specifier = ">=2" },
     { name = "pydantic-settings" },
-    { name = "pylint", marker = "extra == 'dev'" },
     { name = "pyst-typesense-async" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest", marker = "extra == 'testing'" },
-    { name = "pytest-antilru", marker = "extra == 'dev'" },
-    { name = "pytest-antilru", marker = "extra == 'testing'" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'" },
-    { name = "pytest-asyncio", marker = "extra == 'testing'" },
-    { name = "pytest-cov", marker = "extra == 'dev'" },
-    { name = "pytest-cov", marker = "extra == 'testing'" },
-    { name = "pytest-randomly", marker = "extra == 'dev'" },
-    { name = "pytest-randomly", marker = "extra == 'testing'" },
-    { name = "python-coveralls", marker = "extra == 'testing'" },
     { name = "rdflib" },
     { name = "rfc3987" },
-    { name = "setuptools", marker = "extra == 'dev'" },
     { name = "sqlalchemy", specifier = ">=2.0" },
     { name = "structlog" },
-    { name = "testcontainers", extras = ["postgres"], marker = "extra == 'dev'" },
-    { name = "testcontainers", extras = ["postgres"], marker = "extra == 'testing'" },
     { name = "uvicorn" },
 ]
-provides-extras = ["testing", "dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "aiosqlite" },
+    { name = "build" },
+    { name = "faker" },
+    { name = "httpx" },
+    { name = "mkdocs" },
+    { name = "mkdocs-material" },
+    { name = "pre-commit" },
+    { name = "pylint" },
+    { name = "pytest" },
+    { name = "pytest-antilru" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-randomly" },
+    { name = "python-coveralls" },
+    { name = "setuptools" },
+    { name = "testcontainers", extras = ["postgres"] },
+]
+testing = [
+    { name = "aiosqlite" },
+    { name = "faker" },
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-antilru" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-randomly" },
+    { name = "python-coveralls" },
+    { name = "testcontainers", extras = ["postgres"] },
+]
 
 [[package]]
 name = "pydantic"

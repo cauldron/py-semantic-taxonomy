@@ -44,7 +44,7 @@ jobs:
 
       - name: Install package and test deps
         run: |
-          uv sync --extra testing
+          uv sync --only-group testing
 
       - name: Test with pytest
         # Should be:

@@ -50,7 +50,7 @@ source = "https://github.com/cauldron/py-semantic-taxonomy"
 homepage = "https://github.com/cauldron/py-semantic-taxonomy"
 tracker = "https://github.com/cauldron/py-semantic-taxonomy/issues"
 
-[project.optional-dependencies]
+[dependency-groups]
 testing = [
     "aiosqlite",
     "faker",
@@ -64,20 +64,13 @@ testing = [
     "testcontainers[postgres]",
 ]
 dev = [
+    {include-group = "testing"},
     "build",
-    "pre-commit",
-    "aiosqlite",
-    "httpx",
     "mkdocs",
     "mkdocs-material",
+    "pre-commit",
     "pylint",
-    "pytest",
-    "pytest-antilru",
-    "pytest-asyncio",
-    "pytest-cov",
-    "pytest-randomly",
     "setuptools",
-    "testcontainers[postgres]",
 ]
 
 [tool.setuptools]
