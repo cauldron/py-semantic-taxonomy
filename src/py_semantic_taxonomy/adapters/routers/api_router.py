@@ -58,10 +58,7 @@ async def verify_auth_token(
 async def server_status(
     search=Depends(get_search_service),
 ) -> response.ServerStatus:
-    return response.ServerStatus(
-        version=__version__,
-        search=bool(search.is_configured)
-    )
+    return response.ServerStatus(version=__version__, search=search.is_configured())
 
 
 # Search
