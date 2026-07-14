@@ -1,3 +1,5 @@
+import functools
+
 import structlog
 
 from py_semantic_taxonomy.cfg import get_settings
@@ -19,6 +21,18 @@ def c(language: str, prefix: str = "") -> str:
         return f"{prefix}-pyst-concepts-{language}"
     else:
         return f"pyst-concepts-{language}"
+
+
+# Can't be named `is_configured`; inside the class body that name resolves to the
+# `SearchService.is_configured` method instead of this decorator.
+def requires_search(func):
+    @functools.wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        if not self.is_configured():
+            raise SearchNotConfigured
+        return await func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class SearchService:
@@ -43,49 +57,37 @@ class SearchService:
     def is_configured(self) -> bool:
         return self.configured
 
+    @requires_search
     async def initialize(self) -> None:
-        if not self.is_configured():
-            raise SearchNotConfigured
-
         await self.engine.initialize(list(self.languages.values()))
 
+    @requires_search
     async def reset(self) -> None:
-        if not self.is_configured():
-            raise SearchNotConfigured
-
         await self.engine.reset()
 
+    @requires_search
     async def create_concept(self, concept: Concept) -> None:
-        if not self.is_configured():
-            raise SearchNotConfigured
-
         for language, collection in self.languages.items():
             dct = concept.to_search_dict(language)
             if not (self.settings.typesense_exclude_if_missing_for_language) or dct["pref_label"]:
                 await self.engine.create_concept(dct, collection)
 
+    @requires_search
     async def update_concept(self, concept: Concept) -> None:
-        if not self.is_configured():
-            raise SearchNotConfigured
-
         for language, collection in self.languages.items():
             dct = concept.to_search_dict(language)
             if not (self.settings.typesense_exclude_if_missing_for_language) or dct["pref_label"]:
                 await self.engine.update_concept(dct, collection)
 
+    @requires_search
     async def delete_concept(self, iri: str) -> None:
-        if not self.is_configured():
-            raise SearchNotConfigured
-
         for collection in self.languages.values():
             await self.engine.delete_concept(hash_fnv64(iri), collection)
 
+    @requires_search
     async def search(
         self, query: str, language: str, semantic: bool = True, prefix: bool = False
     ) -> list[SearchResult]:
-        if not self.is_configured():
-            raise SearchNotConfigured
-
         if language not in self.languages:
             raise UnknownLanguage
 
