@@ -29,9 +29,19 @@ These scripts will give you the values of the environment variables needed for s
 export PyST_auth_token="supersecret"
 ```
 
+Alternatively, the `compose.yaml` file in the [repo](https://github.com/cauldron/py-semantic-taxonomy/) starts both containers with `docker compose up -d`. Copy `.env.example` to `.env` for step 2 and set `PyST_auth_token` to a secret of your own; Compose and the app both read `.env` automatically, so the published port follows `PyST_db_port` with no extra flags.
+
+To run the whole stack — Postgres, Typesense, and PyST itself — without installing Python, use the `demo` profile, which builds the app from the `Dockerfile` and serves it on <http://localhost:8000>:
+
+```console
+docker compose --profile demo up --build
+```
+
+This reads `.env` if present, falling back to built-in default credentials otherwise. Stop it again with `docker compose --profile demo down` (the `--profile` flag is needed on the way down too).
+
 2\. Configure required software
 
-The following parameters must be either specified as environment variables, or given in the file `pyst-config.env`.
+The following parameters must be either specified as environment variables, or given in the file `.env`.
 
 !!! Note
 

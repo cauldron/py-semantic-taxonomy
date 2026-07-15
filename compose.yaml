@@ -1,0 +1,85 @@
+# Development-only Postgres + Typesense, as an alternative to the scripts/ helpers.
+# `docker compose up -d` to start, `docker compose down` to stop.
+# Published ports bind to 127.0.0.1 only: this stack ships default credentials
+# (pyst/pyst, api key 123abc, auth token supersecret) and is not meant to be
+# reachable from other hosts. Drop the 127.0.0.1: prefix only behind a firewall.
+services:
+  postgres:
+    image: postgres:16
+    # Same ${VAR:-default} as the app service, so --env-file keeps both in sync.
+    environment:
+      POSTGRES_USER: ${PyST_db_user:-pyst}
+      POSTGRES_PASSWORD: ${PyST_db_pass:-pyst}
+      POSTGRES_DB: ${PyST_db_name:-PyST}
+    ports:
+      # Same env var the app reads, so set PyST_db_port to move both if 5432 is taken.
+      - "127.0.0.1:${PyST_db_port:-5432}:5432"
+    volumes:
+      - pyst-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PyST_db_user:-pyst} -d ${PyST_db_name:-PyST}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  typesense:
+    image: typesense/typesense:28.0
+    command: --data-dir /data --enable-cors
+    environment:
+      TYPESENSE_API_KEY: ${PyST_typesense_api_key:-123abc}
+    ports:
+      - "127.0.0.1:8108:8108"
+    volumes:
+      - pyst-typesense:/data
+    healthcheck:
+      # Image ships no curl/wget/nc, but has bash; open a TCP socket to the port.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8108"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Optional: `docker compose --profile demo up` runs the app too, no host Python needed.
+  # Left out of the default `up`, which starts only the datastores for local development.
+  app:
+    profiles: ["demo"]
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      # Network addresses are fixed for the compose network (internal ports).
+      PyST_db_host: postgres
+      PyST_db_port: "5432"
+      PyST_typesense_url: http://typesense:8108
+      # Shared values: overridable via .env, else these defaults.
+      PyST_db_user: ${PyST_db_user:-pyst}
+      PyST_db_pass: ${PyST_db_pass:-pyst}
+      PyST_db_name: ${PyST_db_name:-PyST}
+      PyST_typesense_api_key: ${PyST_typesense_api_key:-123abc}
+      PyST_auth_token: ${PyST_auth_token:-supersecret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      typesense:
+        condition: service_healthy
+
+  # One-off seeder: loads Combined Nomenclature data into the running demo app.
+  # Bring the stack up first, then run this on demand:
+  #   docker compose --profile demo up -d
+  #   docker compose run --rm seed
+  # Override the defaults inline, e.g. SEED_SAMPLE=False for the full (>1h) import:
+  #   SEED_YEAR=2025 SEED_SAMPLE=False docker compose run --rm seed
+  seed:
+    profiles: ["seed"]
+    image: ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+    environment:
+      PYST_AUTH_TOKEN: ${PyST_auth_token:-supersecret}
+      PYST_HOST: http://app:8000
+      SEED_YEAR: ${SEED_YEAR:-2024}
+      SEED_SAMPLE: ${SEED_SAMPLE:-true}
+    volumes:
+      - ./scripts/seed_cn.py:/seed_cn.py:ro
+    command: ["uv", "run", "--no-project", "--with", "pyst-client>=1.2", "/seed_cn.py"]
+
+volumes:
+  pyst-postgres:
+  pyst-typesense:

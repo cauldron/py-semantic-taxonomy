@@ -21,15 +21,20 @@ Where:
 * `host` is the URL that `py-semantic-taxonomy` is running at, e.g. "http://localhost:8000" if running locally
 * `sample` is a boolean flag on whether only a sample of the available data should be imported. The full import takes more than an hour.
 
-If you are testing locally using the default Docker containers for Postgres and Typesense, then the `CombinedNomenclatureLoader` can take these values:
+`scripts/seed_cn.py` wraps this call, reading `SEED_YEAR`, `SEED_SAMPLE`,
+`PYST_AUTH_TOKEN`, and `PYST_HOST` from the environment. Against a local instance:
 
-```python
-CombinedNomenclatureLoader(
-    year=2024,
-    api_key="abc123",  # Default API key; adjust if needed
-    host="http://127.0.0.1:8000",  # Default Uvicorn port; adjust if needed
-    sample=True
-).write()
+```bash
+PYST_AUTH_TOKEN=supersecret PYST_HOST=http://127.0.0.1:8000 \
+    uv run --with 'pyst-client>=1.2' scripts/seed_cn.py
+```
+
+With the Docker Compose demo stack, the `seed` service runs the same script for you:
+
+```bash
+docker compose --profile demo up -d           # start the stack
+docker compose run --rm seed                  # load 2024 sample data
+SEED_YEAR=2025 SEED_SAMPLE=False docker compose run --rm seed   # or the full import
 ```
 
 ## Creating a new taxonomy

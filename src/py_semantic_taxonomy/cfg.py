@@ -27,7 +27,9 @@ class Settings(BaseSettings):
     #     "https://brightway-lca.com",
     # }
     model_config = SettingsConfigDict(
-        env_prefix="PyST_", env_file="pyst-config.env", env_file_encoding="utf-8"
+        env_prefix="PyST_",
+        env_file=".env",
+        env_file_encoding="utf-8",
     )
 
 
