@@ -69,10 +69,27 @@ async def test_create_relationships(postgres, cn_db_engine, client):
 
 
 @pytest.mark.postgres
-async def test_create_relationships_duplicate(postgres, cn_db_engine, client, relationships):
+async def test_create_relationships_exact_duplicate_ignored(
+    postgres, cn_db_engine, client, relationships
+):
+    # Re-posting an existing exact relationship is a no-op, not an error (issue #41).
     response = await client.post(
         get_full_api_path("relationship"), json=[relationships[3].to_json_ld()]
     )
+    assert response.status_code == 200
+    assert response.json() == [relationships[3].to_json_ld()]
+
+
+@pytest.mark.postgres
+async def test_create_relationships_conflicting_predicate(
+    postgres, cn_db_engine, client, relationships
+):
+    # Same source and target with a different predicate remains a conflict.
+    conflict = {
+        "@id": relationships[3].source,
+        RelationshipVerbs.close_match.value: [{"@id": relationships[3].target}],
+    }
+    response = await client.post(get_full_api_path("relationship"), json=[conflict])
     assert response.status_code == 409
     assert response.json() == {
         "detail": "Relationship between source `http://data.europa.eu/xsp/cn2024/010021000090` and target `http://data.europa.eu/xsp/cn2024/010011000090` already exists"

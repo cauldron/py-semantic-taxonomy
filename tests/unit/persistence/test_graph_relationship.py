@@ -49,12 +49,88 @@ async def test_create_relationships(sqlite, graph):
     assert found == rels
 
 
-async def test_create_relationships_duplicate(sqlite, graph, relationships):
-    with pytest.raises(DuplicateRelationship) as excinfo:
-        await graph.relationships_create([relationships[3]])
-    assert excinfo.match(
-        f"Relationship between source `{relationships[3].source}` and target `{relationships[3].target}` already exists"
+async def test_create_relationships_exact_duplicate_ignored(sqlite, graph, relationships):
+    # relationships[3] already exists in the fixture; re-creating the exact same
+    # relationship is a no-op instead of an error (issue #41).
+    out = await graph.relationships_create([relationships[3]])
+    assert out == [relationships[3]]
+
+    found = await graph.relationships_get(iri=relationships[3].source)
+    assert found == [relationships[3]]
+
+
+async def test_create_relationships_conflicting_predicate(sqlite, graph, relationships):
+    # Same source and target but a different predicate is a genuine conflict, not a
+    # duplicate to ignore.
+    conflict = Relationship(
+        source=relationships[3].source,
+        target=relationships[3].target,
+        predicate=RelationshipVerbs.close_match,
     )
+    with pytest.raises(DuplicateRelationship) as excinfo:
+        await graph.relationships_create([conflict])
+    assert excinfo.match(
+        f"Relationship between source `{conflict.source}` and target `{conflict.target}` already exists"
+    )
+
+
+async def test_create_relationships_mixed_batch(sqlite, graph, relationships):
+    # A batch mixing an existing exact duplicate with a new relationship inserts the
+    # new one and ignores the duplicate.
+    new = Relationship(source="x", target="y", predicate=RelationshipVerbs.exact_match)
+    out = await graph.relationships_create([relationships[3], new])
+    assert out == [relationships[3], new]
+
+    assert await graph.relationships_get(iri="x") == [new]
+
+
+async def test_create_relationships_intra_batch_exact_duplicate(sqlite, graph):
+    # The same new relationship repeated within one call is inserted once, not an error.
+    dup = Relationship(source="x", target="y", predicate=RelationshipVerbs.exact_match)
+    out = await graph.relationships_create([dup, dup])
+    assert out == [dup, dup]
+
+    assert await graph.relationships_get(iri="x") == [dup]
+
+
+async def test_create_relationships_intra_batch_conflict(sqlite, graph):
+    # Two relationships in one call sharing source and target but differing in predicate
+    # is a conflict, not a silent failure.
+    with pytest.raises(DuplicateRelationship):
+        await graph.relationships_create(
+            [
+                Relationship(source="x", target="y", predicate=RelationshipVerbs.broad_match),
+                Relationship(source="x", target="y", predicate=RelationshipVerbs.close_match),
+            ]
+        )
+
+
+async def test_create_relationships_retries_after_integrity_race(sqlite, graph):
+    # A concurrent writer can insert an overlapping (source, target) pair between our
+    # snapshot read and our insert, raising IntegrityError. That must be re-classified
+    # and retried, not surfaced as a spurious DuplicateRelationship (issue #41).
+    from unittest import mock
+
+    from sqlalchemy.exc import IntegrityError
+    from sqlalchemy.ext.asyncio import AsyncConnection
+    from sqlalchemy.sql.dml import Insert
+
+    rel = Relationship(source="x", target="y", predicate=RelationshipVerbs.exact_match)
+    original = AsyncConnection.execute
+    inserts = {"n": 0}
+
+    async def flaky_execute(self, statement, *args, **kwargs):
+        if isinstance(statement, Insert):
+            inserts["n"] += 1
+            if inserts["n"] == 1:
+                raise IntegrityError("simulated race", None, Exception("UNIQUE"))
+        return await original(self, statement, *args, **kwargs)
+
+    with mock.patch.object(AsyncConnection, "execute", flaky_execute):
+        out = await graph.relationships_create([rel])
+
+    assert out == [rel]
+    assert await graph.relationships_get(iri="x") == [rel]
 
 
 async def test_delete_concept(sqlite, graph, relationships):
