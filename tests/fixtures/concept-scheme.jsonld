@@ -17,6 +17,11 @@
       "@id": "http://publications.europa.eu/resource/authority/corporate-body/TAXUD"
     }
   ],
+  "http://purl.org/dc/terms/license": [
+    {
+      "@id": "https://creativecommons.org/licenses/by/4.0/"
+    }
+  ],
   "http://www.w3.org/2002/07/owl#versionInfo": [
     {
       "@value": "2024"

@@ -14,6 +14,7 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 cn2024:cn2024 a skos:ConceptScheme ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
     eli:based_on <http://data.europa.eu/eli/reg_impl/2023/2364/oj> ;
     eli:version_date "2023-11-20"^^xsd:date ;
     dcterms:created "2023-10-11T13:59:56"^^xsd:dateTime ;
@@ -37,6 +38,7 @@ cn2024:cn2024 a skos:ConceptScheme ;
     skos:scopeNote "http://publications.europa.eu/resource/oj/JOC_2019_119_R_0001"^^xsd:anyURI .
 
 cn2023:cn2023 a skos:ConceptScheme ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
     eli:based_on <http://data.europa.eu/eli/reg_impl/2022/1998/oj> ;
     eli:version_date "2022-11-20"^^xsd:date ;
     dcterms:creator <http://publications.europa.eu/resource/authority/corporate-body/ESTAT>,
@@ -123,6 +125,7 @@ cn2023:010100000080 a skos:Concept ;
         "Caballos, asnos, mulos y burdéganos, vivos"@es .
 
 cn2023:CN2023_CN2024 a xkos:Correspondence ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
     dcterms:creator <http://publications.europa.eu/resource/authority/corporate-body/ESTAT> ;
     dcterms:description "This table is indicative and has no legal value."@en ;
     dcterms:created "2024-07-02T08:46:15"^^xsd:dateTime ;

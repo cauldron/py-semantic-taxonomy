@@ -25,3 +25,10 @@ def test_correspondence_made_of(cn):
     obj[f"{XKOS}madeOf"] = []
     with pytest.raises(ValueError):
         Correspondence(**obj)
+
+
+def test_correspondence_license_required(cn):
+    obj = cn.correspondence
+    del obj["http://purl.org/dc/terms/license"]
+    with pytest.raises(ValidationError):
+        Correspondence(**obj)

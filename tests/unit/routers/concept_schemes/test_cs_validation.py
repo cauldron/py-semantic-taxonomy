@@ -34,3 +34,10 @@ def test_concept_scheme_definition(cn):
     obj[f"{SKOS}definition"] = []
     with pytest.raises(ValidationError):
         ConceptScheme(**obj)
+
+
+def test_concept_scheme_license_required(cn):
+    obj = cn.scheme
+    del obj["http://purl.org/dc/terms/license"]
+    with pytest.raises(ValidationError):
+        ConceptScheme(**obj)

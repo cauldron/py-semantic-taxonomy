@@ -145,6 +145,12 @@ class ConceptScheme(KOSCommon):
         description="https://www.w3.org/TR/owl-ref/#versionInfo-def",
         example=[{"@value": "2024"}],
     )
+    license: list[dict] = Field(
+        alias="http://purl.org/dc/terms/license",
+        title="DCTerms license",
+        description="https://www.dublincore.org/specifications/dublin-core/dcmi-terms/#http://purl.org/dc/terms/license",
+        example=[{"@id": "https://creativecommons.org/licenses/by/4.0/"}],
+    )
 
 
 class Relationship(BaseModel):

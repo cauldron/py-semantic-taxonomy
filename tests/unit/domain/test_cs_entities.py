@@ -59,6 +59,7 @@ def test_concept_scheme_to_db_dict(cn):
             {"@id": "http://publications.europa.eu/resource/authority/corporate-body/TAXUD"},
         ],
         version=[{"@value": "2024"}],
+        license=[{"@id": "https://creativecommons.org/licenses/by/4.0/"}],
         status=[
             {
                 "@id": "http://purl.org/ontology/bibo/status/accepted",
@@ -129,6 +130,7 @@ def test_concept_scheme_filter_language(cn):
         "extra",
         "history_notes",
         "id_",
+        "license",
         "notations",
         "status",
         "types",
@@ -173,6 +175,7 @@ def test_concept_scheme_from_json_ld(cn):
             {"@id": "http://publications.europa.eu/resource/authority/corporate-body/TAXUD"},
         ],
         version=[{"@value": "2024"}],
+        license=[{"@id": "https://creativecommons.org/licenses/by/4.0/"}],
         status=[
             {
                 "@id": "http://purl.org/ontology/bibo/status/accepted",

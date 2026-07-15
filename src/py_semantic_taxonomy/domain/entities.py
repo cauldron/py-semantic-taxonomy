@@ -124,6 +124,7 @@ class ConceptScheme(SKOS):
     created: list[datetime]
     creators: list[dict]
     version: list[str]
+    license: list[dict]
 
     def filter_language(self, language: str) -> "Concept":
         SAME_FIELDS = (
@@ -134,6 +135,7 @@ class ConceptScheme(SKOS):
             "extra",
             "history_notes",
             "id_",
+            "license",
             "notations",
             "status",
             "types",

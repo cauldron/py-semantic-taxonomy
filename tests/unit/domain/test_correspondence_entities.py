@@ -64,6 +64,7 @@ def test_correspondence_to_db_dict(cn):
             },
         ],
         version=[{"@value": "1.0"}],
+        license=[{"@id": "https://creativecommons.org/licenses/by/4.0/"}],
         extra={
             "http://purl.org/dc/terms/description": [
                 {
@@ -90,6 +91,7 @@ def test_correspondence_from_json_ld(cn):
     expected = Correspondence(
         id_="http://data.europa.eu/xsp/cn2023/CN2023_CN2024",
         types=["http://rdf-vocabulary.ddialliance.org/xkos#Correspondence"],
+        license=[{"@id": "https://creativecommons.org/licenses/by/4.0/"}],
         pref_labels=[
             {"@language": "en", "@value": "Transposition between CN 2023 and CN 2024"},
         ],
