@@ -38,12 +38,13 @@ def create_app() -> FastAPI:
 
     app.include_router(api_router)
     app.include_router(web_router)
-    app.include_router(catch_router)
     app.mount(
         "/static",
         StaticFiles(directory=Path(__file__).parent / "adapters" / "routers" / "static"),
         name="static",
     )
+    # Registered last: its `/{path:path}` catch-all must not shadow other routes.
+    app.include_router(catch_router)
     return app
 
 
@@ -51,6 +52,7 @@ def test_app() -> FastAPI:
     app = FastAPI()
     app.include_router(api_router)
     app.include_router(web_router)
+    app.include_router(catch_router)
     return app
 
 
